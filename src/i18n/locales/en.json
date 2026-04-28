@@ -1,0 +1,74 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "close": "Close",
+    "back": "Back",
+    "search": "Search",
+    "noData": "No data available"
+  },
+  "auth": {
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "username": "Username",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "loginButton": "Sign In",
+    "loginSuccess": "Welcome back!",
+    "loginFailed": "Invalid credentials",
+    "loggingIn": "Signing in..."
+  },
+  "menu": {
+    "title": "Menu",
+    "search": "Search drinks...",
+    "allCategories": "All",
+    "addToCart": "Add to Cart",
+    "outOfStock": "Out of Stock",
+    "categories": {
+      "coffee": "Coffee",
+      "milkTea": "Milk Tea",
+      "fruitTea": "Fruit Tea",
+      "iceBlended": "Ice Blended",
+      "smoothie": "Smoothie"
+    }
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "total": "Total",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "quantity": "Quantity",
+    "note": "Note"
+  },
+  "orders": {
+    "title": "Orders",
+    "empty": "No orders yet",
+    "status": {
+      "pending": "Pending",
+      "preparing": "Preparing",
+      "ready": "Ready",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "account": {
+    "title": "Account",
+    "profile": "Profile",
+    "changePassword": "Change Password",
+    "settings": "Settings",
+    "logout": "Sign Out"
+  },
+  "product": {
+    "size": "Size",
+    "sweetness": "Sweetness",
+    "toppings": "Toppings",
+    "note": "Special Note",
+    "addToCart": "Add to Cart",
+    "price": "Price"
+  }
+}

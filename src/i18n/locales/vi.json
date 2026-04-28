@@ -1,0 +1,74 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "retry": "Thử lại",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "save": "Lưu",
+    "close": "Đóng",
+    "back": "Quay lại",
+    "search": "Tìm kiếm",
+    "noData": "Không có dữ liệu"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "username": "Tên đăng nhập",
+    "password": "Mật khẩu",
+    "forgotPassword": "Quên mật khẩu?",
+    "loginButton": "Đăng nhập",
+    "loginSuccess": "Chào mừng trở lại!",
+    "loginFailed": "Thông tin đăng nhập không đúng",
+    "loggingIn": "Đang đăng nhập..."
+  },
+  "menu": {
+    "title": "Thực đơn",
+    "search": "Tìm kiếm đồ uống...",
+    "allCategories": "Tất cả",
+    "addToCart": "Thêm vào giỏ",
+    "outOfStock": "Hết hàng",
+    "categories": {
+      "coffee": "Cà phê",
+      "milkTea": "Trà sữa",
+      "fruitTea": "Trà trái cây",
+      "iceBlended": "Đá xay",
+      "smoothie": "Sinh tố"
+    }
+  },
+  "cart": {
+    "title": "Giỏ hàng",
+    "empty": "Giỏ hàng trống",
+    "total": "Tổng cộng",
+    "checkout": "Đặt hàng",
+    "remove": "Xóa",
+    "quantity": "Số lượng",
+    "note": "Ghi chú"
+  },
+  "orders": {
+    "title": "Đơn hàng",
+    "empty": "Chưa có đơn hàng nào",
+    "status": {
+      "pending": "Chờ xử lý",
+      "preparing": "Đang pha chế",
+      "ready": "Sẵn sàng",
+      "completed": "Hoàn thành",
+      "cancelled": "Đã hủy"
+    }
+  },
+  "account": {
+    "title": "Cá nhân",
+    "profile": "Thông tin cá nhân",
+    "changePassword": "Đổi mật khẩu",
+    "settings": "Cài đặt",
+    "logout": "Đăng xuất"
+  },
+  "product": {
+    "size": "Kích thước",
+    "sweetness": "Độ ngọt",
+    "toppings": "Topping",
+    "note": "Ghi chú đặc biệt",
+    "addToCart": "Thêm vào giỏ hàng",
+    "price": "Giá"
+  }
+}
