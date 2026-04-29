@@ -8,8 +8,8 @@ f/**
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
-import { APP_CONFIG } from '~/constants/Config';
-import { getStoredToken } from '~/context/AuthContext';
+import { APP_CONFIG } from '@/constants/Config';
+import { getStoredToken } from '@/context/AuthContext';
 
 const axiosClient = axios.create({
   baseURL: APP_CONFIG.apiUrl,

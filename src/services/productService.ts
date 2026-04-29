@@ -5,7 +5,7 @@
  * @layer services
  */
 
-import axiosClient from '~/api/axiosClient';
+import axiosClient from '@/api/axiosClient';
 
 /**
  * Lấy danh sách sản phẩm từ API

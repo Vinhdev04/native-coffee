@@ -10,8 +10,8 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, SafeAreaView, Alert,
 } from 'react-native';
-import { useAuth } from '~/context/AuthContext';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '~/styles/theme';
+import { useAuth } from '@/context/AuthContext';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
 
 const MenuItem = ({
   icon, label, onPress, danger,

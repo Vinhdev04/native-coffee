@@ -12,11 +12,11 @@ import {
   ActivityIndicator, RefreshControl, SafeAreaView,
 } from 'react-native';
 import { useTranslation }      from 'react-i18next';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '~/styles/theme';
-import { useDebounce }         from '~/hooks/useDebounce';
-import { mockProducts, mockCategories } from '~/data/mockData';
-import { formatCurrency }      from '~/utils';
-import { useCart }             from '~/context/CartContext';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
+import { useDebounce }         from '@/hooks/useDebounce';
+import { mockProducts, mockCategories } from '@/data/mockData';
+import { formatCurrency }      from '@/utils';
+import { useCart }             from '@/context/CartContext';
 import { 
   Search, 
   X, 

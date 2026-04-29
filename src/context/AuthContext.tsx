@@ -7,11 +7,11 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import socketClient from '~/socket/SocketClient';
-import { APP_CONFIG } from '~/constants/Config';
-import axiosClient from '~/api/axiosClient';
-import { UserDetail } from '~/pages/auth/types';
-import { BaseResponse } from '~/pages/types';
+import socketClient from '@/socket/SocketClient';
+import { APP_CONFIG } from '@/constants/Config';
+import axiosClient from '@/api/axiosClient';
+import { UserDetail } from '@/pages/auth/types';
+import { BaseResponse } from '@/pages/types';
 
 interface AuthContextData {
   isAuthenticated: boolean;

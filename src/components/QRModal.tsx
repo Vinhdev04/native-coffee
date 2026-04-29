@@ -16,11 +16,11 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { COLORS, FONTS } from '~/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 import { Minus, Plus, ShoppingBag, X } from 'lucide-react-native';
-import { formatPrice, products } from '~/constants/products';
-import { useCart } from '~/context/CartContext';
-import { ButtonLoadingContent } from '~/components/AppLoading';
+import { formatPrice, products } from '@/constants/products';
+import { useCart } from '@/context/CartContext';
+import { ButtonLoadingContent } from '@/components/AppLoading';
 
 const { width, height } = Dimensions.get('window');
 
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     color: COLORS.black,
   },
   activeOption: {
-    backgroundColor: COLORS.milk.light,
+    backgroundColor: COLORS.surfaceWarm,
     borderColor: COLORS.primary,
   },
   activeText: {

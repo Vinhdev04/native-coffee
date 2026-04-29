@@ -12,7 +12,7 @@ import {
   StyleSheet,
   Modal,
 } from 'react-native';
-import { COLORS, FONTS } from '~/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 
 interface FullScreenLoadingOverlayProps {
   show: boolean;

@@ -10,11 +10,11 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { View, ActivityIndicator, StatusBar } from 'react-native';
 
-import LoginScreen       from '~/pages/auth/LoginScreen';
-import MainNavigator     from '~/navigation/MainNavigator';
-import { useAuth, AuthProvider } from '~/context/AuthContext';
-import { CartProvider }          from '~/context/CartContext';
-import { Colors }                from '~/constants/Colors';
+import LoginScreen       from '@/pages/auth/LoginScreen';
+import MainNavigator     from '@/navigation/MainNavigator';
+import { useAuth, AuthProvider } from '@/context/AuthContext';
+import { CartProvider }          from '@/context/CartContext';
+import { Colors }                from '@/constants/Colors';
 import Toast                     from 'react-native-toast-message';
 
 const Stack = createStackNavigator();

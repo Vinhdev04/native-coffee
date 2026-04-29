@@ -10,11 +10,11 @@ import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, Image, SafeAreaView,
 } from 'react-native';
-import { useAuth }        from '~/context/AuthContext';
-import { useCart }        from '~/context/CartContext';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '~/styles/theme';
-import { formatCurrency } from '~/utils';
-import { mockProducts }   from '~/data/mockData';
+import { useAuth }        from '@/context/AuthContext';
+import { useCart }        from '@/context/CartContext';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
+import { formatCurrency } from '@/utils';
+import { mockProducts }   from '@/data/mockData';
 import LinearGradient     from 'react-native-linear-gradient';
 import { 
   ShoppingBag, 

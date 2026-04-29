@@ -10,9 +10,9 @@ import {
   View, Text, FlatList, StyleSheet,
   TouchableOpacity, SafeAreaView,
 } from 'react-native';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '~/styles/theme';
-import { useCart }        from '~/context/CartContext';
-import { formatCurrency } from '~/utils';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
+import { useCart }        from '@/context/CartContext';
+import { formatCurrency } from '@/utils';
 
 const mockOrders = [
   { id: 'ORD-001', items: 3, total: 165000, status: 'completed', date: '28/04/2025 09:30' },

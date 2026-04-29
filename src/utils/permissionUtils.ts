@@ -5,7 +5,7 @@
  * @layer utils
  */
 
-import { UserDetail } from '~/pages/auth/types';
+import { UserDetail } from '@/pages/auth/types';
 
 /**
  * Danh sách permissions key của hệ thống

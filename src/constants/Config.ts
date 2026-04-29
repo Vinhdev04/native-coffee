@@ -21,7 +21,7 @@ console.log('API URL:', APP_CONFIG.apiUrl);
 console.log('Public Key Found:', !!APP_CONFIG.publicKey);
 
 export const APP_ASSETS = {
-  logo: require('~/assets/images/logo.png'),
-  splashBg: require('~/assets/images/splash_bg.png'),
-  coffeePattern: require('~/assets/images/coffee_pattern.png'),
+  logo: require('@/assets/images/logo.png'),
+  splashBg: require('@/assets/images/splash_bg.png'),
+  coffeePattern: require('@/assets/images/coffee_pattern.png'),
 };

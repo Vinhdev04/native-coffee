@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { Image, ImageProps, View, StyleSheet, ActivityIndicator } from 'react-native';
-import { COLORS } from '~/styles/theme';
+import { COLORS } from '@/styles/theme';
 
 interface ImageWithFallbackProps extends Omit<ImageProps, 'source'> {
   src: string;
@@ -17,7 +17,7 @@ export function ImageWithFallback({ src, style, ...props }: ImageWithFallbackPro
   const [hasError, setHasError] = useState(false);
 
   const source = hasError || !src
-    ? require('~/assets/images/logo.png') // Sử dụng logo làm placeholder
+    ? require('@/assets/images/logo.png') // Sử dụng logo làm placeholder
     : { uri: src };
 
   return (

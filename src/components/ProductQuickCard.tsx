@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { Plus, Star, Package } from 'lucide-react-native';
-import { COLORS, FONTS } from '~/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - 48 - 16) / 2;

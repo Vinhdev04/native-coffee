@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { X, Minus, Plus, Edit3 } from 'lucide-react-native';
-import { COLORS, FONTS } from '~/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 
 const { height } = Dimensions.get('window');
 

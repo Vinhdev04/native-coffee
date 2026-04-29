@@ -12,7 +12,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { COLORS, FONTS } from '~/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 import { Home, LayoutGrid, User, History } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');

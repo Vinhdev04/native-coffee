@@ -12,9 +12,9 @@ import {
   StyleSheet,
   SafeAreaView,
 } from 'react-native';
-import { COLORS, FONTS } from '~/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 import { Bell, ShoppingBag } from 'lucide-react-native';
-import { useCart } from '~/context/CartContext';
+import { useCart } from '@/context/CartContext';
 
 export function Header() {
   const { totalItems } = useCart();

@@ -8,14 +8,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Coffee, ClipboardList, User, Home } from 'lucide-react-native';
-import { COLORS, FONTS } from '~/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 import { useTranslation } from 'react-i18next';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
-import HomeScreen    from '~/pages/home/HomeScreen';
-import MenuScreen    from '~/pages/menu/MenuScreen';
-import OrderScreen   from '~/pages/orders/OrderScreen';
-import AccountScreen from '~/pages/account/AccountScreen';
+import HomeScreen    from '@/pages/home/HomeScreen';
+import MenuScreen    from '@/pages/menu/MenuScreen';
+import OrderScreen   from '@/pages/orders/OrderScreen';
+import AccountScreen from '@/pages/account/AccountScreen';
 
 const Tab = createBottomTabNavigator();
 

@@ -6,7 +6,7 @@
  */
 
 import forge from 'node-forge';
-import { APP_CONFIG } from '~/constants/Config';
+import { APP_CONFIG } from '@/constants/Config';
 
 /**
  * Mã hóa chuỗi bằng Public Key RSA-OAEP

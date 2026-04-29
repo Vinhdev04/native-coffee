@@ -12,10 +12,10 @@ import {
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useTranslation }  from 'react-i18next';
-import { useAuth }         from '~/context/AuthContext';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '~/styles/theme';
-import { encryptWithRSA }  from '~/utils/encryption';
-import axiosClient         from '~/api/axiosClient';
+import { useAuth }         from '@/context/AuthContext';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
+import { encryptWithRSA }  from '@/utils/encryption';
+import axiosClient         from '@/api/axiosClient';
 import Toast               from 'react-native-toast-message';
 import LinearGradient     from 'react-native-linear-gradient';
 import { 
@@ -139,7 +139,7 @@ const LoginScreen = () => {
         </View>
 
         {/* Footer */}
-        <Text style={styles.footer}>© 2025 Native Coffee. All rights reserved.</Text>
+        <Text style={styles.footer}>© 2026 Native Coffee. All rights reserved.</Text>
       </ScrollView>
     </LinearGradient>
   );

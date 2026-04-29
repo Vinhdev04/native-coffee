@@ -5,7 +5,7 @@
  * @layer services
  */
 
-import axiosClient from '~/api/axiosClient';
+import axiosClient from '@/api/axiosClient';
 
 /**
  * Tạo đơn hàng mới
