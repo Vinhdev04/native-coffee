@@ -1,3 +1,10 @@
+/**
+ * @file MainNavigator.tsx
+ * @desc Navigator chính dạng Bottom Tab — quản lý chuyển đổi giữa các màn hình
+ *       Home, Menu, Orders và Account với icon animated và style coffee.
+ * @layer navigation
+ */
+
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Coffee, ClipboardList, User, Home } from 'lucide-react-native';

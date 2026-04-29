@@ -1,4 +1,11 @@
 /**
+ * @file mockData.ts
+ * @desc Dữ liệu mẫu (Mock Data) — cung cấp danh sách sản phẩm, danh mục,
+ *       topping và các dữ liệu tĩnh dùng cho quá trình phát triển UI.
+ * @layer data
+ */
+
+/**
  * Mock data - Native Coffee App
  * Dùng khi chưa kết nối API thật
  */

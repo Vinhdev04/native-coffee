@@ -1,3 +1,10 @@
+/**
+ * @file LoginScreen.tsx
+ * @desc Màn hình đăng nhập — xử lý form xác thực, mã hóa mật khẩu RSA
+ *       và điều hướng vào ứng dụng sau khi login thành công.
+ * @layer pages/auth
+ */
+
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
@@ -6,10 +13,19 @@ import {
 } from 'react-native';
 import { useTranslation }  from 'react-i18next';
 import { useAuth }         from '~/context/AuthContext';
-import { COLORS, FONTS, SPACING } from '~/styles/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '~/styles/theme';
 import { encryptWithRSA }  from '~/utils/encryption';
 import axiosClient         from '~/api/axiosClient';
 import Toast               from 'react-native-toast-message';
+import LinearGradient     from 'react-native-linear-gradient';
+import { 
+  User, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  Coffee as CoffeeIcon, 
+  ChevronRight 
+} from 'lucide-react-native';
 
 const LoginScreen = () => {
   const { t }    = useTranslation();
@@ -50,15 +66,15 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
+    <LinearGradient
+      colors={[COLORS.primary, COLORS.primaryDark]}
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoEmoji}>☕</Text>
+            <CoffeeIcon size={52} color={COLORS.white} />
           </View>
           <Text style={styles.brandName}>Native Coffee</Text>
           <Text style={styles.tagline}>Hương vị đỉnh cao, phục vụ tận tâm</Text>
@@ -71,23 +87,27 @@ const LoginScreen = () => {
           {/* Username */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t('auth.username')}</Text>
-            <TextInput
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-              placeholder="Nhập tên đăng nhập"
-              placeholderTextColor={COLORS.placeholder}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <View style={styles.inputWrapper}>
+              <User size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Nhập tên đăng nhập"
+                placeholderTextColor={COLORS.placeholder}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
           </View>
 
           {/* Password */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t('auth.password')}</Text>
-            <View style={styles.passwordWrapper}>
+            <View style={styles.inputWrapper}>
+              <Lock size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, styles.passwordInput]}
+                style={[styles.input, { flex: 1 }]}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Nhập mật khẩu"
@@ -95,7 +115,7 @@ const LoginScreen = () => {
                 secureTextEntry={!showPass}
               />
               <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPass(!showPass)}>
-                <Text style={styles.eyeIcon}>{showPass ? '🙈' : '👁️'}</Text>
+                {showPass ? <EyeOff size={20} color={COLORS.textSecondary} /> : <Eye size={20} color={COLORS.textSecondary} />}
               </TouchableOpacity>
             </View>
           </View>
@@ -110,7 +130,10 @@ const LoginScreen = () => {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.loginBtnText}>☕ {t('auth.loginButton')}</Text>
+              <View style={styles.loginBtnContent}>
+                <Text style={styles.loginBtnText}>{t('auth.loginButton')}</Text>
+                <ChevronRight size={18} color={COLORS.white} />
+              </View>
             )}
           </TouchableOpacity>
         </View>
@@ -118,122 +141,124 @@ const LoginScreen = () => {
         {/* Footer */}
         <Text style={styles.footer}>© 2025 Native Coffee. All rights reserved.</Text>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primary,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: SPACING.lg,
+    padding: SPACING.xl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: 40,
   },
   logoContainer: {
     width:           100,
     height:          100,
-    borderRadius:    50,
+    borderRadius:    32,
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent:  'center',
     alignItems:      'center',
-    marginBottom:    SPACING.md,
-  },
-  logoEmoji: {
-    fontSize: 52,
+    marginBottom:    SPACING.lg,
   },
   brandName: {
     fontFamily: FONTS.bold,
-    fontSize:   28,
+    fontSize:   32,
     color:      COLORS.white,
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
   tagline: {
     fontFamily: FONTS.regular,
-    fontSize:   13,
+    fontSize:   14,
     color:      'rgba(255,255,255,0.7)',
-    marginTop:  6,
+    marginTop:  8,
   },
   card: {
     backgroundColor: COLORS.white,
-    borderRadius:    24,
-    padding:         SPACING.lg,
+    borderRadius:    32,
+    padding:         SPACING.xl,
     shadowColor:     '#000',
-    shadowOffset:    { width: 0, height: 8 },
-    shadowOpacity:   0.15,
+    shadowOffset:    { width: 0, height: 10 },
+    shadowOpacity:   0.2,
     shadowRadius:    20,
-    elevation:       10,
+    elevation:       12,
   },
   cardTitle: {
     fontFamily:   FONTS.bold,
-    fontSize:     22,
+    fontSize:     24,
     color:        COLORS.primary,
-    marginBottom: SPACING.lg,
+    marginBottom: 30,
     textAlign:    'center',
   },
   inputGroup: {
-    marginBottom: SPACING.md,
+    marginBottom: 20,
   },
   label: {
     fontFamily:   FONTS.semiBold,
-    fontSize:     13,
+    fontSize:     14,
     color:        COLORS.textSecondary,
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceWarm,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 56,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    height:           52,
-    borderWidth:      1.5,
-    borderColor:      COLORS.border,
-    borderRadius:     12,
-    paddingHorizontal: SPACING.md,
+    flex: 1,
     fontFamily:       FONTS.regular,
     fontSize:         15,
     color:            COLORS.textPrimary,
-    backgroundColor:  COLORS.surfaceWarm,
-  },
-  passwordWrapper: {
-    position: 'relative',
-  },
-  passwordInput: {
-    paddingRight: 50,
   },
   eyeBtn: {
-    position:     'absolute',
-    right:        14,
-    top:          14,
-  },
-  eyeIcon: {
-    fontSize: 20,
+    padding: 8,
   },
   loginBtn: {
-    height:         54,
+    height:         56,
     backgroundColor: COLORS.accent,
-    borderRadius:   14,
+    borderRadius:   18,
     justifyContent: 'center',
     alignItems:     'center',
-    marginTop:      SPACING.sm,
+    marginTop:      10,
+    elevation: 4,
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   loginBtnDisabled: {
     opacity: 0.7,
   },
+  loginBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   loginBtnText: {
     fontFamily: FONTS.bold,
-    fontSize:   16,
+    fontSize:   17,
     color:      COLORS.white,
-    letterSpacing: 0.5,
   },
   footer: {
     textAlign:    'center',
     fontFamily:   FONTS.regular,
-    fontSize:     11,
+    fontSize:     12,
     color:        'rgba(255,255,255,0.5)',
-    marginTop:    SPACING.xl,
+    marginTop:    40,
   },
 });
 

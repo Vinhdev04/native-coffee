@@ -1,4 +1,11 @@
 /**
+ * @file auth/types.ts
+ * @desc Định nghĩa các model dữ liệu liên quan đến xác thực như
+ *       UserDetail, LoginResponse, Credentials, v.v.
+ * @layer pages/auth
+ */
+
+/**
  * Auth types - Native Coffee App
  */
 

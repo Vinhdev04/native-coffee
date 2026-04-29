@@ -1,3 +1,10 @@
+/**
+ * @file HomeScreen.tsx
+ * @desc Màn hình chính (Dashboard) — hiển thị banner khuyến mãi,
+ *       sản phẩm nổi bật và danh mục sản phẩm nhanh.
+ * @layer pages/home
+ */
+
 import React from 'react';
 import {
   View, Text, ScrollView, StyleSheet,
@@ -8,6 +15,16 @@ import { useCart }        from '~/context/CartContext';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '~/styles/theme';
 import { formatCurrency } from '~/utils';
 import { mockProducts }   from '~/data/mockData';
+import LinearGradient     from 'react-native-linear-gradient';
+import { 
+  ShoppingBag, 
+  Search, 
+  ArrowRight, 
+  Coffee as CoffeeIcon, 
+  Zap, 
+  Leaf, 
+  IceCream 
+} from 'lucide-react-native';
 
 const HomeScreen = () => {
   const { user }         = useAuth();
@@ -18,27 +35,47 @@ const HomeScreen = () => {
     <SafeAreaView style={s.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero */}
-        <View style={s.hero}>
-          <Text style={s.greeting}>Xin chào, {user?.fullName || user?.username || 'Barista'} ☕</Text>
-          <Text style={s.subtitle}>Hôm nay bạn muốn uống gì?</Text>
+        <LinearGradient
+          colors={[COLORS.primary, COLORS.primaryDark]}
+          style={s.hero}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={s.headerRow}>
+            <View>
+              <Text style={s.greeting}>Xin chào, {user?.fullName || user?.username || 'Barista'} ☕</Text>
+              <Text style={s.subtitle}>Hôm nay bạn muốn uống gì?</Text>
+            </View>
+            <TouchableOpacity style={s.searchCircle}>
+              <Search size={20} color={COLORS.white} />
+            </TouchableOpacity>
+          </View>
+          
           {totalItems > 0 && (
             <View style={s.cartPill}>
-              <Text style={s.cartPillText}>🛒 {totalItems} sản phẩm trong giỏ</Text>
+              <ShoppingBag size={14} color={COLORS.white} />
+              <Text style={s.cartPillText}>{totalItems} món trong giỏ</Text>
             </View>
           )}
-        </View>
+        </LinearGradient>
 
         {/* Promo Banner */}
-        <View style={s.banner}>
+        <LinearGradient
+          colors={[COLORS.accent, '#A0522D']}
+          style={s.banner}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
           <View style={{ flex: 1 }}>
             <Text style={s.bannerTitle}>Khuyến mãi hôm nay</Text>
             <Text style={s.bannerDesc}>Giảm 20% cho tất cả Cà phê</Text>
             <TouchableOpacity style={s.bannerBtn}>
-              <Text style={s.bannerBtnText}>Xem ngay →</Text>
+              <Text style={s.bannerBtnText}>Xem ngay</Text>
+              <ArrowRight size={14} color={COLORS.accent} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
-          <Text style={{ fontSize: 52 }}>☕</Text>
-        </View>
+          <CoffeeIcon size={60} color="rgba(255,255,255,0.2)" style={s.bannerIcon} />
+        </LinearGradient>
 
         {/* Best Sellers */}
         <View style={s.section}>
@@ -61,13 +98,13 @@ const HomeScreen = () => {
           <Text style={s.sectionTitle}>Danh mục</Text>
           <View style={s.catGrid}>
             {[
-              { icon: '☕', name: 'Cà phê',  count: 12 },
-              { icon: '🧋', name: 'Trà sữa', count: 8  },
-              { icon: '🍵', name: 'Trà cây', count: 6  },
-              { icon: '🥤', name: 'Đá xay',  count: 5  },
+              { icon: <CoffeeIcon size={28} color={COLORS.primary} />, name: 'Cà phê',  count: 12 },
+              { icon: <Leaf size={28} color={COLORS.primary} />,      name: 'Trà trái cây', count: 8  },
+              { icon: <IceCream size={28} color={COLORS.primary} />,  name: 'Đá xay',  count: 6  },
+              { icon: <Zap size={28} color={COLORS.primary} />,       name: 'Năng lượng', count: 5  },
             ].map((c) => (
               <TouchableOpacity key={c.name} style={s.catCard}>
-                <Text style={{ fontSize: 30 }}>{c.icon}</Text>
+                <View style={s.catIconBg}>{c.icon}</View>
                 <Text style={s.catName}>{c.name}</Text>
                 <Text style={s.catCount}>{c.count} món</Text>
               </TouchableOpacity>
@@ -82,26 +119,30 @@ const HomeScreen = () => {
 
 const s = StyleSheet.create({
   container:   { flex: 1, backgroundColor: COLORS.background },
-  hero:        { backgroundColor: COLORS.primary, paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg, paddingBottom: 40 },
-  greeting:    { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.white },
+  hero:        { paddingHorizontal: SPACING.lg, paddingTop: 60, paddingBottom: 60, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
+  headerRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  searchCircle:{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  greeting:    { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.white },
   subtitle:    { fontFamily: FONTS.regular, fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
-  cartPill:    { backgroundColor: COLORS.accent, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start', marginTop: 10 },
+  cartPill:    { backgroundColor: COLORS.accent, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start', marginTop: 20, flexDirection: 'row', alignItems: 'center', gap: 6 },
   cartPillText:{ fontFamily: FONTS.semiBold, fontSize: 12, color: COLORS.white },
-  banner:      { marginHorizontal: 16, marginTop: -24, backgroundColor: COLORS.accent, borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bannerTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
-  bannerDesc:  { fontFamily: FONTS.regular, fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
-  bannerBtn:   { backgroundColor: COLORS.white, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start', marginTop: 10 },
+  banner:      { marginHorizontal: 20, marginTop: -30, borderRadius: 24, padding: 20, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', elevation: 8, shadowColor: COLORS.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  bannerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.white },
+  bannerDesc:  { fontFamily: FONTS.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
+  bannerBtn:   { backgroundColor: COLORS.white, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'flex-start', marginTop: 15, flexDirection: 'row', alignItems: 'center' },
   bannerBtnText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.accent },
-  section:     { paddingHorizontal: SPACING.md, marginTop: SPACING.lg },
-  sectionTitle:{ fontFamily: FONTS.bold, fontSize: 17, color: COLORS.primary, marginBottom: SPACING.sm },
-  featCard:    { width: 160, backgroundColor: COLORS.white, borderRadius: 16, marginRight: 12, overflow: 'hidden', elevation: 3 },
-  featImg:     { width: '100%', height: 120 },
-  featName:    { fontFamily: FONTS.semiBold, fontSize: 12, color: COLORS.textPrimary },
-  featPrice:   { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.accent, marginTop: 2 },
-  catGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  catCard:     { width: '47%', backgroundColor: COLORS.white, borderRadius: 16, padding: 16, alignItems: 'center', elevation: 2 },
-  catName:     { fontFamily: FONTS.semiBold, fontSize: 13, color: COLORS.textPrimary, marginTop: 6 },
-  catCount:    { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  bannerIcon:  { position: 'absolute', right: -10, bottom: -10 },
+  section:     { paddingHorizontal: SPACING.lg, marginTop: 30 },
+  sectionTitle:{ fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginBottom: SPACING.md },
+  featCard:    { width: 180, backgroundColor: COLORS.white, borderRadius: 20, marginRight: 16, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  featImg:     { width: '100%', height: 140 },
+  featName:    { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary },
+  featPrice:   { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.accent, marginTop: 4 },
+  catGrid:     { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  catCard:     { width: '47%', backgroundColor: COLORS.white, borderRadius: 20, padding: 20, alignItems: 'center', marginBottom: 15, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  catIconBg:   { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  catName:     { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary },
+  catCount:    { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
 });
 
 export default HomeScreen;

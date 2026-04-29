@@ -1,3 +1,10 @@
+/**
+ * @file AccountScreen.tsx
+ * @desc Màn hình tài khoản người dùng — hiển thị thông tin cá nhân,
+ *       thống kê đơn hàng và các tùy chọn cài đặt, đăng xuất.
+ * @layer pages/account
+ */
+
 import React from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,

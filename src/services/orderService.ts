@@ -1,3 +1,10 @@
+/**
+ * @file orderService.ts
+ * @desc Service quản lý đơn hàng — cung cấp các hàm gọi API để tạo đơn,
+ *       lấy lịch sử đơn hàng và cập nhật trạng thái đơn.
+ * @layer services
+ */
+
 import axiosClient from '~/api/axiosClient';
 
 /**

@@ -1,3 +1,10 @@
+/**
+ * @file OrderScreen.tsx
+ * @desc Màn hình quản lý đơn hàng — hiển thị danh sách đơn hàng đã đặt,
+ *       phân loại theo trạng thái (Đang chờ, Hoàn thành, Đã hủy).
+ * @layer pages/orders
+ */
+
 import React, { useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet,

@@ -1,3 +1,10 @@
+/**
+ * @file MenuScreen.tsx
+ * @desc Màn hình thực đơn — danh sách sản phẩm phân loại theo category,
+ *       hỗ trợ tìm kiếm và thêm sản phẩm vào giỏ hàng.
+ * @layer pages/menu
+ */
+
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TextInput,
@@ -10,6 +17,14 @@ import { useDebounce }         from '~/hooks/useDebounce';
 import { mockProducts, mockCategories } from '~/data/mockData';
 import { formatCurrency }      from '~/utils';
 import { useCart }             from '~/context/CartContext';
+import { 
+  Search, 
+  X, 
+  Plus, 
+  ShoppingBag, 
+  Coffee as CoffeeIcon,
+  Filter
+} from 'lucide-react-native';
 
 interface Product {
   id:          string;
@@ -86,7 +101,7 @@ const MenuScreen = () => {
         <View style={styles.productBottom}>
           <Text style={styles.productPrice}>{formatCurrency(item.price)}</Text>
           <TouchableOpacity style={styles.addBtn} onPress={() => handleAddToCart(item)}>
-            <Text style={styles.addBtnText}>+</Text>
+            <Plus size={20} color={COLORS.white} />
           </TouchableOpacity>
         </View>
       </View>
@@ -97,17 +112,20 @@ const MenuScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>☕ {t('menu.title')}</Text>
-        {totalItems > 0 && (
-          <View style={styles.cartBadge}>
-            <Text style={styles.cartBadgeText}>{totalItems}</Text>
-          </View>
-        )}
+        <Text style={styles.headerTitle}>{t('menu.title')}</Text>
+        <TouchableOpacity style={styles.cartBtn}>
+          <ShoppingBag size={24} color={COLORS.primary} />
+          {totalItems > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{totalItems}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
-      {/* Search */}
+      {/* Search Bar */}
       <View style={styles.searchWrapper}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Search size={20} color={COLORS.textMuted} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           value={searchText}
@@ -117,7 +135,7 @@ const MenuScreen = () => {
         />
         {searchText.length > 0 && (
           <TouchableOpacity onPress={() => setSearchText('')}>
-            <Text style={styles.clearIcon}>✕</Text>
+            <X size={18} color={COLORS.textMuted} />
           </TouchableOpacity>
         )}
       </View>
@@ -144,7 +162,7 @@ const MenuScreen = () => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.accent} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>☕</Text>
+            <CoffeeIcon size={64} color={COLORS.border} />
             <Text style={styles.emptyText}>Không tìm thấy sản phẩm</Text>
           </View>
         }
@@ -155,35 +173,33 @@ const MenuScreen = () => {
 
 const styles = StyleSheet.create({
   container:     { flex: 1, backgroundColor: COLORS.background },
-  header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingTop: SPACING.md, paddingBottom: SPACING.sm },
-  headerTitle:   { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.primary },
-  cartBadge:     { backgroundColor: COLORS.accent, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  cartBadgeText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.white },
-  searchWrapper: { flexDirection: 'row', alignItems: 'center', marginHorizontal: SPACING.md, marginBottom: SPACING.sm, backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.border, paddingHorizontal: SPACING.sm, height: 48 },
-  searchIcon:    { fontSize: 16, marginRight: 6 },
-  searchInput:   { flex: 1, fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textPrimary },
-  clearIcon:     { fontSize: 14, color: COLORS.textMuted, paddingHorizontal: 4 },
-  categoryList:  { paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, gap: 8 },
-  catChip:       { paddingHorizontal: 14, paddingVertical: 8, borderRadius: BORDER_RADIUS.full, backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border },
-  catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  catChipText:   { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textSecondary },
+  header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10 },
+  headerTitle:   { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.primary },
+  cartBtn:       { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center', elevation: 2 },
+  cartBadge:     { position: 'absolute', top: 0, right: 0, backgroundColor: COLORS.accent, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: COLORS.white },
+  cartBadgeText: { fontFamily: FONTS.bold, fontSize: 10, color: COLORS.white },
+  searchWrapper: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 16, backgroundColor: COLORS.white, borderRadius: 16, paddingHorizontal: 16, height: 52, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+  searchIcon:    { marginRight: 10 },
+  searchInput:   { flex: 1, fontFamily: FONTS.regular, fontSize: 15, color: COLORS.textPrimary },
+  categoryList:  { paddingHorizontal: 20, paddingBottom: 16, gap: 10 },
+  catChip:       { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, backgroundColor: COLORS.white, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+  catChipActive: { backgroundColor: COLORS.primary },
+  catChipText:   { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
   catChipTextActive: { color: COLORS.white },
-  productList:   { paddingHorizontal: SPACING.sm, paddingBottom: SPACING.xxl },
-  productRow:    { justifyContent: 'space-between', paddingHorizontal: SPACING.sm, marginBottom: SPACING.sm },
-  productCard:   { width: '48%', backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.lg, overflow: 'hidden', shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
-  productImage:  { width: '100%', height: 140 },
-  badge:         { position: 'absolute', top: 8, left: 8, backgroundColor: COLORS.gold, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  productList:   { paddingHorizontal: 12, paddingBottom: 100 },
+  productRow:    { justifyContent: 'space-between', paddingHorizontal: 8, marginBottom: 16 },
+  productCard:   { width: '48%', backgroundColor: COLORS.white, borderRadius: 20, overflow: 'hidden', elevation: 4, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
+  productImage:  { width: '100%', height: 150 },
+  badge:         { position: 'absolute', top: 10, left: 10, backgroundColor: COLORS.gold, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, elevation: 2 },
   badgeText:     { fontFamily: FONTS.bold, fontSize: 10, color: COLORS.white },
-  productInfo:   { padding: SPACING.sm },
-  productName:   { fontFamily: FONTS.semiBold, fontSize: 13, color: COLORS.textPrimary, marginBottom: 4 },
-  productDesc:   { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted, marginBottom: 8 },
+  productInfo:   { padding: 12 },
+  productName:   { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary, marginBottom: 4 },
+  productDesc:   { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted, marginBottom: 12 },
   productBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  productPrice:  { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.accent },
-  addBtn:        { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center' },
-  addBtnText:    { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.white, lineHeight: 22 },
-  emptyContainer: { alignItems: 'center', paddingTop: 60 },
-  emptyIcon:     { fontSize: 48, marginBottom: 12 },
-  emptyText:     { fontFamily: FONTS.regular, fontSize: 15, color: COLORS.textMuted },
+  productPrice:  { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.accent },
+  addBtn:        { width: 36, height: 36, borderRadius: 12, backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center', elevation: 2 },
+  emptyContainer: { alignItems: 'center', paddingTop: 100, opacity: 0.5 },
+  emptyText:     { fontFamily: FONTS.regular, fontSize: 16, color: COLORS.textMuted, marginTop: 16 },
 });
 
 export default MenuScreen;

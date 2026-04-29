@@ -1,3 +1,10 @@
+/**
+ * @file productService.ts
+ * @desc Service quản lý sản phẩm — cung cấp các hàm gọi API để lấy
+ *       danh sách sản phẩm, chi tiết sản phẩm và danh mục.
+ * @layer services
+ */
+
 import axiosClient from '~/api/axiosClient';
 
 /**

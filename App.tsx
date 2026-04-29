@@ -1,7 +1,8 @@
 /**
- * Native Coffee App
- * Root component - khởi tạo GestureHandler, SafeArea và Navigation
- * @format
+ * @file App.tsx
+ * @desc Thành phần gốc của ứng dụng — khởi tạo GestureHandler, SafeAreaProvider,
+ *       StatusBar và tích hợp RootNavigator cùng cấu hình đa ngôn ngữ.
+ * @layer root
  */
 
 import React from 'react';
