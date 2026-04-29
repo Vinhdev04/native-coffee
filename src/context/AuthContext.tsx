@@ -7,11 +7,10 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import socketClient from '@/socket/SocketClient';
 import { APP_CONFIG } from '@/constants/Config';
-import axiosClient from '@/api/axiosClient';
-import { UserDetail } from '@/pages/auth/types';
+import { UserDetail, LoginResponse } from '@/pages/auth/types';
 import { BaseResponse } from '@/pages/types';
+import { getMeApi, logoutApi } from '@/services/authService';
 
 interface AuthContextData {
   isAuthenticated: boolean;
@@ -33,7 +32,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     loadStoredAuth();
-    socketClient.setOnAuthError(logout);
   }, []);
 
   /** Làm phẳng dữ liệu user nếu API trả về { user: {...}, permissions: [...] } */
@@ -55,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const storedUser  = await AsyncStorage.getItem('@user');
 
       if (!storedToken) {
-        socketClient.initialize(APP_CONFIG.socketUrl);
+        // No socket init needed
       }
 
       if (storedToken && storedUser) {
@@ -64,10 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(flattenUser(parsedUser));
         setIsAuthenticated(true);
 
-        socketClient.initialize(APP_CONFIG.socketUrl, storedToken);
-
-        axiosClient
-          .get('/auth/me')
+        getMeApi()
           .then((res) => {
             const body: any = res;
             if (body?.rows?.length > 0) {
@@ -96,10 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(flattened);
       setIsAuthenticated(true);
 
-      socketClient.initialize(APP_CONFIG.socketUrl, newToken);
-
-      axiosClient
-        .get('/auth/me')
+      getMeApi()
         .then((response) => {
           const body: any = response;
           if (body?.rows?.length > 0) {
@@ -118,11 +110,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    await AsyncStorage.clear();
-    setToken(null);
-    setUser(null);
-    setIsAuthenticated(false);
-    socketClient.disconnect();
+    try {
+      await logoutApi();
+    } catch (error) {
+      console.warn('API Logout failed, clearing local storage anyway.');
+    } finally {
+      await AsyncStorage.clear();
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
 
   return (

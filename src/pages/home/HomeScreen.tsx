@@ -66,12 +66,12 @@ const HomeScreen = () => {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         >
-          <View style={{ flex: 1 }}>
+          <View style={s.bannerContent}>
             <Text style={s.bannerTitle}>Khuyến mãi hôm nay</Text>
             <Text style={s.bannerDesc}>Giảm 20% cho tất cả Cà phê</Text>
             <TouchableOpacity style={s.bannerBtn}>
               <Text style={s.bannerBtnText}>Xem ngay</Text>
-              <ArrowRight size={14} color={COLORS.accent} style={{ marginLeft: 4 }} />
+              <ArrowRight size={14} color={COLORS.accent} style={s.bannerBtnIcon} />
             </TouchableOpacity>
           </View>
           <CoffeeIcon size={60} color="rgba(255,255,255,0.2)" style={s.bannerIcon} />
@@ -84,7 +84,7 @@ const HomeScreen = () => {
             {featured.map((p) => (
               <View key={p.id} style={s.featCard}>
                 <Image source={{ uri: p.image }} style={s.featImg} resizeMode="cover" />
-                <View style={{ padding: 8 }}>
+                <View style={s.featDetails}>
                   <Text style={s.featName} numberOfLines={1}>{p.name}</Text>
                   <Text style={s.featPrice}>{formatCurrency(p.price)}</Text>
                 </View>
@@ -111,7 +111,7 @@ const HomeScreen = () => {
             ))}
           </View>
         </View>
-        <View style={{ height: 40 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -131,11 +131,14 @@ const s = StyleSheet.create({
   bannerDesc:  { fontFamily: FONTS.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
   bannerBtn:   { backgroundColor: COLORS.white, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'flex-start', marginTop: 15, flexDirection: 'row', alignItems: 'center' },
   bannerBtnText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.accent },
+  bannerContent: { flex: 1 },
+  bannerBtnIcon: { marginLeft: 4 },
   bannerIcon:  { position: 'absolute', right: -10, bottom: -10 },
   section:     { paddingHorizontal: SPACING.lg, marginTop: 30 },
   sectionTitle:{ fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginBottom: SPACING.md },
   featCard:    { width: 180, backgroundColor: COLORS.white, borderRadius: 20, marginRight: 16, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
   featImg:     { width: '100%', height: 140 },
+  featDetails: { padding: 8 },
   featName:    { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary },
   featPrice:   { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.accent, marginTop: 4 },
   catGrid:     { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
@@ -143,6 +146,7 @@ const s = StyleSheet.create({
   catIconBg:   { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
   catName:     { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary },
   catCount:    { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  bottomSpacer:{ height: 40 },
 });
 
 export default HomeScreen;

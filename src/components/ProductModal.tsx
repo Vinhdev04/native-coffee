@@ -112,7 +112,7 @@ export const ProductModal = ({
               {product.image ? (
                 <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
               ) : (
-                <View style={[styles.image, { backgroundColor: COLORS.gray[100] }]} />
+                <View style={styles.imagePlaceholder} />
               )}
             </View>
 
@@ -120,7 +120,7 @@ export const ProductModal = ({
               {/* Header Info */}
               <View style={styles.headerInfo}>
                 <View style={styles.titleRow}>
-                  {editItem && <Edit3 size={16} color={COLORS.primary} style={{ marginRight: 8 }} />}
+                  {editItem && <Edit3 size={16} color={COLORS.primary} style={styles.editIcon} />}
                   <Text style={styles.productName}>{product.name}</Text>
                 </View>
                 <Text style={styles.productDescription}>{product.description}</Text>
@@ -282,6 +282,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  imagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: COLORS.gray[100],
+  },
   contentContainer: {
     paddingHorizontal: 24,
     paddingTop: 24,
@@ -294,6 +299,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+  },
+  editIcon: {
+    marginRight: 8,
   },
   productName: {
     fontSize: 20,

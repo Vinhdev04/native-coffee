@@ -11,6 +11,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { View, ActivityIndicator, StatusBar } from 'react-native';
 
 import LoginScreen       from '@/pages/auth/LoginScreen';
+import RegisterScreen    from '@/pages/auth/RegisterScreen';
 import MainNavigator     from '@/navigation/MainNavigator';
 import { useAuth, AuthProvider } from '@/context/AuthContext';
 import { CartProvider }          from '@/context/CartContext';
@@ -35,7 +36,10 @@ const NavigationContent = () => {
       <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} translucent={false} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
         ) : (
           <>
             <Stack.Screen name="Main" component={MainNavigator} />

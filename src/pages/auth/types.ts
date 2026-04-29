@@ -21,13 +21,32 @@ export interface UserDetail {
   createdAt?:  string;
 }
 
-export interface LoginRequest {
+export interface LoginPayload {
   username: string;
   password: string;
 }
 
 export interface LoginResponse {
-  token:    string;
-  user:     UserDetail;
   res_code: number;
+  rows: ({
+    token: string;
+  } & UserDetail)[];
+  error_code?: string;
+  error_cont?: string;
+}
+
+export interface RegisterPayload {
+  username:    string;
+  password:    string;
+  fullName:    string;
+  email?:      string;
+  phone?:      string;
+  inviterCode?: string;
+}
+
+export interface RegisterResponse {
+  res_code: number;
+  error_code?: string;
+  error_cont?: string;
+  rows?: any[];
 }

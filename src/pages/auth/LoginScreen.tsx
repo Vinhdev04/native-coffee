@@ -12,10 +12,11 @@ import {
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useTranslation }  from 'react-i18next';
+import { useNavigation }   from '@react-navigation/native';
 import { useAuth }         from '@/context/AuthContext';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
 import { encryptWithRSA }  from '@/utils/encryption';
-import axiosClient         from '@/api/axiosClient';
+import { loginApi }      from '@/services/authService';
 import Toast               from 'react-native-toast-message';
 import LinearGradient     from 'react-native-linear-gradient';
 import { 
@@ -30,6 +31,7 @@ import {
 const LoginScreen = () => {
   const { t }    = useTranslation();
   const { login } = useAuth();
+  const navigation = useNavigation<any>();
 
   const [username,  setUsername]  = useState('');
   const [password,  setPassword]  = useState('');
@@ -48,7 +50,7 @@ const LoginScreen = () => {
       let encryptedPassword = password;
       try { encryptedPassword = await encryptWithRSA(password); } catch (_) {}
 
-      const response: any = await axiosClient.post('/auth/login', {
+      const response = await loginApi({
         username: username.trim(),
         password: encryptedPassword,
       });
@@ -107,7 +109,7 @@ const LoginScreen = () => {
             <View style={styles.inputWrapper}>
               <Lock size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={styles.input}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Nhập mật khẩu"
@@ -135,6 +137,15 @@ const LoginScreen = () => {
                 <ChevronRight size={18} color={COLORS.white} />
               </View>
             )}
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.registerLink} 
+            onPress={() => navigation.navigate('Register')}
+          >
+            <Text style={styles.registerLinkText}>
+              Chưa có tài khoản? <Text style={styles.registerLinkBold}>Đăng ký ngay</Text>
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -259,6 +270,19 @@ const styles = StyleSheet.create({
     fontSize:     12,
     color:        'rgba(255,255,255,0.5)',
     marginTop:    40,
+  },
+  registerLink: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  registerLinkText: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  registerLinkBold: {
+    fontFamily: FONTS.bold,
+    color: COLORS.accent,
   },
 });
 

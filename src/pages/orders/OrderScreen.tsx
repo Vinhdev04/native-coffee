@@ -80,7 +80,7 @@ const OrderScreen = () => {
         contentContainerStyle={s.list}
         ListEmptyComponent={
           <View style={s.empty}>
-            <Text style={{ fontSize: 48 }}>☕</Text>
+            <Text style={s.emptyIcon}>☕</Text>
             <Text style={s.emptyText}>Chưa có đơn hàng nào</Text>
           </View>
         }
@@ -110,6 +110,7 @@ const s = StyleSheet.create({
   detailBtn:    { alignSelf: 'flex-end' },
   detailBtnText:{ fontFamily: FONTS.semiBold, fontSize: 13, color: COLORS.accent },
   empty:        { alignItems: 'center', paddingTop: 60 },
+  emptyIcon:    { fontSize: 48 },
   emptyText:    { fontFamily: FONTS.regular, fontSize: 15, color: COLORS.textMuted, marginTop: 12 },
 });
 
