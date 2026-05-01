@@ -69,6 +69,7 @@ const HomeScreen = () => {
           </View>
         </View>
 
+
         {/* Sticky Categories Bar */}
         <View style={s.stickyCatContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catList}>
@@ -82,6 +83,24 @@ const HomeScreen = () => {
               <TouchableOpacity key={i} style={s.catItem}>
                 <View style={[s.catIcon, { backgroundColor: c.color }]}>{c.icon}</View>
                 <Text style={s.catLabel}>{c.name}</Text>
+
+        {/* Best Sellers */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>⭐ Bán chạy nhất</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {featured.map((p) => (
+              <TouchableOpacity 
+                key={p.id} 
+                style={s.featCard}
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('ProductDetail', { product: p })}
+              >
+                <Image source={{ uri: p.image }} style={s.featImg} resizeMode="cover" />
+                <View style={s.featDetails}>
+                  <Text style={s.featName} numberOfLines={1}>{p.name}</Text>
+                  <Text style={s.featPrice}>{formatCurrency(p.price)}</Text>
+                </View>
+
               </TouchableOpacity>
             ))}
           </ScrollView>

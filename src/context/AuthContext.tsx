@@ -65,8 +65,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getMeApi()
           .then((res) => {
             const body: any = res;
-            if (body?.rows?.length > 0) {
-              const flattened = flattenUser(body.rows[0]);
+            const syncData = body?.rows?.[0] || body?.user || body?.data;
+            if (syncData) {
+              const flattened = flattenUser(syncData);
               if (flattened) {
                 setUser(flattened);
                 AsyncStorage.setItem('@user', JSON.stringify(flattened));
@@ -94,8 +95,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getMeApi()
         .then((response) => {
           const body: any = response;
-          if (body?.rows?.length > 0) {
-            const syncUser = flattenUser(body.rows[0]);
+          const syncData = body?.rows?.[0] || body?.user || body?.data;
+          if (syncData) {
+            const syncUser = flattenUser(syncData);
             if (syncUser) {
               const finalUser = { ...flattened, ...syncUser };
               setUser(finalUser);
@@ -111,14 +113,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await logoutApi();
-    } catch (error) {
-      console.warn('API Logout failed, clearing local storage anyway.');
-    } finally {
-      await AsyncStorage.clear();
+      // Gọi API logout nhưng không dùng await để tránh treo UI
+      logoutApi().catch(err => console.warn('Background logout API error:', err));
+      
+      // Xóa dữ liệu local ngay lập tức
+      await AsyncStorage.removeItem('@token');
+      await AsyncStorage.removeItem('@user');
+      
       setToken(null);
       setUser(null);
       setIsAuthenticated(false);
+      
+      console.log('✅ Logout successful (local state cleared)');
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 

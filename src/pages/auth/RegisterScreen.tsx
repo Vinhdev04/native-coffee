@@ -14,6 +14,7 @@ import {
 import { useTranslation }  from 'react-i18next';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
 import { registerApi }     from '@/services/authService';
+import { encryptWithRSA }  from '@/utils/encryption';
 import Toast               from 'react-native-toast-message';
 import LinearGradient     from 'react-native-linear-gradient';
 import { 
@@ -34,7 +35,7 @@ const RegisterScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
 
-  const [username, setUsername] = useState('');
+  const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail]       = useState('');
@@ -42,16 +43,29 @@ const RegisterScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!username.trim() || !password.trim() || !fullName.trim()) {
+    if (!userName.trim() || !password.trim() || !fullName.trim()) {
       Toast.show({ type: 'error', text1: 'Vui lòng nhập các trường bắt buộc (*)', position: 'bottom' });
       return;
     }
 
     setIsLoading(true);
     try {
+      // Mã hóa password giống màn hình Login
+      let encryptedPassword = password;
+      try { 
+        encryptedPassword = await encryptWithRSA(password); 
+      } catch (err) {
+        console.warn('RSA Encryption failed, sending plain password', err);
+      }
+
       const response = await registerApi({
+
         username: username.trim(),
         password,
+
+        userName: userName.trim(),
+        password: encryptedPassword,
+
         fullName: fullName.trim(),
         email: email.trim(),
         phone: phone.trim(),
@@ -79,6 +93,7 @@ const RegisterScreen = () => {
           colors={['rgba(17, 9, 5, 0.4)', 'rgba(17, 9, 5, 0.9)', COLORS.primary]}
           style={s.gradient}
         >
+
           <SafeAreaView style={s.safe}>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -87,7 +102,113 @@ const RegisterScreen = () => {
               <ScrollView 
                 contentContainerStyle={s.scrollContent} 
                 showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
+
+          <ScrollView 
+            contentContainerStyle={s.scrollContent} 
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Header */}
+            <View style={s.header}>
+              <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+                <ChevronLeft size={28} color={COLORS.white} />
+              </TouchableOpacity>
+              <View style={s.logoMini}>
+                <CoffeeIcon size={24} color={COLORS.white} />
+              </View>
+              <Text style={s.brandTitle}>Tạo tài khoản</Text>
+              <Text style={s.brandSub}>Khởi đầu hành trình thưởng thức cà phê cùng Native Coffee</Text>
+            </View>
+
+            {/* Form Card */}
+            <View style={s.card}>
+              {/* Full Name */}
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Họ và tên *</Text>
+                <View style={s.inputWrapper}>
+                  <User size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                  <TextInput
+                    style={s.input}
+                    value={fullName}
+                    onChangeText={setFullName}
+                    placeholder="Nhập họ tên đầy đủ"
+                    placeholderTextColor={COLORS.placeholder}
+                  />
+                </View>
+              </View>
+
+              {/* Username */}
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Tên đăng nhập *</Text>
+                <View style={s.inputWrapper}>
+                  <UserPlus size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                  <TextInput
+                    style={s.input}
+                    value={userName}
+                    onChangeText={setUserName}
+                    placeholder="Chọn tên đăng nhập"
+                    placeholderTextColor={COLORS.placeholder}
+                    autoCapitalize="none"
+                  />
+                </View>
+              </View>
+
+              {/* Password */}
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Mật khẩu *</Text>
+                <View style={s.inputWrapper}>
+                  <Lock size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                  <TextInput
+                    style={s.input}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Nhập mật khẩu"
+                    placeholderTextColor={COLORS.placeholder}
+                    secureTextEntry
+                  />
+                </View>
+              </View>
+
+              {/* Email */}
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Email (không bắt buộc)</Text>
+                <View style={s.inputWrapper}>
+                  <Mail size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                  <TextInput
+                    style={s.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="example@gmail.com"
+                    placeholderTextColor={COLORS.placeholder}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+              </View>
+
+              {/* Phone */}
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Số điện thoại</Text>
+                <View style={s.inputWrapper}>
+                  <Phone size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                  <TextInput
+                    style={s.input}
+                    value={phone}
+                    onChangeText={setPhone}
+                    placeholder="Nhập số điện thoại"
+                    placeholderTextColor={COLORS.placeholder}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+              </View>
+
+              {/* Register Button */}
+              <TouchableOpacity
+                style={[s.registerBtn, isLoading && s.registerBtnDisabled]}
+                onPress={handleRegister}
+                disabled={isLoading}
+                activeOpacity={0.85}
+
               >
                 {/* Back Button */}
                 <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>

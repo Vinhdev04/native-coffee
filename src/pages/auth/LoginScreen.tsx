@@ -37,13 +37,13 @@ const LoginScreen = () => {
   const { login } = useAuth();
   const navigation = useNavigation<any>();
 
-  const [username,  setUsername]  = useState('');
+  const [userName,  setUserName]  = useState('');
   const [password,  setPassword]  = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPass,  setShowPass]  = useState(false);
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
+    if (!userName.trim() || !password.trim()) {
       Toast.show({ type: 'error', text1: 'Vui lòng nhập đầy đủ thông tin', position: 'bottom' });
       return;
     }
@@ -54,9 +54,10 @@ const LoginScreen = () => {
       try { encryptedPassword = await encryptWithRSA(password); } catch (_) {}
 
       const response = await loginApi({
-        username: username.trim(),
+        userName: userName.trim(),
         password: encryptedPassword,
       });
+
 
       if (response?.res_code === 0 && response?.rows?.[0]) {
         const { token, ...userData } = response.rows[0];
@@ -68,6 +69,44 @@ const LoginScreen = () => {
     } catch (error: any) {
       console.error('Login error:', error);
       Toast.show({ type: 'error', text1: 'Có lỗi kết nối, vui lòng thử lại', position: 'bottom' });
+
+      // Hỗ trợ cả cấu trúc rows (legacy) và data (new chips api)
+      const userDataFromRows = response?.rows?.[0];
+      const userDataFromData = response?.user || response?.data;
+      const finalUserData = userDataFromRows || userDataFromData;
+      const token = response?.token || finalUserData?.token;
+
+      if ((response?.res_code === 0 || token) && finalUserData) {
+        if (token) {
+          await login(token, finalUserData);
+          Toast.show({ type: 'success', text1: '☕ Chào mừng đến Native Coffee!', position: 'bottom' });
+        } else {
+          Toast.show({ type: 'error', text1: 'Không tìm thấy Token xác thực', position: 'bottom' });
+        }
+      } else {
+        // Lấy thông báo lỗi chi tiết nhất có thể
+        const errorMsg = response?.data?.message || response?.error_cont || 'Đăng nhập không thành công';
+        const errorCode = response?.error_code ? `[${response.error_code}] ` : '';
+        
+        console.log('--- LOGIN FAILED ---');
+        console.log('Response:', JSON.stringify(response, null, 2));
+
+        Toast.show({ 
+          type: 'error', 
+          text1: 'Đăng nhập thất bại', 
+          text2: `${errorCode}${errorMsg}`,
+          position: 'bottom' 
+        });
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      Toast.show({ 
+        type: 'error', 
+        text1: 'Lỗi kết nối', 
+        text2: error.message,
+        position: 'bottom' 
+      });
+
     } finally {
       setIsLoading(false);
     }
@@ -117,6 +156,7 @@ const LoginScreen = () => {
                   />
                 </View>
 
+
                 {/* Password Input */}
                 <View style={styles.inputContainer}>
                   <Lock size={20} color={COLORS.textMuted} />
@@ -132,6 +172,24 @@ const LoginScreen = () => {
                     {showPass ? <EyeOff size={20} color={COLORS.textMuted} /> : <Eye size={20} color={COLORS.textMuted} />}
                   </TouchableOpacity>
                 </View>
+
+          {/* Username */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>{t('auth.username')}</Text>
+            <View style={styles.inputWrapper}>
+              <User size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={userName}
+                onChangeText={setUserName}
+                placeholder="Nhập tên đăng nhập"
+                placeholderTextColor={COLORS.placeholder}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+          </View>
+
 
                 <TouchableOpacity style={styles.forgotPass}>
                   <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>

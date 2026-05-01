@@ -17,7 +17,8 @@ export const APP_CONFIG = {
 };
 
 console.log('--- NATIVE COFFEE CONFIG ---');
-console.log('API URL:', APP_CONFIG.apiUrl);
+console.log('API Base URL:', APP_CONFIG.apiUrl);
+console.log('Full Login URL:', `${APP_CONFIG.apiUrl}/auth/login`);
 console.log('Public Key Found:', !!APP_CONFIG.publicKey);
 
 export const APP_ASSETS = {
