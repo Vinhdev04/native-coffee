@@ -22,7 +22,7 @@ export const loginApi = async (payload: LoginPayload): Promise<LoginResponse> =>
  * @param payload { username, password, fullName, ... }
  */
 export const registerApi = async (payload: any): Promise<any> => {
-  const response = await axiosClient.post('/auth/register', payload);
+  const response = await axiosClient.post('/account/users', payload);
   return response;
 };
 
@@ -31,11 +31,12 @@ export const registerApi = async (payload: any): Promise<any> => {
  */
 export const logoutApi = async () => {
   try {
+    // Gọi API logout nhưng không sử dụng interceptor mặc định nếu có thể
+    // Hoặc đơn giản là bắt lỗi để tránh hiện Toast đỏ
     const response = await axiosClient.post('/auth/logout');
     return response;
   } catch (error) {
-    // Thường thì logout lỗi vẫn cho phép user thoát ở phía client
-    console.warn('API Logout error:', error);
+    // Không log console.error để tránh gây hoang mang
     return null;
   }
 };

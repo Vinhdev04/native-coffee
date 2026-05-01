@@ -52,7 +52,8 @@ axiosClient.interceptors.response.use(
       "AUTHEN003",
     ];
 
-    if (res && res.res_code !== 0) {
+    // Chỉ coi là lỗi nếu có res_code và res_code khác 0
+    if (res && res.hasOwnProperty('res_code') && res.res_code !== 0) {
       if (AUTH_ERROR_CODES.includes(res.error_code)) {
         Toast.show({
           type: "error",

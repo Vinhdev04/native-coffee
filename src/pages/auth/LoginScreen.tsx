@@ -37,13 +37,13 @@ const LoginScreen = () => {
   const { login } = useAuth();
   const navigation = useNavigation<any>();
 
-  const [username,  setUsername]  = useState('');
+  const [userName,  setUserName]  = useState('');
   const [password,  setPassword]  = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPass,  setShowPass]  = useState(false);
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
+    if (!userName.trim() || !password.trim()) {
       Toast.show({ type: 'error', text1: 'Vui lòng nhập đầy đủ thông tin', position: 'bottom' });
       return;
     }
@@ -54,10 +54,11 @@ const LoginScreen = () => {
       try { encryptedPassword = await encryptWithRSA(password); } catch (_) {}
 
       const response = await loginApi({
-        username: username.trim(),
+        userName: userName.trim(),
         password: encryptedPassword,
       });
 
+<<<<<<< HEAD
       if (response?.res_code === 0 && response?.rows?.[0]) {
         const { token, ...userData } = response.rows[0];
         await login(token, userData);
@@ -68,12 +69,51 @@ const LoginScreen = () => {
     } catch (error: any) {
       console.error('Login error:', error);
       Toast.show({ type: 'error', text1: 'Có lỗi kết nối, vui lòng thử lại', position: 'bottom' });
+=======
+      // Hỗ trợ cả cấu trúc rows (legacy) và data (new chips api)
+      const userDataFromRows = response?.rows?.[0];
+      const userDataFromData = response?.user || response?.data;
+      const finalUserData = userDataFromRows || userDataFromData;
+      const token = response?.token || finalUserData?.token;
+
+      if ((response?.res_code === 0 || token) && finalUserData) {
+        if (token) {
+          await login(token, finalUserData);
+          Toast.show({ type: 'success', text1: '☕ Chào mừng đến Native Coffee!', position: 'bottom' });
+        } else {
+          Toast.show({ type: 'error', text1: 'Không tìm thấy Token xác thực', position: 'bottom' });
+        }
+      } else {
+        // Lấy thông báo lỗi chi tiết nhất có thể
+        const errorMsg = response?.data?.message || response?.error_cont || 'Đăng nhập không thành công';
+        const errorCode = response?.error_code ? `[${response.error_code}] ` : '';
+        
+        console.log('--- LOGIN FAILED ---');
+        console.log('Response:', JSON.stringify(response, null, 2));
+
+        Toast.show({ 
+          type: 'error', 
+          text1: 'Đăng nhập thất bại', 
+          text2: `${errorCode}${errorMsg}`,
+          position: 'bottom' 
+        });
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      Toast.show({ 
+        type: 'error', 
+        text1: 'Lỗi kết nối', 
+        text2: error.message,
+        position: 'bottom' 
+      });
+>>>>>>> 6976078b349132f627fc11d294182dc03d5eb3ab
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
+<<<<<<< HEAD
     <View style={styles.container}>
       <StatusBar barStyle="light-content" transparent backgroundColor="transparent" />
       <ImageBackground source={{ uri: BG_IMAGE }} style={styles.bgImage}>
@@ -84,6 +124,68 @@ const LoginScreen = () => {
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.keyboardView}
+=======
+    <LinearGradient
+      colors={[COLORS.primary, COLORS.primaryDark]}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <CoffeeIcon size={52} color={COLORS.white} />
+          </View>
+          <Text style={styles.brandName}>Native Coffee</Text>
+          <Text style={styles.tagline}>Hương vị đỉnh cao, phục vụ tận tâm</Text>
+        </View>
+
+        {/* Form Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Đăng nhập</Text>
+
+          {/* Username */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>{t('auth.username')}</Text>
+            <View style={styles.inputWrapper}>
+              <User size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={userName}
+                onChangeText={setUserName}
+                placeholder="Nhập tên đăng nhập"
+                placeholderTextColor={COLORS.placeholder}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+          </View>
+
+          {/* Password */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>{t('auth.password')}</Text>
+            <View style={styles.inputWrapper}>
+              <Lock size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Nhập mật khẩu"
+                placeholderTextColor={COLORS.placeholder}
+                secureTextEntry={!showPass}
+              />
+              <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPass(!showPass)}>
+                {showPass ? <EyeOff size={20} color={COLORS.textSecondary} /> : <Eye size={20} color={COLORS.textSecondary} />}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Login Button */}
+          <TouchableOpacity
+            style={[styles.loginBtn, isLoading && styles.loginBtnDisabled]}
+            onPress={handleLogin}
+            disabled={isLoading}
+            activeOpacity={0.85}
+>>>>>>> 6976078b349132f627fc11d294182dc03d5eb3ab
           >
             <ScrollView 
               contentContainerStyle={styles.scrollContent} 
