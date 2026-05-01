@@ -13,6 +13,7 @@ import {
 import { useTranslation }  from 'react-i18next';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
 import { registerApi }     from '@/services/authService';
+import { encryptWithRSA }  from '@/utils/encryption';
 import Toast               from 'react-native-toast-message';
 import LinearGradient     from 'react-native-linear-gradient';
 import { 
@@ -31,7 +32,7 @@ const RegisterScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
 
-  const [username, setUsername] = useState('');
+  const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail]       = useState('');
@@ -39,16 +40,24 @@ const RegisterScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!username.trim() || !password.trim() || !fullName.trim()) {
+    if (!userName.trim() || !password.trim() || !fullName.trim()) {
       Toast.show({ type: 'error', text1: 'Vui lòng nhập các trường bắt buộc (*)', position: 'bottom' });
       return;
     }
 
     setIsLoading(true);
     try {
+      // Mã hóa password giống màn hình Login
+      let encryptedPassword = password;
+      try { 
+        encryptedPassword = await encryptWithRSA(password); 
+      } catch (err) {
+        console.warn('RSA Encryption failed, sending plain password', err);
+      }
+
       const response = await registerApi({
-        username: username.trim(),
-        password, // Password encryption should happen here if needed
+        userName: userName.trim(),
+        password: encryptedPassword,
         fullName: fullName.trim(),
         email: email.trim(),
         phone: phone.trim(),
@@ -119,8 +128,8 @@ const RegisterScreen = () => {
                   <UserPlus size={20} color={COLORS.textSecondary} style={s.inputIcon} />
                   <TextInput
                     style={s.input}
-                    value={username}
-                    onChangeText={setUsername}
+                    value={userName}
+                    onChangeText={setUserName}
                     placeholder="Chọn tên đăng nhập"
                     placeholderTextColor={COLORS.placeholder}
                     autoCapitalize="none"

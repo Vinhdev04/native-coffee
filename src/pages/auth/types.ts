@@ -22,7 +22,7 @@ export interface UserDetail {
 }
 
 export interface LoginPayload {
-  username: string;
+  userName: string;
   password: string;
 }
 
@@ -36,7 +36,7 @@ export interface LoginResponse {
 }
 
 export interface RegisterPayload {
-  username:    string;
+  userName:    string;
   password:    string;
   fullName:    string;
   email?:      string;

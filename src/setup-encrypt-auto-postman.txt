@@ -1,0 +1,40 @@
+3. Cách tự động mã hóa RSA trong Postman (Dùng Pre-request Script)
+Vì mật khẩu phải mã hóa RSA, nếu bạn nhập 123456 trực tiếp vào Body sẽ bị lỗi. Bạn có thể dùng script này trong mục Pre-request Script của Postman để nó tự mã hóa:
+
+Mở tab Pre-request Script trong Request của Postman.
+Dán đoạn code sau vào (sử dụng thư viện forge có sẵn trong Postman):
+// 1. Khai báo Public Key (lấy từ file .env)
+const publicKeyPem = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAirCTNKmZ2JRAFKm0Yyyn
+... (dán đầy đủ key vào đây) ...
+fwIDAQAB
+-----END PUBLIC KEY-----`;
+
+// 2. Import thư viện forge (Postman hỗ trợ nạp từ CDN)
+if (!pm.globals.has("forgejs")) {
+    pm.sendRequest("https://cdnjs.cloudflare.com/ajax/libs/node-forge/0.10.0/forge.min.js", (err, res) => {
+        pm.globals.set("forgejs", res.text());
+        eval(pm.globals.get("forgejs"));
+        encryptPassword();
+    });
+} else {
+    eval(pm.globals.get("forgejs"));
+    encryptPassword();
+}
+
+function encryptPassword() {
+    const password = "123456"; // Mật khẩu gốc bạn muốn test
+    const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
+    const encrypted = publicKey.encrypt(password, 'RSA-OAEP');
+    const base64Encrypted = forge.util.encode64(encrypted);
+    
+    // Lưu vào biến để dùng trong Body
+    pm.variables.set("encrypted_password", base64Encrypted);
+    console.log("Encrypted Password:", base64Encrypted);
+}
+Sau đó, trong tab Body, bạn sửa lại thành:
+json
+{
+  "userName": "admintest@cs.vn",
+  "password": "{{encrypted_password}}"
+}
