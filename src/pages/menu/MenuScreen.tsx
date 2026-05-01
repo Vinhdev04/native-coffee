@@ -12,6 +12,7 @@ import {
   ActivityIndicator, RefreshControl, SafeAreaView,
 } from 'react-native';
 import { useTranslation }      from 'react-i18next';
+import { useNavigation }       from '@react-navigation/native';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
 import { useDebounce }         from '@/hooks/useDebounce';
 import { mockProducts, mockCategories } from '@/data/mockData';
@@ -39,6 +40,7 @@ interface Product {
 
 const MenuScreen = () => {
   const { t } = useTranslation();
+  const navigation = useNavigation<any>();
   const { dispatch, totalItems } = useCart();
 
   const [searchText,       setSearchText]       = useState('');
@@ -88,7 +90,11 @@ const MenuScreen = () => {
   );
 
   const renderProduct = ({ item }: { item: Product }) => (
-    <View style={styles.productCard}>
+    <TouchableOpacity 
+      style={styles.productCard} 
+      activeOpacity={0.9}
+      onPress={() => navigation.navigate('ProductDetail', { product: item })}
+    >
       <Image source={{ uri: item.image }} style={styles.productImage} resizeMode="cover" />
       {item.isBestSeller && (
         <View style={styles.badge}>
@@ -105,7 +111,7 @@ const MenuScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
