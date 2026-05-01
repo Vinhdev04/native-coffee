@@ -9,6 +9,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, KeyboardAvoidingView, 
   Platform, ScrollView, SafeAreaView,
+  ImageBackground, StatusBar
 } from 'react-native';
 import { useTranslation }  from 'react-i18next';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
@@ -27,6 +28,8 @@ import {
   Coffee as CoffeeIcon
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+
+const BG_IMAGE = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=1000&auto=format&fit=crop';
 
 const RegisterScreen = () => {
   const { t } = useTranslation();
@@ -56,8 +59,13 @@ const RegisterScreen = () => {
       }
 
       const response = await registerApi({
+
+        username: username.trim(),
+        password,
+
         userName: userName.trim(),
         password: encryptedPassword,
+
         fullName: fullName.trim(),
         email: email.trim(),
         phone: phone.trim(),
@@ -78,15 +86,23 @@ const RegisterScreen = () => {
   };
 
   return (
-    <LinearGradient
-      colors={[COLORS.primary, COLORS.primaryDark]}
-      style={s.container}
-    >
-      <SafeAreaView style={s.safe}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={s.keyboardView}
+    <View style={s.container}>
+      <StatusBar barStyle="light-content" transparent backgroundColor="transparent" />
+      <ImageBackground source={{ uri: BG_IMAGE }} style={s.bgImage}>
+        <LinearGradient
+          colors={['rgba(17, 9, 5, 0.4)', 'rgba(17, 9, 5, 0.9)', COLORS.primary]}
+          style={s.gradient}
         >
+
+          <SafeAreaView style={s.safe}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={s.keyboardView}
+            >
+              <ScrollView 
+                contentContainerStyle={s.scrollContent} 
+                showsVerticalScrollIndicator={false}
+
           <ScrollView 
             contentContainerStyle={s.scrollContent} 
             showsVerticalScrollIndicator={false}
@@ -192,62 +208,222 @@ const RegisterScreen = () => {
                 onPress={handleRegister}
                 disabled={isLoading}
                 activeOpacity={0.85}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <View style={s.btnContent}>
-                    <Text style={s.btnText}>Đăng ký ngay</Text>
-                    <ChevronRight size={18} color={COLORS.white} />
-                  </View>
-                )}
-              </TouchableOpacity>
 
-              <TouchableOpacity style={s.loginLink} onPress={() => navigation.navigate('Login')}>
-                <Text style={s.loginLinkText}>
-                  Đã có tài khoản? <Text style={s.loginLinkBold}>Đăng nhập</Text>
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </LinearGradient>
+              >
+                {/* Back Button */}
+                <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+                  <ChevronLeft size={30} color={COLORS.white} />
+                </TouchableOpacity>
+
+                {/* Header */}
+                <View style={s.header}>
+                  <Text style={s.title}>Tạo tài khoản</Text>
+                  <Text style={s.subtitle}>Bắt đầu trải nghiệm cà phê tuyệt vời</Text>
+                </View>
+
+                {/* Form */}
+                <View style={s.form}>
+                  {/* Full Name */}
+                  <View style={s.inputWrapper}>
+                    <User size={20} color={COLORS.textMuted} />
+                    <TextInput
+                      style={s.input}
+                      placeholder="Họ và tên *"
+                      placeholderTextColor={COLORS.textMuted}
+                      value={fullName}
+                      onChangeText={setFullName}
+                    />
+                  </View>
+
+                  {/* Username */}
+                  <View style={s.inputWrapper}>
+                    <UserPlus size={20} color={COLORS.textMuted} />
+                    <TextInput
+                      style={s.input}
+                      placeholder="Tên đăng nhập *"
+                      placeholderTextColor={COLORS.textMuted}
+                      value={username}
+                      onChangeText={setUsername}
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  {/* Password */}
+                  <View style={s.inputWrapper}>
+                    <Lock size={20} color={COLORS.textMuted} />
+                    <TextInput
+                      style={s.input}
+                      placeholder="Mật khẩu *"
+                      placeholderTextColor={COLORS.textMuted}
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                    />
+                  </View>
+
+                  {/* Email */}
+                  <View style={s.inputWrapper}>
+                    <Mail size={20} color={COLORS.textMuted} />
+                    <TextInput
+                      style={s.input}
+                      placeholder="Email"
+                      placeholderTextColor={COLORS.textMuted}
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  {/* Phone */}
+                  <View style={s.inputWrapper}>
+                    <Phone size={20} color={COLORS.textMuted} />
+                    <TextInput
+                      style={s.input}
+                      placeholder="Số điện thoại"
+                      placeholderTextColor={COLORS.textMuted}
+                      value={phone}
+                      onChangeText={setPhone}
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+
+                  {/* Register Button */}
+                  <TouchableOpacity
+                    style={[s.registerBtn, isLoading && s.btnDisabled]}
+                    onPress={handleRegister}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color={COLORS.white} />
+                    ) : (
+                      <Text style={s.registerBtnText}>Đăng ký ngay</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  <View style={s.footer}>
+                    <Text style={s.footerText}>Đã có tài khoản? </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                      <Text style={s.loginText}>Đăng nhập</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+          </SafeAreaView>
+        </LinearGradient>
+      </ImageBackground>
+    </View>
   );
 };
 
 const s = StyleSheet.create({
-  container:    { flex: 1 },
-  safe:         { flex: 1 },
-  keyboardView: { flex: 1 },
-  scrollContent:{ padding: SPACING.lg, paddingBottom: 60 },
-  header:       { marginBottom: 30, marginTop: 10 },
-  backBtn:      { width: 40, height: 40, justifyContent: 'center', marginBottom: 15 },
-  logoMini:     { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  brandTitle:   { fontFamily: FONTS.bold, fontSize: 28, color: COLORS.white },
-  brandSub:     { fontFamily: FONTS.regular, fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 8 },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius:    32,
-    padding:         SPACING.xl,
-    elevation:       12,
-    shadowColor:     '#000',
-    shadowOffset:    { width: 0, height: 10 },
-    shadowOpacity:   0.2,
-    shadowRadius:    20,
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
   },
-  inputGroup:   { marginBottom: 18 },
-  label:        { fontFamily: FONTS.semiBold, fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceWarm, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 16, height: 52 },
-  inputIcon:    { marginRight: 12 },
-  input:        { flex: 1, fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textPrimary },
-  registerBtn:  { height: 56, backgroundColor: COLORS.accent, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 10, elevation: 4, shadowColor: COLORS.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
-  registerBtnDisabled: { opacity: 0.7 },
-  btnContent:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  btnText:      { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
-  loginLink:    { marginTop: 24, alignItems: 'center' },
-  loginLinkText:{ fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textSecondary },
-  loginLinkBold:{ fontFamily: FONTS.bold, color: COLORS.accent },
+  bgImage: {
+    flex: 1,
+  },
+  gradient: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  safe: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  backBtn: {
+    marginTop: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+  },
+  header: {
+    marginTop: 30,
+    marginBottom: 40,
+  },
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: 32,
+    color: COLORS.white,
+  },
+  subtitle: {
+    fontFamily: FONTS.medium,
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 8,
+  },
+  form: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 30,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 56,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  input: {
+    flex: 1,
+    marginLeft: 12,
+    fontFamily: FONTS.regular,
+    fontSize: 16,
+    color: COLORS.white,
+  },
+  registerBtn: {
+    backgroundColor: COLORS.accent,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    elevation: 5,
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  registerBtnText: {
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.white,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 25,
+  },
+  footerText: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  loginText: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.accent,
+  },
 });
 
 export default RegisterScreen;

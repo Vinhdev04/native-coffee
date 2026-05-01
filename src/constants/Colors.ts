@@ -6,12 +6,12 @@
  */
 export const Colors = {
   // === BRAND COFFEE ===
-  primary: '#3D1C02',          // Espresso đậm - màu chủ đạo
-  primaryLight: '#6B3A2A',     // Nâu medium roast
-  primaryDark: '#1A0A00',      // Dark roast - header/footer
-  accent: '#C8793A',           // Caramel ấm - nút CTA
-  accentLight: '#E8A96A',      // Caramel nhạt - hover/highlight
-  gold: '#D4A843',             // Vàng cà phê - badge, star
+  primary: '#23120B',          // Americano/Espresso đậm - màu chủ đạo
+  primaryLight: '#4E342E',     // Nâu medium roast
+  primaryDark: '#110905',      // Deep roast - header/footer
+  accent: '#AF693E',           // Caramel đậm - nút CTA
+  accentLight: '#D29168',      // Caramel nhạt - hover/highlight
+  gold: '#C5A059',             // Vàng cà phê - badge, star
 
   // === SEMANTIC ===
   success: '#2E7D32',
@@ -20,22 +20,22 @@ export const Colors = {
   info: '#2563EB',
 
   // === BACKGROUND ===
-  background: '#FFF8F0',       // Kem ấm - nền chính
-  backgroundSecondary: '#FFF3E8', // Kem đậm hơn
+  background: '#FDF8F5',       // Kem rất nhạt - nền chính
+  backgroundSecondary: '#F8F1EA', // Kem đậm hơn (Latte)
   surface: '#FFFFFF',          // Card/surface trắng
-  surfaceWarm: '#FDF6EE',      // Surface ấm nhẹ
+  surfaceWarm: '#FAF3ED',      // Surface ấm nhẹ
 
   // === TEXT ===
-  textPrimary: '#1A0A00',      // Chữ chính - dark roast
-  textSecondary: '#6B3A2A',    // Chữ phụ - medium roast
-  textMuted: '#9CA3AF',        // Chữ nhạt - placeholder
+  textPrimary: '#23120B',      // Chữ chính - dark roast
+  textSecondary: '#5D4037',    // Chữ phụ - medium roast
+  textMuted: '#9E9E9E',        // Chữ nhạt - placeholder
   textOnDark: '#FFFFFF',       // Chữ trên nền tối
   textOnAccent: '#FFFFFF',     // Chữ trên nút caramel
 
   // === BORDER & DIVIDER ===
-  border: '#E8D5C4',           // Viền ấm
-  borderLight: '#F5EDE3',      // Viền nhạt
-  divider: '#F0E0D0',          // Đường kẻ
+  border: '#E0D4CC',           // Viền ấm
+  borderLight: '#F1E9E4',      // Viền nhạt
+  divider: '#EDE0D4',          // Đường kẻ
 
   // === NEUTRAL ===
   white: '#FFFFFF',
@@ -54,9 +54,9 @@ export const Colors = {
   },
 
   // === OVERLAY ===
-  overlay: 'rgba(61, 28, 2, 0.5)',     // Overlay coffee tối
-  overlayLight: 'rgba(61, 28, 2, 0.15)', // Overlay nhạt
-  placeholder: '#D4B8A8',
+  overlay: 'rgba(35, 18, 11, 0.6)',     // Overlay coffee tối
+  overlayLight: 'rgba(35, 18, 11, 0.15)', // Overlay nhạt
+  placeholder: '#D2B4A3',
 };
 
 export type ColorType = keyof typeof Colors;

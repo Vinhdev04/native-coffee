@@ -7,12 +7,12 @@
 
 export const COLORS = {
   // === BRAND ===
-  primary: '#3D1C02',        // Espresso đậm
-  primaryLight: '#6B3A2A',   // Medium roast
-  primaryDark: '#1A0A00',    // Dark roast
-  accent: '#C8793A',         // Caramel
-  accentLight: '#E8A96A',    // Caramel nhạt
-  gold: '#D4A843',           // Vàng cà phê
+  primary: '#23120B',        // Americano/Espresso đậm
+  primaryLight: '#4E342E',   // Medium roast
+  primaryDark: '#110905',    // Deep roast
+  accent: '#AF693E',         // Caramel
+  accentLight: '#D29168',    // Caramel nhạt
+  gold: '#C5A059',           // Vàng cà phê
 
   // === SEMANTIC ===
   success: '#2E7D32',
@@ -20,22 +20,22 @@ export const COLORS = {
   error: '#DC2626',
 
   // === BACKGROUND ===
-  background: '#FFF8F0',     // Kem ấm
+  background: '#FDF8F5',     // Kem rất nhạt
   surface: '#FFFFFF',
-  surfaceWarm: '#FDF6EE',
+  surfaceWarm: '#FAF3ED',
 
   // === TEXT ===
-  textPrimary: '#1A0A00',
-  textSecondary: '#6B3A2A',
-  textMuted: '#9CA3AF',
+  textPrimary: '#23120B',
+  textSecondary: '#5D4037',
+  textMuted: '#9E9E9E',
   textOnDark: '#FFFFFF',
 
   // === NEUTRAL ===
   white: '#FFFFFF',
-  black: '#1A0A00',
-  border: '#E8D5C4',
-  divider: '#F0E0D0',
-  placeholder: '#D4B8A8',
+  black: '#110905',
+  border: '#E0D4CC',
+  divider: '#EDE0D4',
+  placeholder: '#D2B4A3',
 
   // === GRAY SCALE ===
   gray: {
@@ -53,18 +53,18 @@ export const COLORS = {
 
   // === COFFEE SPECIFIC ===
   coffee: {
-    espresso: '#3D1C02',
-    americano: '#5C2E0A',
-    latte: '#C8A882',
-    cappuccino: '#9B6B47',
-    mocha: '#6B3A2A',
-    cream: '#FFF8F0',
-    milk: '#FDF6EE',
+    espresso: '#23120B',
+    americano: '#4E342E',
+    latte: '#D7CCC8',
+    cappuccino: '#A1887F',
+    mocha: '#5D4037',
+    cream: '#FDF8F5',
+    milk: '#F8F1EA',
   },
 
   // === OVERLAY ===
-  overlay: 'rgba(61, 28, 2, 0.5)',
-  overlayLight: 'rgba(61, 28, 2, 0.15)',
+  overlay: 'rgba(35, 18, 11, 0.6)',
+  overlayLight: 'rgba(35, 18, 11, 0.15)',
 };
 
 export const FONTS = {
