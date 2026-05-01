@@ -11,6 +11,7 @@ import {
   TouchableOpacity, Image, SafeAreaView,
 } from 'react-native';
 import { useAuth }        from '@/context/AuthContext';
+import { useNavigation }  from '@react-navigation/native';
 import { useCart }        from '@/context/CartContext';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
@@ -28,6 +29,7 @@ import {
 
 const HomeScreen = () => {
   const { user }         = useAuth();
+  const navigation       = useNavigation<any>();
   const { totalItems }   = useCart();
   const featured         = mockProducts.filter((p) => p.isBestSeller).slice(0, 3);
 
@@ -82,13 +84,18 @@ const HomeScreen = () => {
           <Text style={s.sectionTitle}>⭐ Bán chạy nhất</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {featured.map((p) => (
-              <View key={p.id} style={s.featCard}>
+              <TouchableOpacity 
+                key={p.id} 
+                style={s.featCard}
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('ProductDetail', { product: p })}
+              >
                 <Image source={{ uri: p.image }} style={s.featImg} resizeMode="cover" />
                 <View style={s.featDetails}>
                   <Text style={s.featName} numberOfLines={1}>{p.name}</Text>
                   <Text style={s.featPrice}>{formatCurrency(p.price)}</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
