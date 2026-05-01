@@ -66,6 +66,14 @@ const RegisterScreen = () => {
         userName: userName.trim(),
         password: encryptedPassword,
 
+
+        username: username.trim(),
+        password,
+
+        userName: userName.trim(),
+        password: encryptedPassword,
+
+
         fullName: fullName.trim(),
         email: email.trim(),
         phone: phone.trim(),

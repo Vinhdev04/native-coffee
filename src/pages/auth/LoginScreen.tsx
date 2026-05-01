@@ -113,6 +113,7 @@ const LoginScreen = () => {
   };
 
   return (
+
     <View style={styles.container}>
       <StatusBar barStyle="light-content" transparent backgroundColor="transparent" />
       <ImageBackground source={{ uri: BG_IMAGE }} style={styles.bgImage}>
@@ -123,6 +124,21 @@ const LoginScreen = () => {
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.keyboardView}
+
+    <LinearGradient
+      colors={[COLORS.primary, COLORS.primaryDark]}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <CoffeeIcon size={52} color={COLORS.white} />
+          </View>
+          <Text style={styles.brandName}>Native Coffee</Text>
+          <Text style={styles.tagline}>Hương vị đỉnh cao, phục vụ tận tâm</Text>
+        </View>
+
           >
             <ScrollView 
               contentContainerStyle={styles.scrollContent} 
@@ -191,6 +207,62 @@ const LoginScreen = () => {
           </View>
 
 
+          {/* Login Button */}
+          <TouchableOpacity
+            style={[styles.loginBtn, isLoading && styles.loginBtnDisabled]}
+            onPress={handleLogin}
+            disabled={isLoading}
+            activeOpacity={0.85}
+
+          >
+            <ScrollView 
+              contentContainerStyle={styles.scrollContent} 
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Header / Logo */}
+              <View style={styles.header}>
+                <View style={styles.logoBadge}>
+                  <CoffeeIcon size={40} color={COLORS.white} />
+                </View>
+                <Text style={styles.brandName}>NATIVE{'\n'}COFFEE</Text>
+                <View style={styles.divider} />
+                <Text style={styles.tagline}>Premium Coffee Experience</Text>
+              </View>
+
+              {/* Form Section */}
+              <View style={styles.formContainer}>
+                <Text style={styles.welcomeText}>Chào mừng trở lại!</Text>
+                
+                {/* Username Input */}
+                <View style={styles.inputContainer}>
+                  <User size={20} color={COLORS.textMuted} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Tên đăng nhập"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                {/* Password Input */}
+                <View style={styles.inputContainer}>
+                  <Lock size={20} color={COLORS.textMuted} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Mật khẩu"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPass}
+                  />
+                  <TouchableOpacity onPress={() => setShowPass(!showPass)}>
+                    {showPass ? <EyeOff size={20} color={COLORS.textMuted} /> : <Eye size={20} color={COLORS.textMuted} />}
+                  </TouchableOpacity>
+                </View>
+
                 <TouchableOpacity style={styles.forgotPass}>
                   <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
                 </TouchableOpacity>
@@ -207,6 +279,24 @@ const LoginScreen = () => {
                     <Text style={styles.loginBtnText}>Đăng nhập</Text>
                   )}
                 </TouchableOpacity>
+
+                <TouchableOpacity style={styles.forgotPass}>
+                  <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
+                </TouchableOpacity>
+
+                {/* Action Buttons */}
+                <TouchableOpacity
+                  style={[styles.loginBtn, isLoading && styles.btnDisabled]}
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color={COLORS.white} />
+                  ) : (
+                    <Text style={styles.loginBtnText}>Đăng nhập</Text>
+                  )}
+                </TouchableOpacity>
+
 
                 <View style={styles.footerRow}>
                   <Text style={styles.footerText}>Chưa có tài khoản? </Text>
@@ -323,11 +413,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: 16,
     color: COLORS.white,
+
   },
   forgotPass: {
     alignSelf: 'flex-end',
     marginBottom: 25,
   },
+
+  },
+  forgotPass: {
+    alignSelf: 'flex-end',
+    marginBottom: 25,
+  },
+
   forgotPassText: {
     fontFamily: FONTS.medium,
     fontSize: 14,
