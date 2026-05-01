@@ -69,6 +69,7 @@ const HomeScreen = () => {
           </View>
         </View>
 
+
         {/* Sticky Categories Bar */}
         <View style={s.stickyCatContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catList}>
@@ -82,6 +83,71 @@ const HomeScreen = () => {
               <TouchableOpacity key={i} style={s.catItem}>
                 <View style={[s.catIcon, { backgroundColor: c.color }]}>{c.icon}</View>
                 <Text style={s.catLabel}>{c.name}</Text>
+
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Promotions Carousel Placeholder */}
+        <View style={s.promoSection}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} pagingEnabled snapToInterval={340} decelerationRate="fast">
+            <LinearGradient colors={[COLORS.primary, COLORS.primaryLight]} style={s.promoCard}>
+              <View style={s.promoInfo}>
+                <Text style={s.promoTag}>ƯU ĐÃI KHỦNG</Text>
+                <Text style={s.promoTitle}>Giảm 50% cho{'\n'}đơn đầu tiên</Text>
+                <TouchableOpacity style={s.promoBtn}>
+                  <Text style={s.promoBtnText}>Lấy mã ngay</Text>
+                </TouchableOpacity>
+              </View>
+              <Image source={{ uri: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=300' }} style={s.promoImg} />
+            </LinearGradient>
+            
+            <LinearGradient colors={['#AF693E', '#8D6E63']} style={s.promoCard}>
+              <View style={s.promoInfo}>
+                <Text style={s.promoTag}>MỚI RA MẮT</Text>
+                <Text style={s.promoTitle}>Espresso Muối{'\n'}Đậm đà lôi cuốn</Text>
+                <TouchableOpacity style={s.promoBtn}>
+                  <Text style={s.promoBtnText}>Thử ngay</Text>
+                </TouchableOpacity>
+              </View>
+              <Image source={{ uri: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=300' }} style={s.promoImg} />
+            </LinearGradient>
+          </ScrollView>
+        </View>
+
+
+        {/* Best Sellers */}
+        <View style={s.section}>
+          <View style={s.sectionHeader}>
+            <Text style={s.sectionTitle}>Sản phẩm nổi bật ⚡</Text>
+            <TouchableOpacity><Text style={s.seeAll}>Xem tất cả</Text></TouchableOpacity>
+          </View>
+          <View style={s.productGrid}>
+            {featured.map((p) => (
+              <TouchableOpacity 
+                key={p.id} 
+                style={s.productCard}
+                onPress={() => navigation.navigate('ProductDetail', { product: p })}
+              >
+                <View style={s.imgContainer}>
+                  <Image source={{ uri: p.image }} style={s.productImg} />
+                  {p.isBestSeller && (
+                    <View style={s.bestSellerBadge}>
+                      <Text style={s.bestSellerText}>Bán chạy</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={s.productInfo}>
+                  <Text style={s.productName} numberOfLines={2}>{p.name}</Text>
+                  <View style={s.priceRow}>
+                    <Text style={s.productPrice}>{formatCurrency(p.price)}</Text>
+                    <TouchableOpacity style={s.addBtn}>
+                      <Plus size={20} color={COLORS.white} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -144,6 +210,7 @@ const HomeScreen = () => {
                     </TouchableOpacity>
                   </View>
                 </View>
+
               </TouchableOpacity>
             ))}
           </View>

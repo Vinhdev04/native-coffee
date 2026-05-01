@@ -59,13 +59,21 @@ const RegisterScreen = () => {
       }
 
       const response = await registerApi({
-<<<<<<< HEAD
+
         username: username.trim(),
         password,
-=======
+
         userName: userName.trim(),
         password: encryptedPassword,
->>>>>>> 6976078b349132f627fc11d294182dc03d5eb3ab
+
+
+        username: username.trim(),
+        password,
+
+        userName: userName.trim(),
+        password: encryptedPassword,
+
+
         fullName: fullName.trim(),
         email: email.trim(),
         phone: phone.trim(),
@@ -93,7 +101,7 @@ const RegisterScreen = () => {
           colors={['rgba(17, 9, 5, 0.4)', 'rgba(17, 9, 5, 0.9)', COLORS.primary]}
           style={s.gradient}
         >
-<<<<<<< HEAD
+
           <SafeAreaView style={s.safe}>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -102,8 +110,7 @@ const RegisterScreen = () => {
               <ScrollView 
                 contentContainerStyle={s.scrollContent} 
                 showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-=======
+
           <ScrollView 
             contentContainerStyle={s.scrollContent} 
             showsVerticalScrollIndicator={false}
@@ -209,7 +216,7 @@ const RegisterScreen = () => {
                 onPress={handleRegister}
                 disabled={isLoading}
                 activeOpacity={0.85}
->>>>>>> 6976078b349132f627fc11d294182dc03d5eb3ab
+
               >
                 {/* Back Button */}
                 <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>

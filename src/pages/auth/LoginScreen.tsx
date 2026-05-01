@@ -58,7 +58,7 @@ const LoginScreen = () => {
         password: encryptedPassword,
       });
 
-<<<<<<< HEAD
+
       if (response?.res_code === 0 && response?.rows?.[0]) {
         const { token, ...userData } = response.rows[0];
         await login(token, userData);
@@ -69,7 +69,7 @@ const LoginScreen = () => {
     } catch (error: any) {
       console.error('Login error:', error);
       Toast.show({ type: 'error', text1: 'Có lỗi kết nối, vui lòng thử lại', position: 'bottom' });
-=======
+
       // Hỗ trợ cả cấu trúc rows (legacy) và data (new chips api)
       const userDataFromRows = response?.rows?.[0];
       const userDataFromData = response?.user || response?.data;
@@ -106,14 +106,14 @@ const LoginScreen = () => {
         text2: error.message,
         position: 'bottom' 
       });
->>>>>>> 6976078b349132f627fc11d294182dc03d5eb3ab
+
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-<<<<<<< HEAD
+
     <View style={styles.container}>
       <StatusBar barStyle="light-content" transparent backgroundColor="transparent" />
       <ImageBackground source={{ uri: BG_IMAGE }} style={styles.bgImage}>
@@ -124,7 +124,7 @@ const LoginScreen = () => {
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.keyboardView}
-=======
+
     <LinearGradient
       colors={[COLORS.primary, COLORS.primaryDark]}
       style={styles.container}
@@ -139,9 +139,55 @@ const LoginScreen = () => {
           <Text style={styles.tagline}>Hương vị đỉnh cao, phục vụ tận tâm</Text>
         </View>
 
-        {/* Form Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Đăng nhập</Text>
+          >
+            <ScrollView 
+              contentContainerStyle={styles.scrollContent} 
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Header / Logo */}
+              <View style={styles.header}>
+                <View style={styles.logoBadge}>
+                  <CoffeeIcon size={40} color={COLORS.white} />
+                </View>
+                <Text style={styles.brandName}>NATIVE{'\n'}COFFEE</Text>
+                <View style={styles.divider} />
+                <Text style={styles.tagline}>Premium Coffee Experience</Text>
+              </View>
+
+              {/* Form Section */}
+              <View style={styles.formContainer}>
+                <Text style={styles.welcomeText}>Chào mừng trở lại!</Text>
+                
+                {/* Username Input */}
+                <View style={styles.inputContainer}>
+                  <User size={20} color={COLORS.textMuted} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Tên đăng nhập"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="none"
+                  />
+                </View>
+
+
+                {/* Password Input */}
+                <View style={styles.inputContainer}>
+                  <Lock size={20} color={COLORS.textMuted} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Mật khẩu"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPass}
+                  />
+                  <TouchableOpacity onPress={() => setShowPass(!showPass)}>
+                    {showPass ? <EyeOff size={20} color={COLORS.textMuted} /> : <Eye size={20} color={COLORS.textMuted} />}
+                  </TouchableOpacity>
+                </View>
 
           {/* Username */}
           <View style={styles.inputGroup}>
@@ -160,24 +206,6 @@ const LoginScreen = () => {
             </View>
           </View>
 
-          {/* Password */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('auth.password')}</Text>
-            <View style={styles.inputWrapper}>
-              <Lock size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Nhập mật khẩu"
-                placeholderTextColor={COLORS.placeholder}
-                secureTextEntry={!showPass}
-              />
-              <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPass(!showPass)}>
-                {showPass ? <EyeOff size={20} color={COLORS.textSecondary} /> : <Eye size={20} color={COLORS.textSecondary} />}
-              </TouchableOpacity>
-            </View>
-          </View>
 
           {/* Login Button */}
           <TouchableOpacity
@@ -185,7 +213,7 @@ const LoginScreen = () => {
             onPress={handleLogin}
             disabled={isLoading}
             activeOpacity={0.85}
->>>>>>> 6976078b349132f627fc11d294182dc03d5eb3ab
+
           >
             <ScrollView 
               contentContainerStyle={styles.scrollContent} 
@@ -251,6 +279,24 @@ const LoginScreen = () => {
                     <Text style={styles.loginBtnText}>Đăng nhập</Text>
                   )}
                 </TouchableOpacity>
+
+                <TouchableOpacity style={styles.forgotPass}>
+                  <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
+                </TouchableOpacity>
+
+                {/* Action Buttons */}
+                <TouchableOpacity
+                  style={[styles.loginBtn, isLoading && styles.btnDisabled]}
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color={COLORS.white} />
+                  ) : (
+                    <Text style={styles.loginBtnText}>Đăng nhập</Text>
+                  )}
+                </TouchableOpacity>
+
 
                 <View style={styles.footerRow}>
                   <Text style={styles.footerText}>Chưa có tài khoản? </Text>
@@ -367,11 +413,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: 16,
     color: COLORS.white,
+
   },
   forgotPass: {
     alignSelf: 'flex-end',
     marginBottom: 25,
   },
+
+  },
+  forgotPass: {
+    alignSelf: 'flex-end',
+    marginBottom: 25,
+  },
+
   forgotPassText: {
     fontFamily: FONTS.medium,
     fontSize: 14,
