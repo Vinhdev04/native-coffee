@@ -51,26 +51,18 @@ const LoginScreen = () => {
     setIsLoading(true);
     try {
       let encryptedPassword = password;
-      try { encryptedPassword = await encryptWithRSA(password); } catch (_) {}
+      try { 
+        encryptedPassword = await encryptWithRSA(password); 
+      } catch (_) {
+        console.warn('RSA encryption failed');
+      }
 
       const response = await loginApi({
         userName: userName.trim(),
         password: encryptedPassword,
       });
 
-
-      if (response?.res_code === 0 && response?.rows?.[0]) {
-        const { token, ...userData } = response.rows[0];
-        await login(token, userData);
-        Toast.show({ type: 'success', text1: '☕ Chào mừng đến Native Coffee!', position: 'bottom' });
-      } else {
-        Toast.show({ type: 'error', text1: response?.error_cont || 'Đăng nhập thất bại', position: 'bottom' });
-      }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      Toast.show({ type: 'error', text1: 'Có lỗi kết nối, vui lòng thử lại', position: 'bottom' });
-
-      // Hỗ trợ cả cấu trúc rows (legacy) và data (new chips api)
+      // Hỗ trợ cả cấu trúc rows (legacy) và user/data (new chips api)
       const userDataFromRows = response?.rows?.[0];
       const userDataFromData = response?.user || response?.data;
       const finalUserData = userDataFromRows || userDataFromData;
@@ -84,13 +76,8 @@ const LoginScreen = () => {
           Toast.show({ type: 'error', text1: 'Không tìm thấy Token xác thực', position: 'bottom' });
         }
       } else {
-        // Lấy thông báo lỗi chi tiết nhất có thể
         const errorMsg = response?.data?.message || response?.error_cont || 'Đăng nhập không thành công';
         const errorCode = response?.error_code ? `[${response.error_code}] ` : '';
-        
-        console.log('--- LOGIN FAILED ---');
-        console.log('Response:', JSON.stringify(response, null, 2));
-
         Toast.show({ 
           type: 'error', 
           text1: 'Đăng nhập thất bại', 
@@ -103,17 +90,15 @@ const LoginScreen = () => {
       Toast.show({ 
         type: 'error', 
         text1: 'Lỗi kết nối', 
-        text2: error.message,
+        text2: error.message || 'Vui lòng thử lại sau',
         position: 'bottom' 
       });
-
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-
     <View style={styles.container}>
       <StatusBar barStyle="light-content" transparent backgroundColor="transparent" />
       <ImageBackground source={{ uri: BG_IMAGE }} style={styles.bgImage}>
@@ -124,21 +109,6 @@ const LoginScreen = () => {
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.keyboardView}
-
-    <LinearGradient
-      colors={[COLORS.primary, COLORS.primaryDark]}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <CoffeeIcon size={52} color={COLORS.white} />
-          </View>
-          <Text style={styles.brandName}>Native Coffee</Text>
-          <Text style={styles.tagline}>Hương vị đỉnh cao, phục vụ tận tâm</Text>
-        </View>
-
           >
             <ScrollView 
               contentContainerStyle={styles.scrollContent} 
@@ -166,83 +136,8 @@ const LoginScreen = () => {
                     style={styles.input}
                     placeholder="Tên đăng nhập"
                     placeholderTextColor={COLORS.textMuted}
-                    value={username}
-                    onChangeText={setUsername}
-                    autoCapitalize="none"
-                  />
-                </View>
-
-
-                {/* Password Input */}
-                <View style={styles.inputContainer}>
-                  <Lock size={20} color={COLORS.textMuted} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Mật khẩu"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPass}
-                  />
-                  <TouchableOpacity onPress={() => setShowPass(!showPass)}>
-                    {showPass ? <EyeOff size={20} color={COLORS.textMuted} /> : <Eye size={20} color={COLORS.textMuted} />}
-                  </TouchableOpacity>
-                </View>
-
-          {/* Username */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('auth.username')}</Text>
-            <View style={styles.inputWrapper}>
-              <User size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={userName}
-                onChangeText={setUserName}
-                placeholder="Nhập tên đăng nhập"
-                placeholderTextColor={COLORS.placeholder}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-          </View>
-
-
-          {/* Login Button */}
-          <TouchableOpacity
-            style={[styles.loginBtn, isLoading && styles.loginBtnDisabled]}
-            onPress={handleLogin}
-            disabled={isLoading}
-            activeOpacity={0.85}
-
-          >
-            <ScrollView 
-              contentContainerStyle={styles.scrollContent} 
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Header / Logo */}
-              <View style={styles.header}>
-                <View style={styles.logoBadge}>
-                  <CoffeeIcon size={40} color={COLORS.white} />
-                </View>
-                <Text style={styles.brandName}>NATIVE{'\n'}COFFEE</Text>
-                <View style={styles.divider} />
-                <Text style={styles.tagline}>Premium Coffee Experience</Text>
-              </View>
-
-              {/* Form Section */}
-              <View style={styles.formContainer}>
-                <Text style={styles.welcomeText}>Chào mừng trở lại!</Text>
-                
-                {/* Username Input */}
-                <View style={styles.inputContainer}>
-                  <User size={20} color={COLORS.textMuted} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Tên đăng nhập"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={username}
-                    onChangeText={setUsername}
+                    value={userName}
+                    onChangeText={setUserName}
                     autoCapitalize="none"
                   />
                 </View>
@@ -267,11 +162,12 @@ const LoginScreen = () => {
                   <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
                 </TouchableOpacity>
 
-                {/* Action Buttons */}
+                {/* Login Button */}
                 <TouchableOpacity
                   style={[styles.loginBtn, isLoading && styles.btnDisabled]}
                   onPress={handleLogin}
                   disabled={isLoading}
+                  activeOpacity={0.85}
                 >
                   {isLoading ? (
                     <ActivityIndicator color={COLORS.white} />
@@ -279,24 +175,6 @@ const LoginScreen = () => {
                     <Text style={styles.loginBtnText}>Đăng nhập</Text>
                   )}
                 </TouchableOpacity>
-
-                <TouchableOpacity style={styles.forgotPass}>
-                  <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
-                </TouchableOpacity>
-
-                {/* Action Buttons */}
-                <TouchableOpacity
-                  style={[styles.loginBtn, isLoading && styles.btnDisabled]}
-                  onPress={handleLogin}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator color={COLORS.white} />
-                  ) : (
-                    <Text style={styles.loginBtnText}>Đăng nhập</Text>
-                  )}
-                </TouchableOpacity>
-
 
                 <View style={styles.footerRow}>
                   <Text style={styles.footerText}>Chưa có tài khoản? </Text>
@@ -413,12 +291,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: 16,
     color: COLORS.white,
-
-  },
-  forgotPass: {
-    alignSelf: 'flex-end',
-    marginBottom: 25,
-  },
 
   },
   forgotPass: {

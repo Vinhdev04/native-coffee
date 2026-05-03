@@ -34,8 +34,12 @@ export const COLORS = {
   white: '#FFFFFF',
   black: '#110905',
   border: '#E0D4CC',
+  borderLight: '#F3E9E2',
   divider: '#EDE0D4',
   placeholder: '#D2B4A3',
+
+  // === BACKGROUND ===
+  backgroundSecondary: '#F5F5F5',
 
   // === GRAY SCALE ===
   gray: {

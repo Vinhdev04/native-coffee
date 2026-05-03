@@ -59,21 +59,8 @@ const RegisterScreen = () => {
       }
 
       const response = await registerApi({
-
-        username: username.trim(),
-        password,
-
         userName: userName.trim(),
         password: encryptedPassword,
-
-
-        username: username.trim(),
-        password,
-
-        userName: userName.trim(),
-        password: encryptedPassword,
-
-
         fullName: fullName.trim(),
         email: email.trim(),
         phone: phone.trim(),
@@ -101,7 +88,6 @@ const RegisterScreen = () => {
           colors={['rgba(17, 9, 5, 0.4)', 'rgba(17, 9, 5, 0.9)', COLORS.primary]}
           style={s.gradient}
         >
-
           <SafeAreaView style={s.safe}>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -110,190 +96,100 @@ const RegisterScreen = () => {
               <ScrollView 
                 contentContainerStyle={s.scrollContent} 
                 showsVerticalScrollIndicator={false}
-
-          <ScrollView 
-            contentContainerStyle={s.scrollContent} 
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Header */}
-            <View style={s.header}>
-              <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-                <ChevronLeft size={28} color={COLORS.white} />
-              </TouchableOpacity>
-              <View style={s.logoMini}>
-                <CoffeeIcon size={24} color={COLORS.white} />
-              </View>
-              <Text style={s.brandTitle}>Tạo tài khoản</Text>
-              <Text style={s.brandSub}>Khởi đầu hành trình thưởng thức cà phê cùng Native Coffee</Text>
-            </View>
-
-            {/* Form Card */}
-            <View style={s.card}>
-              {/* Full Name */}
-              <View style={s.inputGroup}>
-                <Text style={s.label}>Họ và tên *</Text>
-                <View style={s.inputWrapper}>
-                  <User size={20} color={COLORS.textSecondary} style={s.inputIcon} />
-                  <TextInput
-                    style={s.input}
-                    value={fullName}
-                    onChangeText={setFullName}
-                    placeholder="Nhập họ tên đầy đủ"
-                    placeholderTextColor={COLORS.placeholder}
-                  />
-                </View>
-              </View>
-
-              {/* Username */}
-              <View style={s.inputGroup}>
-                <Text style={s.label}>Tên đăng nhập *</Text>
-                <View style={s.inputWrapper}>
-                  <UserPlus size={20} color={COLORS.textSecondary} style={s.inputIcon} />
-                  <TextInput
-                    style={s.input}
-                    value={userName}
-                    onChangeText={setUserName}
-                    placeholder="Chọn tên đăng nhập"
-                    placeholderTextColor={COLORS.placeholder}
-                    autoCapitalize="none"
-                  />
-                </View>
-              </View>
-
-              {/* Password */}
-              <View style={s.inputGroup}>
-                <Text style={s.label}>Mật khẩu *</Text>
-                <View style={s.inputWrapper}>
-                  <Lock size={20} color={COLORS.textSecondary} style={s.inputIcon} />
-                  <TextInput
-                    style={s.input}
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Nhập mật khẩu"
-                    placeholderTextColor={COLORS.placeholder}
-                    secureTextEntry
-                  />
-                </View>
-              </View>
-
-              {/* Email */}
-              <View style={s.inputGroup}>
-                <Text style={s.label}>Email (không bắt buộc)</Text>
-                <View style={s.inputWrapper}>
-                  <Mail size={20} color={COLORS.textSecondary} style={s.inputIcon} />
-                  <TextInput
-                    style={s.input}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="example@gmail.com"
-                    placeholderTextColor={COLORS.placeholder}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
-              </View>
-
-              {/* Phone */}
-              <View style={s.inputGroup}>
-                <Text style={s.label}>Số điện thoại</Text>
-                <View style={s.inputWrapper}>
-                  <Phone size={20} color={COLORS.textSecondary} style={s.inputIcon} />
-                  <TextInput
-                    style={s.input}
-                    value={phone}
-                    onChangeText={setPhone}
-                    placeholder="Nhập số điện thoại"
-                    placeholderTextColor={COLORS.placeholder}
-                    keyboardType="phone-pad"
-                  />
-                </View>
-              </View>
-
-              {/* Register Button */}
-              <TouchableOpacity
-                style={[s.registerBtn, isLoading && s.registerBtnDisabled]}
-                onPress={handleRegister}
-                disabled={isLoading}
-                activeOpacity={0.85}
-
+                keyboardShouldPersistTaps="handled"
               >
-                {/* Back Button */}
-                <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-                  <ChevronLeft size={30} color={COLORS.white} />
-                </TouchableOpacity>
-
                 {/* Header */}
                 <View style={s.header}>
+                  <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+                    <ChevronLeft size={28} color={COLORS.white} />
+                  </TouchableOpacity>
+                  <View style={s.logoMini}>
+                    <CoffeeIcon size={24} color={COLORS.white} />
+                  </View>
                   <Text style={s.title}>Tạo tài khoản</Text>
-                  <Text style={s.subtitle}>Bắt đầu trải nghiệm cà phê tuyệt vời</Text>
+                  <Text style={s.subtitle}>Khởi đầu hành trình thưởng thức cà phê cùng Native Coffee</Text>
                 </View>
 
-                {/* Form */}
+                {/* Form Card */}
                 <View style={s.form}>
                   {/* Full Name */}
-                  <View style={s.inputWrapper}>
-                    <User size={20} color={COLORS.textMuted} />
-                    <TextInput
-                      style={s.input}
-                      placeholder="Họ và tên *"
-                      placeholderTextColor={COLORS.textMuted}
-                      value={fullName}
-                      onChangeText={setFullName}
-                    />
+                  <View style={s.inputGroup}>
+                    <Text style={s.label}>Họ và tên *</Text>
+                    <View style={s.inputWrapper}>
+                      <User size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                      <TextInput
+                        style={s.input}
+                        value={fullName}
+                        onChangeText={setFullName}
+                        placeholder="Nhập họ tên đầy đủ"
+                        placeholderTextColor={COLORS.placeholder}
+                      />
+                    </View>
                   </View>
 
                   {/* Username */}
-                  <View style={s.inputWrapper}>
-                    <UserPlus size={20} color={COLORS.textMuted} />
-                    <TextInput
-                      style={s.input}
-                      placeholder="Tên đăng nhập *"
-                      placeholderTextColor={COLORS.textMuted}
-                      value={username}
-                      onChangeText={setUsername}
-                      autoCapitalize="none"
-                    />
+                  <View style={s.inputGroup}>
+                    <Text style={s.label}>Tên đăng nhập *</Text>
+                    <View style={s.inputWrapper}>
+                      <UserPlus size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                      <TextInput
+                        style={s.input}
+                        value={userName}
+                        onChangeText={setUserName}
+                        placeholder="Chọn tên đăng nhập"
+                        placeholderTextColor={COLORS.placeholder}
+                        autoCapitalize="none"
+                      />
+                    </View>
                   </View>
 
                   {/* Password */}
-                  <View style={s.inputWrapper}>
-                    <Lock size={20} color={COLORS.textMuted} />
-                    <TextInput
-                      style={s.input}
-                      placeholder="Mật khẩu *"
-                      placeholderTextColor={COLORS.textMuted}
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry
-                    />
+                  <View style={s.inputGroup}>
+                    <Text style={s.label}>Mật khẩu *</Text>
+                    <View style={s.inputWrapper}>
+                      <Lock size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                      <TextInput
+                        style={s.input}
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholder="Nhập mật khẩu"
+                        placeholderTextColor={COLORS.placeholder}
+                        secureTextEntry
+                      />
+                    </View>
                   </View>
 
                   {/* Email */}
-                  <View style={s.inputWrapper}>
-                    <Mail size={20} color={COLORS.textMuted} />
-                    <TextInput
-                      style={s.input}
-                      placeholder="Email"
-                      placeholderTextColor={COLORS.textMuted}
-                      value={email}
-                      onChangeText={setEmail}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                    />
+                  <View style={s.inputGroup}>
+                    <Text style={s.label}>Email (không bắt buộc)</Text>
+                    <View style={s.inputWrapper}>
+                      <Mail size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                      <TextInput
+                        style={s.input}
+                        value={email}
+                        onChangeText={setEmail}
+                        placeholder="example@gmail.com"
+                        placeholderTextColor={COLORS.placeholder}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                      />
+                    </View>
                   </View>
 
                   {/* Phone */}
-                  <View style={s.inputWrapper}>
-                    <Phone size={20} color={COLORS.textMuted} />
-                    <TextInput
-                      style={s.input}
-                      placeholder="Số điện thoại"
-                      placeholderTextColor={COLORS.textMuted}
-                      value={phone}
-                      onChangeText={setPhone}
-                      keyboardType="phone-pad"
-                    />
+                  <View style={s.inputGroup}>
+                    <Text style={s.label}>Số điện thoại</Text>
+                    <View style={s.inputWrapper}>
+                      <Phone size={20} color={COLORS.textSecondary} style={s.inputIcon} />
+                      <TextInput
+                        style={s.input}
+                        value={phone}
+                        onChangeText={setPhone}
+                        placeholder="Nhập số điện thoại"
+                        placeholderTextColor={COLORS.placeholder}
+                        keyboardType="phone-pad"
+                      />
+                    </View>
                   </View>
 
                   {/* Register Button */}
@@ -301,6 +197,7 @@ const RegisterScreen = () => {
                     style={[s.registerBtn, isLoading && s.btnDisabled]}
                     onPress={handleRegister}
                     disabled={isLoading}
+                    activeOpacity={0.85}
                   >
                     {isLoading ? (
                       <ActivityIndicator color={COLORS.white} />
@@ -360,6 +257,15 @@ const s = StyleSheet.create({
     marginTop: 30,
     marginBottom: 40,
   },
+  logoMini: {
+    width: 50,
+    height: 50,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   title: {
     fontFamily: FONTS.bold,
     fontSize: 32,
@@ -378,6 +284,16 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontFamily: FONTS.medium,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -385,9 +301,11 @@ const s = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 56,
-    marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+  },
+  inputIcon: {
+    marginRight: 4,
   },
   input: {
     flex: 1,

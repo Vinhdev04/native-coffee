@@ -1,4 +1,35 @@
 {
-  "name": "NativeCoffee",
-  "displayName": "Native Coffee"
+  "expo": {
+    "name": "Native Coffee",
+    "slug": "native-coffee",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./src/assets/images/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#3D1C02"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vinhdev04.nativecoffee"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/logo.png",
+        "backgroundColor": "#3D1C02"
+      },
+      "package": "com.vinhdev04.nativecoffee"
+    },
+    "web": {
+      "favicon": "./src/assets/images/logo.png"
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
+  }
 }
