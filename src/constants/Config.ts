@@ -5,15 +5,14 @@
  * @layer constants
  */
 
-import Config from 'react-native-config';
 
 export const APP_CONFIG = {
-  appName: Config.APP_NAME || 'Native Coffee',
-  appVersion: Config.APP_VERSION || '1.0.0',
-  version: Config.APP_VERSION || '1.0.0',
-  apiUrl: Config.API_URL || 'https://api.nativecoffee.com.vn',
-  socketUrl: Config.SOCKET_URL || 'https://api.nativecoffee.com.vn/socket.io',
-  publicKey: Config.PUBLIC_KEY ? Config.PUBLIC_KEY.replace(/\\n/g, '\n').replace(/"/g, '') : '',
+  appName: process.env.EXPO_PUBLIC_APP_NAME || 'Native Coffee',
+  appVersion: process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0',
+  version: process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0',
+  apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://api.nativecoffee.com.vn',
+  socketUrl: process.env.EXPO_PUBLIC_SOCKET_URL || `${process.env.EXPO_PUBLIC_API_URL}/socket.io`,
+  publicKey: process.env.EXPO_PUBLIC_PUBLIC_KEY ? process.env.EXPO_PUBLIC_PUBLIC_KEY.replace(/\\n/g, '\n').replace(/"/g, '') : '',
 };
 
 console.log('--- NATIVE COFFEE CONFIG ---');
