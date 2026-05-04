@@ -40,6 +40,15 @@ const HomeScreen = () => {
     loadData();
   }, []);
 
+  const getCategoryIcon = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes('cà phê') || n.includes('coffee')) return 'https://cdn-icons-png.flaticon.com/512/924/924514.png';
+    if (n.includes('trà sữa') || n.includes('milk tea')) return 'https://cdn-icons-png.flaticon.com/512/3029/3029337.png';
+    if (n.includes('nước ngọt') || n.includes('soda')) return 'https://cdn-icons-png.flaticon.com/512/2722/2722527.png';
+    if (n.includes('matcha')) return 'https://cdn-icons-png.flaticon.com/512/9355/9355646.png';
+    return 'https://cdn-icons-png.flaticon.com/512/3121/3121768.png'; // Default
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -48,9 +57,11 @@ const HomeScreen = () => {
         fetchProducts({ branchId: 1, limit: 100 })
       ]);
 
-      // Dữ liệu bóc tách từ cấu trúc { res_code, data: { rows: [] } }
       const catData = catRes.data?.rows || catRes.data || [];
       const prodData = prodRes.data?.rows || prodRes.data || [];
+
+      console.log('--- DEBUG CATEGORIES ---', JSON.stringify(catData[0], null, 2));
+      console.log('--- DEBUG PRODUCTS ---', JSON.stringify(prodData[0], null, 2));
 
       setCategories(catData);
       
@@ -164,7 +175,7 @@ const HomeScreen = () => {
           renderItem={({ item, index }) => (
             <CategoryItem
               name={item.name}
-              image={item.imageUrl}
+              image={item.imageUrl || item.image || getCategoryIcon(item.name)}
               isActive={activeCategoryId === item.id}
               onPress={() => onCategoryPress(item.id, index)}
             />

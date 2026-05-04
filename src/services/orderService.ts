@@ -28,8 +28,10 @@ export const createOrder = async (payload: {
 /**
  * Lấy danh sách đơn hàng của user
  */
-export const fetchOrders = async (params?: { page?: number; limit?: number; status?: string }) => {
-  const response = await axiosClient.get('/orders', { params });
+export const fetchOrders = async (params?: { page?: number; limit?: number; status?: string; branchId?: number }) => {
+  const response = await axiosClient.get('/orders', { 
+    params: { branchId: 1, ...params } 
+  });
   return response;
 };
 

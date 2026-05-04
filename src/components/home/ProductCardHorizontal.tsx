@@ -13,7 +13,12 @@ interface ProductCardHorizontalProps {
 const ProductCardHorizontal = ({ product, onPress, onAddPress }: ProductCardHorizontalProps) => {
   return (
     <TouchableOpacity style={s.container} onPress={onPress} activeOpacity={0.8}>
-      <Image source={{ uri: product.image }} style={s.image} />
+      <Image 
+        source={{ 
+          uri: product.imageUrl || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' 
+        }} 
+        style={s.image} 
+      />
       <View style={s.info}>
         <Text style={s.name} numberOfLines={1}>{product.name}</Text>
         <Text style={s.description} numberOfLines={2}>

@@ -14,9 +14,8 @@ export interface CartItem {
   price:     number;
   image:     string;
   quantity:  number;
-  size:      string;        // S / M / L
-  sweetness: string;        // 0% / 25% / 50% / 75% / 100%
-  toppings:  string[];
+  selectedAttributes?: any[];
+  totalPrice?: number;
   note?:     string;
 }
 
@@ -120,18 +119,24 @@ export function useCart() {
   const { state, dispatch, totalItems, totalPrice } = context;
 
   const addToCart = (product: any) => {
+    const quantity = product.quantity || 1;
+    const selectedAttributes = product.selectedAttributes || [];
+    const basePrice = Number(product.basePrice || product.price || 0);
+    const extraPrice = selectedAttributes.reduce((sum: number, attr: any) => sum + (Number(attr.priceDelta) || 0), 0);
+    const itemPrice = basePrice + extraPrice;
+
     dispatch({
       type: 'ADD_ITEM',
       item: {
-        cartId: `${product.id}-${Date.now()}`,
+        cartId: `${product.id}-${selectedAttributes.map((a: any) => a.id).join('-') || 'default'}`,
         id: product.id,
         name: product.name,
-        price: product.basePrice || product.price,
+        price: itemPrice,
         image: product.imageUrl || product.image,
-        quantity: 1,
-        size: 'M',
-        sweetness: '100%',
-        toppings: [],
+        quantity: quantity,
+        selectedAttributes,
+        totalPrice: itemPrice,
+        note: product.note || ''
       }
     });
   };

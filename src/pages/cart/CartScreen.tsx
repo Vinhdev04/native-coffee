@@ -1,30 +1,74 @@
 import React from 'react';
 import {
   View, Text, StyleSheet, FlatList, 
-  TouchableOpacity, Image, SafeAreaView
+  TouchableOpacity, Image, SafeAreaView, ActivityIndicator
 } from 'react-native';
 import { useCart } from '@/context/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS, BORDER_RADIUS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
 import { ChevronLeft, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react-native';
+import { createOrder } from '@/services/orderService';
+import Toast from 'react-native-toast-message';
 
 const CartScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { items, totalPrice, updateQuantity, removeItem, clearCart } = useCart();
+  const [isCheckingOut, setIsCheckingOut] = React.useState(false);
+
+  const handleCheckout = async () => {
+    if (items.length === 0) return;
+    try {
+      setIsCheckingOut(true);
+      const payload = {
+        branchId: 1,
+        items: items.map(item => ({
+          productId: item.id,
+          qty: item.quantity,
+          selectedProductAttributeIds: item.selectedAttributes?.map((a: any) => a.id) || [],
+          note: item.note || ''
+        }))
+      };
+
+      await createOrder(payload as any);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Đặt hàng thành công!',
+        text2: 'Đơn hàng của bạn đang được xử lý.',
+      });
+      
+      clearCart();
+      navigation.navigate('Orders');
+    } catch (error) {
+      console.error('Checkout error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Lỗi đặt hàng',
+        text2: 'Vui lòng thử lại sau.',
+      });
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   const renderItem = ({ item }: { item: any }) => (
     <View style={s.cartItem}>
-      <Image source={{ uri: item.image }} style={s.itemImage} />
+      <Image 
+        source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
+        style={s.image} 
+      />
       <View style={s.itemInfo}>
         <Text style={s.itemName} numberOfLines={1}>{item.name}</Text>
-        <Text style={s.itemOptions}>{item.size} | {item.sweetness} đường</Text>
-        <Text style={s.itemPrice}>{formatCurrency(item.price)}</Text>
+        <Text style={s.itemOptions}>
+          {item.selectedAttributes?.map((a: any) => a.name).join(', ') || 'Không có tùy chọn'}
+        </Text>
+        <Text style={s.itemPrice}>{formatCurrency(item.totalPrice || item.price)}</Text>
       </View>
       <View style={s.quantityControl}>
         <TouchableOpacity 
           style={s.qtyBtn} 
-          onPress={() => updateQuantity(item.cartId, item.quantity - 1)}
+          onPress={() => updateQuantity(item.cartId, Math.max(0, item.quantity - 1))}
         >
           <Minus size={16} color={COLORS.textPrimary} />
         </TouchableOpacity>
@@ -48,7 +92,7 @@ const CartScreen = () => {
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Giỏ hàng của bạn</Text>
+        <Text style={s.headerTitle}>Giỏ hàng</Text>
         <TouchableOpacity onPress={clearCart}>
           <Text style={s.clearText}>Xóa hết</Text>
         </TouchableOpacity>
@@ -67,8 +111,16 @@ const CartScreen = () => {
               <Text style={s.totalLabel}>Tổng cộng</Text>
               <Text style={s.totalValue}>{formatCurrency(totalPrice)}</Text>
             </View>
-            <TouchableOpacity style={s.checkoutBtn}>
-              <Text style={s.checkoutText}>Thanh toán ngay</Text>
+            <TouchableOpacity 
+              style={[s.checkoutBtn, isCheckingOut && { opacity: 0.7 }]} 
+              onPress={handleCheckout}
+              disabled={isCheckingOut}
+            >
+              {isCheckingOut ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={s.checkoutText}>Thanh toán ngay</Text>
+              )}
             </TouchableOpacity>
           </View>
         </>
@@ -98,7 +150,7 @@ const s = StyleSheet.create({
 
   listContent: { padding: 20 },
   cartItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, backgroundColor: COLORS.white, borderRadius: 16 },
-  itemImage: { width: 70, height: 70, borderRadius: 12, backgroundColor: COLORS.backgroundSecondary },
+  image: { width: 70, height: 70, borderRadius: 12, backgroundColor: COLORS.backgroundSecondary },
   itemInfo: { flex: 1, marginLeft: 12 },
   itemName: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.textPrimary },
   itemOptions: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },

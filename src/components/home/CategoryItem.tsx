@@ -13,10 +13,12 @@ const CategoryItem = ({ name, image, isActive, onPress }: CategoryItemProps) => 
   return (
     <TouchableOpacity style={s.container} onPress={onPress} activeOpacity={0.7}>
       <View style={[s.imageContainer, isActive && s.activeImageContainer]}>
-        {image ? (
-          <Image source={{ uri: image }} style={s.image} />
+        {(image && image.trim().length > 0) ? (
+          <Image source={{ uri: image }} style={s.image} resizeMode="cover" />
         ) : (
-          <View style={s.placeholder} />
+          <View style={s.placeholder}>
+             <Image source={{ uri: image || 'https://cdn-icons-png.flaticon.com/512/3121/3121768.png' }} style={s.image} />
+          </View>
         )}
       </View>
       <Text style={[s.name, isActive && s.activeName]} numberOfLines={1}>

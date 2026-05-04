@@ -31,42 +31,39 @@ const { width } = Dimensions.get('window');
 const ProductDetailScreen = () => {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { dispatch } = useCart();
+  const { addToCart } = useCart();
   const { product } = route.params;
 
   const [quantity, setQuantity]   = useState(1);
-  const [selectedSize, setSelectedSize] = useState('M');
-  const [selectedSugar, setSelectedSugar] = useState('100%');
-  const [selectedIce, setSelectedIce] = useState('100%');
+  const [selectedAttributes, setSelectedAttributes] = useState<any[]>([]);
 
-  const sizes = [
-    { id: 'S', label: 'Small',  price: 0 },
-    { id: 'M', label: 'Medium', price: 5000 },
-    { id: 'L', label: 'Large',  price: 10000 },
-  ];
+  // Bóc tách thuộc tính từ API (Ví dụ: nhóm theo loại nếu có attributeId)
+  const attributes = product.productAttributes || [];
+  
+  // Tạm thời hiển thị tất cả thuộc tính dưới dạng các chip chọn
+  const toggleAttribute = (attr: any) => {
+    if (selectedAttributes.find(a => a.id === attr.id)) {
+      setSelectedAttributes(selectedAttributes.filter(a => a.id !== attr.id));
+    } else {
+      setSelectedAttributes([...selectedAttributes, attr]);
+    }
+  };
 
-  const totalProductPrice = (product.price + (sizes.find(s => s.id === selectedSize)?.price || 0)) * quantity;
+  const extraPrice = selectedAttributes.reduce((sum, attr) => sum + (Number(attr.priceDelta) || 0), 0);
+  const basePrice = Number(product.basePrice) || Number(product.price) || 0;
+  const totalPrice = (basePrice + extraPrice) * quantity;
 
   const handleAddToCart = () => {
-    dispatch({
-      type: 'ADD_ITEM',
-      item: {
-        cartId:    `${product.id}_${selectedSize}_${selectedSugar}_${selectedIce}`,
-        id:        product.id,
-        name:      product.name,
-        price:     product.price + (sizes.find(s => s.id === selectedSize)?.price || 0),
-        image:     product.image,
-        quantity:  quantity,
-        size:      selectedSize,
-        sweetness: selectedSugar,
-        ice:       selectedIce,
-        toppings:  [],
-      },
+    addToCart({
+      ...product,
+      quantity,
+      selectedAttributes,
+      totalPrice: basePrice + extraPrice
     });
     Toast.show({
       type: 'success',
       text1: 'Đã thêm vào giỏ hàng',
-      text2: `${quantity} x ${product.name} (${selectedSize})`,
+      text2: `${quantity} x ${product.name}`,
       position: 'bottom',
     });
     navigation.goBack();
@@ -77,7 +74,7 @@ const ProductDetailScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
         {/* Image Header */}
         <View style={s.imageContainer}>
-          <Image source={{ uri: product.image }} style={s.image} resizeMode="cover" />
+          <Image source={{ uri: product.imageUrl || product.image }} style={s.image} resizeMode="cover" />
           <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
             <ChevronLeft size={24} color={COLORS.primary} />
           </TouchableOpacity>
@@ -93,58 +90,33 @@ const ProductDetailScreen = () => {
                 <Text style={s.ratingText}>4.8 (120+ đánh giá)</Text>
               </View>
             </View>
-            <Text style={s.price}>{formatCurrency(product.price)}</Text>
+            <Text style={s.price}>{formatCurrency(basePrice)}</Text>
           </View>
 
           <Text style={s.description}>{product.description || 'Hương vị cà phê nguyên bản được pha chế từ những hạt cà phê Arabica thượng hạng, mang đến trải nghiệm tỉnh táo và đầy sảng khoái.'}</Text>
 
-          {/* Sizing */}
-          <View style={s.optionSection}>
-            <Text style={s.optionTitle}>Chọn kích cỡ</Text>
-            <View style={s.sizeRow}>
-              {sizes.map((size) => (
-                <TouchableOpacity
-                  key={size.id}
-                  style={[s.sizeBtn, selectedSize === size.id && s.sizeBtnActive]}
-                  onPress={() => setSelectedSize(size.id)}
-                >
-                  <Text style={[s.sizeLabel, selectedSize === size.id && s.sizeLabelActive]}>{size.id}</Text>
-                  <Text style={[s.sizeSub, selectedSize === size.id && s.sizeSubActive]}>{size.label}</Text>
-                </TouchableOpacity>
-              ))}
+          {/* Dynamic Attributes */}
+          {attributes.length > 0 && (
+            <View style={s.optionSection}>
+              <Text style={s.optionTitle}>Tùy chọn thêm</Text>
+              <View style={s.chipRow}>
+                {attributes.map((attr: any) => {
+                  const isActive = selectedAttributes.find(a => a.id === attr.id);
+                  return (
+                    <TouchableOpacity
+                      key={attr.id}
+                      style={[s.chip, isActive && s.chipActive]}
+                      onPress={() => toggleAttribute(attr)}
+                    >
+                      <Text style={[s.chipText, isActive && s.chipTextActive]}>
+                        {attr.name} (+{formatCurrency(attr.priceDelta)})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-          </View>
-
-          {/* Sugar/Ice Options */}
-          <View style={s.optionSection}>
-            <Text style={s.optionTitle}>Mức đường</Text>
-            <View style={s.chipRow}>
-              {['0%', '30%', '50%', '70%', '100%'].map((val) => (
-                <TouchableOpacity
-                  key={val}
-                  style={[s.chip, selectedSugar === val && s.chipActive]}
-                  onPress={() => setSelectedSugar(val)}
-                >
-                  <Text style={[s.chipText, selectedSugar === val && s.chipTextActive]}>{val}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={s.optionSection}>
-            <Text style={s.optionTitle}>Mức đá</Text>
-            <View style={s.chipRow}>
-              {['Ít đá', 'Vừa', 'Nhiều đá', 'Không đá'].map((val) => (
-                <TouchableOpacity
-                  key={val}
-                  style={[s.chip, selectedIce === val && s.chipActive]}
-                  onPress={() => setSelectedIce(val)}
-                >
-                  <Text style={[s.chipText, selectedIce === val && s.chipTextActive]}>{val}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          )}
         </View>
       </ScrollView>
 
@@ -175,7 +147,7 @@ const ProductDetailScreen = () => {
               end={{ x: 1, y: 0 }}
             >
               <ShoppingBag size={20} color={COLORS.white} style={s.addIcon} />
-              <Text style={s.addBtnText}>Thêm • {formatCurrency(totalProductPrice)}</Text>
+              <Text style={s.addBtnText}>Thêm • {formatCurrency(totalPrice)}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>

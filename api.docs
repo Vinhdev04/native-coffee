@@ -1,0 +1,102 @@
+# NATIVE COFFEE - API DOCUMENTATION FOR POSTMAN TESTING
+# Base URL: https://bill-dev.chips.com.vn/api
+
+## [FOLDER: AUTH]
+- POST /auth/login              : Đăng nhập tài khoản
+  * **Header**: Content-Type: application/json
+  * **Body**:
+    ```json
+    {
+      "userName": "admintest@cs.vn",
+      "password": "<RSA_ENCRYPTED_PASSWORD>"
+    }
+    ```
+- POST /auth/logout             : Đăng xuất tài khoản
+- GET  /auth/me                 : Lấy chi tiết tài khoản hiện tại (Header: Authorization: Bearer <token>)
+- POST /auth/forgot_password    : Quên mật khẩu
+
+## [FOLDER: ACCOUNT]
+- GET  /account/me              : Thông tin tài khoản đang nhập
+- GET  /account/users           : Danh sách người dùng (Admin)
+- POST /account/users           : Tạo người dùng mới
+- PUT  /account/users/{id}      : Cập nhật người dùng
+- POST /account/change-password : Đổi mật khẩu
+
+## [FOLDER: PRODUCT]
+- GET    /products              : Danh sách sản phẩm (Params: branchId=1, limit=100)
+- POST   /products              : Tạo sản phẩm mới
+  * **Header**: Authorization: Bearer <token>
+  * **Body**:
+    ```json
+    {
+      "branchId": 1,
+      "categoryId": 2,
+      "name": "Cà phê sữa đá",
+      "description": "Cà phê phin truyền thống pha sữa đặc",
+      "basePrice": 45000,
+      "imageUrl": "https://images.unsplash.com/photo-1541167760496-1628856ab772",
+      "isActive": "1",
+      "productAttributes": [
+        { "attributeId": 1, "name": "Size M", "priceDelta": 0 },
+        { "attributeId": 1, "name": "Size L", "priceDelta": 5000 }
+      ]
+    }
+    ```
+- GET    /products/{id}         : Chi tiết sản phẩm & Options
+- PUT    /products/{id}         : Cập nhật sản phẩm
+- DELETE /products/{id}         : Xóa sản phẩm (Soft delete)
+
+## [FOLDER: CATEGORY]
+- GET    /product-categories      : Danh sách danh mục (Params: branchId)
+- POST   /product-categories      : Tạo danh mục mới
+- GET    /product-categories/{id} : Chi tiết danh mục
+- PUT    /product-categories/{id} : Cập nhật danh mục
+- DELETE /product-categories/{id} : Xóa danh mục
+
+## [FOLDER: ORDER]
+- GET  /orders                  : Danh sách đơn hàng (Params: branchId, status, keySearch)
+- POST /orders                  : Tạo đơn hàng mới
+  * **Header**: 
+    - Authorization: Bearer <token>
+    - idempotency-key: <chuỗi_ngẫu_nhiên_vdu_123456>
+  * **Body**:
+    ```json
+    {
+      "branchId": 1,
+      "shiftSessionId": 1,
+      "customerName": "Khách Vãng Lai",
+      "customerPhone": "0987654321",
+      "note": "Giao hàng tận nơi",
+      "items": [
+        {
+          "productId": 7,
+          "selectedProductAttributeIds": [1, 2],
+          "qty": 2,
+          "note": "Ít đá"
+        }
+      ]
+    }
+    ```
+- GET  /orders/{id}             : Chi tiết đơn hàng & Logs
+- PUT  /orders/{id}/status       : Cập nhật trạng thái
+  * **Body**: { "status": "PAID" } (Trạng thái: PENDING, PAID, CANCELLED, DONE)
+
+## [FOLDER: PAYMENT]
+- POST /payments/cash/{orderId}          : Thanh toán tiền mặt
+- POST /payments/vnpay/create-url/{orderId}: Tạo link thanh toán VNPay
+- GET  /payments/order/{orderId}         : Lịch sử thanh toán của đơn hàng
+
+## [FOLDER: BRANCH & SHIFT]
+- GET  /branches                 : Danh sách chi nhánh
+- POST /shift-sessions/open      : Mở ca bán hàng
+- POST /shift-sessions/{id}/close: Đóng ca & Kết chuyển
+
+## [FOLDER: REPORTS]
+- GET /reports/revenue-overview  : Báo cáo doanh thu tổng quan
+- GET /reports/revenue-by-day    : Báo cáo theo ngày
+- GET /reports/top-products      : Top sản phẩm bán chạy
+
+## [FOLDER: SYSTEM]
+- GET /roles                     : Danh sách quyền
+- GET /screens                   : Danh sách màn hình phân quyền
+- GET /attributes                : Danh sách thuộc tính (Size, Topping...)

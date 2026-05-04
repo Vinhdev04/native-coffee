@@ -14,36 +14,65 @@ import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
 import { useCart }        from '@/context/CartContext';
 import { formatCurrency } from '@/utils';
 
-const mockOrders = [
-  { id: 'ORD-001', items: 3, total: 165000, status: 'completed', date: '28/04/2025 09:30' },
-  { id: 'ORD-002', items: 1, total: 55000,  status: 'preparing', date: '28/04/2025 10:15' },
-  { id: 'ORD-003', items: 2, total: 108000, status: 'pending',   date: '28/04/2025 11:00' },
-];
+import { fetchOrders } from '@/services/orderService';
+import { ActivityIndicator, RefreshControl } from 'react-native';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  pending:   { label: 'Chờ xử lý',  color: '#92400E', bg: '#FEF3C7' },
-  preparing: { label: 'Đang pha',   color: '#1E40AF', bg: '#DBEAFE' },
-  ready:     { label: 'Sẵn sàng',   color: '#065F46', bg: '#D1FAE5' },
-  completed: { label: 'Hoàn thành', color: '#374151', bg: '#F3F4F6' },
-  cancelled: { label: 'Đã hủy',     color: '#991B1B', bg: '#FEE2E2' },
+  DRAFT:     { label: 'Nháp',       color: '#6B7280', bg: '#F3F4F6' },
+  PENDING:   { label: 'Chờ xử lý',  color: '#92400E', bg: '#FEF3C7' },
+  PAID:      { label: 'Đã thanh toán', color: '#065F46', bg: '#D1FAE5' },
+  READY:     { label: 'Sẵn sàng',   color: '#1E40AF', bg: '#DBEAFE' },
+  DONE:      { label: 'Hoàn thành', color: '#374151', bg: '#F3F4F6' },
+  CANCEL:    { label: 'Đã hủy',     color: '#991B1B', bg: '#FEE2E2' },
 };
 
 const OrderScreen = () => {
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const renderOrder = ({ item }: { item: typeof mockOrders[0] }) => {
-    const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending;
+  React.useEffect(() => {
+    loadOrders();
+  }, [activeTab]);
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await fetchOrders({ 
+        limit: 50,
+      });
+      setOrders(res.data?.rows || res.data || []);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadOrders();
+  };
+
+  const renderOrder = ({ item }: { item: any }) => {
+    const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING;
+    const dateStr = item.createTime 
+      ? `${item.createTime.slice(6,8)}/${item.createTime.slice(4,6)}/${item.createTime.slice(0,4)}`
+      : 'Vừa xong';
+
     return (
       <TouchableOpacity style={s.orderCard} activeOpacity={0.8}>
         <View style={s.orderHeader}>
-          <Text style={s.orderId}>{item.id}</Text>
+          <Text style={s.orderId}>#{item.id}</Text>
           <View style={[s.statusBadge, { backgroundColor: cfg.bg }]}>
             <Text style={[s.statusText, { color: cfg.color }]}>{cfg.label}</Text>
           </View>
         </View>
         <View style={s.orderBody}>
-          <Text style={s.orderMeta}>☕ {item.items} sản phẩm  •  {item.date}</Text>
-          <Text style={s.orderTotal}>{formatCurrency(item.total)}</Text>
+          <Text style={s.orderMeta}>☕ {item.items?.length || 0} sản phẩm  •  {dateStr}</Text>
+          <Text style={s.orderTotal}>{formatCurrency(item.totalAmount || item.total)}</Text>
         </View>
         <TouchableOpacity style={s.detailBtn}>
           <Text style={s.detailBtnText}>Xem chi tiết →</Text>
@@ -73,18 +102,25 @@ const OrderScreen = () => {
         ))}
       </View>
 
-      <FlatList
-        data={mockOrders}
-        renderItem={renderOrder}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={s.list}
-        ListEmptyComponent={
-          <View style={s.empty}>
-            <Text style={s.emptyIcon}>☕</Text>
-            <Text style={s.emptyText}>Chưa có đơn hàng nào</Text>
-          </View>
-        }
-      />
+      {loading && !refreshing ? (
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          renderItem={renderOrder}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={s.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={
+            <View style={s.empty}>
+              <Text style={s.emptyIcon}>☕</Text>
+              <Text style={s.emptyText}>Chưa có đơn hàng nào</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
