@@ -10,10 +10,14 @@ import axiosClient from '@/api/axiosClient';
 /**
  * Lấy danh sách sản phẩm từ API
  */
+/**
+ * Lấy danh sách sản phẩm từ API
+ */
 export const fetchProducts = async (params?: {
-  categoryId?: string;
-  keyword?:    string;
-  page?:       number;
+  categoryId?: number;
+  branchId?:   number;
+  keySearch?:  string;
+  isActive?:   string;
   limit?:      number;
 }) => {
   const response = await axiosClient.get('/products', { params });
@@ -29,9 +33,9 @@ export const fetchProductById = async (id: string) => {
 };
 
 /**
- * Lấy danh sách danh mục
+ * Lấy danh sách danh mục sản phẩm
  */
-export const fetchCategories = async () => {
-  const response = await axiosClient.get('/categories');
+export const fetchCategories = async (params?: { branchId?: number }) => {
+  const response = await axiosClient.get('/product-categories', { params });
   return response;
 };

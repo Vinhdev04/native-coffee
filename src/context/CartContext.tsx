@@ -116,5 +116,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
 export function useCart() {
   const context = useContext(CartContext);
   if (!context) throw new Error('useCart must be used within CartProvider');
-  return context;
+  
+  const { state, dispatch, totalItems, totalPrice } = context;
+
+  const addToCart = (product: any) => {
+    dispatch({
+      type: 'ADD_ITEM',
+      item: {
+        cartId: `${product.id}-${Date.now()}`,
+        id: product.id,
+        name: product.name,
+        price: product.basePrice || product.price,
+        image: product.imageUrl || product.image,
+        quantity: 1,
+        size: 'M',
+        sweetness: '100%',
+        toppings: [],
+      }
+    });
+  };
+
+  const removeItem = (cartId: string) => {
+    dispatch({ type: 'REMOVE_ITEM', cartId });
+  };
+
+  const updateQuantity = (cartId: string, quantity: number) => {
+    dispatch({ type: 'UPDATE_QUANTITY', cartId, quantity });
+  };
+
+  const clearCart = () => {
+    dispatch({ type: 'CLEAR_CART' });
+  };
+
+  return {
+    items: state.items,
+    isOpen: state.isOpen,
+    totalItems,
+    totalPrice,
+    addToCart,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    dispatch
+  };
 }

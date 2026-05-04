@@ -13,6 +13,7 @@ import { View, ActivityIndicator, StatusBar } from 'react-native';
 import LoginScreen       from '@/pages/auth/LoginScreen';
 import RegisterScreen    from '@/pages/auth/RegisterScreen';
 import ProductDetailScreen from '@/pages/menu/ProductDetailScreen';
+import CartScreen          from '@/pages/cart/CartScreen';
 import MainNavigator     from '@/navigation/MainNavigator';
 import { useAuth, AuthProvider } from '@/context/AuthContext';
 import { CartProvider }          from '@/context/CartContext';
@@ -45,6 +46,7 @@ const NavigationContent = () => {
           <>
             <Stack.Screen name="Main" component={MainNavigator} />
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+            <Stack.Screen name="Cart" component={CartScreen} />
           </>
         )}
       </Stack.Navigator>
