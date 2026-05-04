@@ -1,264 +1,451 @@
-/**
- * @file HomeScreen.tsx
- * @desc Màn hình chính (Dashboard) — hiển thị banner khuyến mãi,
- *       sản phẩm nổi bật và danh mục sản phẩm nhanh.
- * @layer pages/home
- */
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, 
-  SafeAreaView, StatusBar, SectionList, FlatList,
+  SafeAreaView, StatusBar, ScrollView, Image, FlatList, TextInput
 } from 'react-native';
-import { useAuth } from '@/context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { useCart } from '@/context/CartContext';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
-import { MapPin, ChevronDown, Bell, Search } from 'lucide-react-native';
+import { COLORS, FONTS, SPACING } from '@/styles/theme';
+import { MapPin, ChevronDown, Heart, Search, ClipboardList, ArrowRight, Clock, ArrowLeft } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
-
 import CategoryItem from '@/components/home/CategoryItem';
-import ProductCardHorizontal from '@/components/home/ProductCardHorizontal';
-import HomeSkeleton from '@/components/home/HomeSkeleton';
 
 const HomeScreen = () => {
-  const { user } = useAuth();
   const navigation = useNavigation<any>();
-  const { totalItems, addToCart } = useCart();
-
   const [categories, setCategories] = useState<any[]>([]);
-  const [sections, setSections] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
-  
-  const sectionListRef = useRef<SectionList>(null);
-  const categoryListRef = useRef<FlatList>(null);
-  const isAutoScrolling = useRef(false);
 
   useEffect(() => {
     loadData();
   }, []);
-
-  const getCategoryIcon = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes('cà phê') || n.includes('coffee')) return 'https://cdn-icons-png.flaticon.com/512/924/924514.png';
-    if (n.includes('trà sữa') || n.includes('milk tea')) return 'https://cdn-icons-png.flaticon.com/512/3029/3029337.png';
-    if (n.includes('nước ngọt') || n.includes('soda')) return 'https://cdn-icons-png.flaticon.com/512/2722/2722527.png';
-    if (n.includes('matcha')) return 'https://cdn-icons-png.flaticon.com/512/9355/9355646.png';
-    return 'https://cdn-icons-png.flaticon.com/512/3121/3121768.png'; // Default
-  };
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [catRes, prodRes] = await Promise.all([
         fetchCategories({ branchId: 1 }),
-        fetchProducts({ branchId: 1, limit: 100 })
+        fetchProducts({ branchId: 1, limit: 10 })
       ]);
-
       const catData = catRes.data?.rows || catRes.data || [];
       const prodData = prodRes.data?.rows || prodRes.data || [];
-
-      console.log('--- DEBUG CATEGORIES ---', JSON.stringify(catData[0], null, 2));
-      console.log('--- DEBUG PRODUCTS ---', JSON.stringify(prodData[0], null, 2));
-
-      setCategories(catData);
       
-      const newSections = catData.map((cat: any) => ({
-        id: cat.id,
-        title: cat.name,
-        data: prodData.filter((p: any) => p.categoryId === cat.id)
-      })).filter((section: any) => section.data.length > 0);
-
-      setSections(newSections);
-      if (catData.length > 0) setActiveCategoryId(catData[0].id);
+      setCategories(catData);
+      setProducts(prodData);
+      
+      if (prodData.length === 0) {
+        console.log("No data for [Products/Gần tôi section]");
+      }
     } catch (error) {
       console.error('Error loading home data:', error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
-  };
-
-  const onEndReached = () => {
-    // Không làm gì vì BE không hỗ trợ phân trang qua tham số page
-  };
-
-  const onCategoryPress = (categoryId: number, index: number) => {
-    isAutoScrolling.current = true;
-    setActiveCategoryId(categoryId);
-    
-    // Find section index
-    const sectionIndex = sections.findIndex(s => s.id === categoryId);
-    if (sectionIndex !== -1) {
-      sectionListRef.current?.scrollToLocation({
-        sectionIndex,
-        itemIndex: 0,
-        animated: true,
-        viewOffset: 0
-      });
-    }
-
-    // Auto scroll category list
-    categoryListRef.current?.scrollToIndex({
-      index,
-      animated: true,
-      viewPosition: 0.5
-    });
-
-    setTimeout(() => {
-      isAutoScrolling.current = false;
-    }, 1000);
-  };
-
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (isAutoScrolling.current || viewableItems.length === 0) return;
-
-    const topSection = viewableItems[0].section;
-    if (topSection && topSection.id !== activeCategoryId) {
-      setActiveCategoryId(topSection.id);
-      
-      // Sync category list
-      const catIndex = categories.findIndex(c => c.id === topSection.id);
-      if (catIndex !== -1) {
-        categoryListRef.current?.scrollToIndex({
-          index: catIndex,
-          animated: true,
-          viewPosition: 0.5
-        });
-      }
-    }
-  }).current;
-
-  if (loading) {
-    return (
-      <SafeAreaView style={s.container}>
-        <HomeSkeleton />
-      </SafeAreaView>
-    );
-  }
+  const renderSectionHeader = (title: string, subtitle?: string) => (
+    <View style={s.sectionHeader}>
+      <View>
+        <Text style={s.sectionTitle}>{title}</Text>
+        {subtitle && <Text style={s.sectionSubtitle}>{subtitle}</Text>}
+      </View>
+      <TouchableOpacity>
+        <ChevronDown style={{ transform: [{ rotate: '-90deg' }] }} size={20} color={COLORS.textSecondary} />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={s.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-      
-      {/* Header */}
-      <View style={s.topBar}>
-        <View style={s.locationContainer}>
-          <MapPin size={16} color={COLORS.accent} />
-          <View style={s.locationTextContainer}>
-            <Text style={s.deliveryLabel}>Giao đến • Bây giờ</Text>
-            <Text style={s.locationText} numberOfLines={1}>123 Đường Cà Phê, Quận 1, TP.HCM</Text>
-          </View>
-          <ChevronDown size={16} color={COLORS.textPrimary} />
-        </View>
-        <TouchableOpacity style={s.iconBtn}>
-          <Bell size={22} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Sticky Categories */}
-      <View style={s.categorySticky}>
-        <FlatList
-          ref={categoryListRef}
-          data={categories}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={s.catList}
-          renderItem={({ item, index }) => (
-            <CategoryItem
-              name={item.name}
-              image={item.imageUrl || item.image || getCategoryIcon(item.name)}
-              isActive={activeCategoryId === item.id}
-              onPress={() => onCategoryPress(item.id, index)}
-            />
-          )}
-        />
-      </View>
-
-      {/* Product List */}
-      <SectionList
-        ref={sectionListRef}
-        sections={sections}
-        keyExtractor={(item) => item.id.toString()}
-        stickySectionHeadersEnabled={false}
-        showsVerticalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.5}
-        renderSectionHeader={({ section: { title } }) => (
-          <Text style={s.sectionTitle}>{title}</Text>
-        )}
-        renderItem={({ item }) => (
-          <ProductCardHorizontal
-            product={item}
-            onPress={() => navigation.navigate('ProductDetail', { product: item })}
-            onAddPress={() => addToCart(item)}
-          />
-        )}
-        ListHeaderComponent={() => (
-          <View style={s.searchContainer}>
-            <TouchableOpacity style={s.searchBar} activeOpacity={0.9}>
-              <Search size={20} color={COLORS.textMuted} />
-              <Text style={s.placeholderText}>Tìm kiếm món ngon...</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        ListFooterComponent={<View style={s.bottomSpacer} />}
-        contentContainerStyle={s.listContent}
-      />
-
-      {/* Floating Cart Pill */}
-      {totalItems > 0 && (
-        <TouchableOpacity style={s.floatingCart} onPress={() => navigation.navigate('Cart')}>
-          <View style={s.cartInfo}>
-            <View style={s.cartCount}>
-              <Text style={s.cartCountText}>{totalItems}</Text>
+    <SafeAreaView style={s.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#D8F1F3" />
+      <ScrollView style={s.container} showsVerticalScrollIndicator={false}>
+        
+        {/* Top Header Section with light blue background */}
+        <View style={s.topBackground}>
+          {/* Header Row */}
+          <View style={s.headerRow}>
+            <View style={s.locationContainer}>
+              <ArrowLeft size={20} color={COLORS.textPrimary} />
+              <View style={s.locationTextWrap}>
+                <Text style={s.deliveryLabel}>GIAO TỚI</Text>
+                <View style={s.locationSelector}>
+                  <Text style={s.locationText} numberOfLines={1}>11 Đường E - KP.Nhị Đồng 2</Text>
+                  <ChevronDown size={16} color={COLORS.textPrimary} />
+                </View>
+              </View>
             </View>
-            <Text style={s.cartTotalText}>Xem giỏ hàng</Text>
+            <View style={s.headerActions}>
+              <TouchableOpacity style={s.iconBtn}>
+                <Heart size={20} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+              <TouchableOpacity style={s.iconBtn}>
+                <ClipboardList size={20} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
           </View>
-        </TouchableOpacity>
-      )}
+
+          {/* Search Bar */}
+          <View style={s.searchContainer}>
+            <Search size={20} color={COLORS.textMuted} />
+            <TextInput 
+              placeholder="Bạn đang thèm gì nào?"
+              placeholderTextColor={COLORS.textMuted}
+              style={s.searchInput}
+            />
+          </View>
+
+          {/* Banner Deal */}
+          <View style={s.bannerContainer}>
+             <View style={{flex: 1}}>
+                <Text style={s.bannerTitle}>Deal Siêu Mát</Text>
+                <View style={s.bannerSubtitleWrap}>
+                   <Text style={s.bannerSubtitle}>Giảm đến 50% món giải nhiệt</Text>
+                   <ArrowRight size={14} color={COLORS.textPrimary} />
+                </View>
+             </View>
+             {/* Note: In real app use an Image, leaving placeholder log if empty */}
+             <View style={s.bannerImagePlaceholder} />
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={s.actionButtonsRow}>
+          <TouchableOpacity style={[s.actionBtn, s.actionBtnActive]}>
+            <Image source={{uri: 'https://cdn-icons-png.flaticon.com/512/3063/3063822.png'}} style={s.actionIcon} />
+            <Text style={s.actionBtnTextActive}>Giao hàng</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.actionBtn}>
+            <Image source={{uri: 'https://cdn-icons-png.flaticon.com/512/3233/3233446.png'}} style={s.actionIcon} />
+            <Text style={s.actionBtnText}>Đi Ăn Nhà Hàng</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Veggie Promo Banner */}
+        <View style={s.veggieBanner}>
+          <View style={s.veggieIconPlaceholder}>
+            <Image source={{uri: 'https://cdn-icons-png.flaticon.com/512/2917/2917629.png'}} style={{width: 40, height: 40}} />
+          </View>
+          <View style={{flex: 1, marginLeft: 10}}>
+            <Text style={s.veggieTitle}>Bạn theo chế độ ăn chay?</Text>
+            <Text style={s.veggieSubtitle}>Thiết lập chế độ ăn uống</Text>
+          </View>
+        </View>
+
+        {/* Categories */}
+        <View style={s.categoriesContainer}>
+          <FlatList
+            data={categories}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <CategoryItem
+                name={item.name}
+                image={item.imageUrl}
+                isActive={false}
+                onPress={() => {}}
+              />
+            )}
+            ListEmptyComponent={() => {
+              console.log("No data for [Categories]");
+              return null;
+            }}
+          />
+        </View>
+
+        {/* Sections: Gần tôi, Giải đấu quán đỉnh, Bữa xế */}
+        <View style={s.horizontalSectionsContainer}>
+           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.horizontalSectionsPad}>
+              {/* Card 1 */}
+              <TouchableOpacity style={s.highlightCard}>
+                 <View style={s.highlightCardImagePlaceholder}>
+                    {products[0]?.imageUrl && <Image source={{uri: products[0].imageUrl}} style={s.highlightImage} />}
+                 </View>
+                 <Text style={s.highlightCardTitle}>Gần tôi</Text>
+                 <Text style={s.highlightCardSub}>Get it quick</Text>
+              </TouchableOpacity>
+              
+              {/* Card 2 */}
+              <TouchableOpacity style={s.highlightCard}>
+                 <View style={s.highlightCardImagePlaceholder}>
+                    {products[1]?.imageUrl && <Image source={{uri: products[1].imageUrl}} style={s.highlightImage} />}
+                 </View>
+                 <Text style={s.highlightCardTitle}>Giải đấu quán đỉnh</Text>
+                 <Text style={s.highlightCardSub}>Giảm đến 50%</Text>
+              </TouchableOpacity>
+
+              {/* Card 3 */}
+              <TouchableOpacity style={s.highlightCard}>
+                 <View style={s.highlightCardImagePlaceholder}>
+                    {products[2]?.imageUrl && <Image source={{uri: products[2].imageUrl}} style={s.highlightImage} />}
+                 </View>
+                 <Text style={s.highlightCardTitle}>Bữa xế</Text>
+                 <Text style={s.highlightCardSub}>Quảng cáo</Text>
+              </TouchableOpacity>
+           </ScrollView>
+        </View>
+
+        {/* Đắm chìm vào mĩ vị */}
+        <View style={s.promoSection}>
+           {renderSectionHeader('Đắm chìm vào mĩ vị')}
+           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginTop: 10}}>
+              <View style={s.promoCardBig} />
+              <View style={s.promoCardBig} />
+           </ScrollView>
+        </View>
+        <View style={{height: 100}} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
-  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 15, backgroundColor: COLORS.white },
-  locationContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  locationTextContainer: { flex: 1 },
-  deliveryLabel: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.textMuted },
-  locationText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
-  iconBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.backgroundSecondary, borderRadius: 12 },
-  
-  categorySticky: { backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight, paddingBottom: 10 },
-  catList: { paddingHorizontal: 20, paddingTop: 15 },
-  
-  searchContainer: { paddingHorizontal: 20, marginVertical: 15 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.backgroundSecondary, borderRadius: 12, paddingHorizontal: 15, height: 45, gap: 10 },
-  placeholderText: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textMuted },
-
-  listContent: { paddingHorizontal: 20 },
-  sectionTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary, marginTop: 20, marginBottom: 15 },
-  
-  floatingCart: { position: 'absolute', bottom: 30, left: 20, right: 20, height: 56, backgroundColor: COLORS.primary, borderRadius: 16, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, elevation: 8 },
-  cartInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cartCount: { width: 24, height: 24, borderRadius: 12, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center' },
-  cartCountText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.primary },
-  cartTotalText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
-  
-  bottomSpacer: { height: 100 },
+  safeArea: { flex: 1, backgroundColor: COLORS.white },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  topBackground: {
+    backgroundColor: '#D8F1F3', // Light blue background from screenshot
+    paddingBottom: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    justifyContent: 'space-between'
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1
+  },
+  locationTextWrap: {
+    flex: 1
+  },
+  deliveryLabel: {
+    fontSize: 10,
+    fontFamily: FONTS.bold,
+    color: COLORS.textSecondary,
+    marginBottom: 2
+  },
+  locationSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5
+  },
+  locationText: {
+    fontSize: 15,
+    fontFamily: FONTS.bold,
+    color: COLORS.textPrimary,
+    maxWidth: '85%'
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 10
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    marginHorizontal: 15,
+    marginTop: 15,
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 48,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontFamily: FONTS.medium,
+    fontSize: 14,
+    color: COLORS.textPrimary
+  },
+  bannerContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 15,
+    marginTop: 20,
+    alignItems: 'center'
+  },
+  bannerTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 20,
+    color: COLORS.textPrimary,
+    marginBottom: 5
+  },
+  bannerSubtitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5
+  },
+  bannerSubtitle: {
+    fontFamily: FONTS.medium,
+    fontSize: 13,
+    color: COLORS.textSecondary
+  },
+  bannerImagePlaceholder: {
+    width: 100,
+    height: 80,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    marginHorizontal: 15,
+    marginTop: 15,
+    gap: 10
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
+    paddingVertical: 12,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2
+  },
+  actionBtnActive: {
+    backgroundColor: '#1E4040', // Dark green matching screenshot
+  },
+  actionIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 8
+  },
+  actionBtnTextActive: {
+    fontFamily: FONTS.bold,
+    color: COLORS.white,
+    fontSize: 13
+  },
+  actionBtnText: {
+    fontFamily: FONTS.bold,
+    color: COLORS.textPrimary,
+    fontSize: 13
+  },
+  veggieBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 15,
+    marginTop: 20,
+    backgroundColor: COLORS.white,
+    padding: 15,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2
+  },
+  veggieIconPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF0E6',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  veggieTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    marginBottom: 4
+  },
+  veggieSubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.textSecondary
+  },
+  categoriesContainer: {
+    marginTop: 25,
+    paddingLeft: 15
+  },
+  horizontalSectionsContainer: {
+    marginTop: 25
+  },
+  horizontalSectionsPad: {
+    paddingHorizontal: 15,
+    gap: 15
+  },
+  highlightCard: {
+    width: 140,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2
+  },
+  highlightCardImagePlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.backgroundSecondary,
+    marginBottom: 10,
+    overflow: 'hidden'
+  },
+  highlightImage: {
+    width: '100%',
+    height: '100%'
+  },
+  highlightCardTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: 4
+  },
+  highlightCardSub: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: 'center'
+  },
+  promoSection: {
+    marginTop: 30,
+    paddingHorizontal: 15
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  sectionTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.textPrimary
+  },
+  sectionSubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginTop: 2
+  },
+  promoCardBig: {
+    width: 280,
+    height: 160,
+    backgroundColor: '#C82B32', // Red mock
+    borderRadius: 16,
+    marginRight: 15
+  }
 });
 
 export default HomeScreen;

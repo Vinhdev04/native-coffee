@@ -6,45 +6,45 @@
  */
 
 export const COLORS = {
-  // === BRAND ===
-  primary: '#23120B',        // Americano/Espresso đậm
-  primaryLight: '#4E342E',   // Medium roast
-  primaryDark: '#110905',    // Deep roast
-  accent: '#AF693E',         // Caramel
-  accentLight: '#D29168',    // Caramel nhạt
-  gold: '#C5A059',           // Vàng cà phê
+  // === BRAND ORANGE ===
+  primary: '#FF7A00',        // Orange chính
+  primaryLight: '#FF9E40',   // Orange nhạt
+  primaryDark: '#E66A00',    // Orange đậm
+  accent: '#111827',         // Đen xám cho text
+  accentLight: '#374151',    // Xám
+  gold: '#F59E0B',           // Vàng sao/badge
 
   // === SEMANTIC ===
-  success: '#2E7D32',
+  success: '#10B981',
   warning: '#F59E0B',
-  error: '#DC2626',
+  error: '#EF4444',
 
   // === BACKGROUND ===
-  background: '#FDF8F5',     // Kem rất nhạt
+  background: '#F9FAFB',     // Nền nhạt
   surface: '#FFFFFF',
-  surfaceWarm: '#FAF3ED',
+  surfaceWarm: '#FFF7F0',
 
   // === TEXT ===
-  textPrimary: '#23120B',
-  textSecondary: '#5D4037',
-  textMuted: '#9E9E9E',
+  textPrimary: '#111827',
+  textSecondary: '#4B5563',
+  textMuted: '#9CA3AF',
   textOnDark: '#FFFFFF',
 
   // === NEUTRAL ===
   white: '#FFFFFF',
-  black: '#110905',
-  border: '#E0D4CC',
-  borderLight: '#F3E9E2',
-  divider: '#EDE0D4',
-  placeholder: '#D2B4A3',
+  black: '#111827',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
+  divider: '#E5E7EB',
+  placeholder: '#D1D5DB',
 
   // === BACKGROUND ===
-  backgroundSecondary: '#F5F5F5',
+  backgroundSecondary: '#F3F4F6',
 
   // === GRAY SCALE ===
   gray: {
-    50:  '#FAFAFA',
-    100: '#F5F5F5',
+    50:  '#F9FAFB',
+    100: '#F3F4F6',
     200: '#E5E7EB',
     300: '#D1D5DB',
     400: '#9CA3AF',
@@ -55,20 +55,20 @@ export const COLORS = {
     900: '#111827',
   },
 
-  // === COFFEE SPECIFIC ===
+  // === COFFEE SPECIFIC (Kept for compatibility, but changed colors) ===
   coffee: {
-    espresso: '#23120B',
-    americano: '#4E342E',
-    latte: '#D7CCC8',
-    cappuccino: '#A1887F',
-    mocha: '#5D4037',
-    cream: '#FDF8F5',
-    milk: '#F8F1EA',
+    espresso: '#111827',
+    americano: '#374151',
+    latte: '#F3F4F6',
+    cappuccino: '#D1D5DB',
+    mocha: '#4B5563',
+    cream: '#F9FAFB',
+    milk: '#FFFFFF',
   },
 
   // === OVERLAY ===
-  overlay: 'rgba(35, 18, 11, 0.6)',
-  overlayLight: 'rgba(35, 18, 11, 0.15)',
+  overlay: 'rgba(0, 0, 0, 0.5)',
+  overlayLight: 'rgba(0, 0, 0, 0.2)',
 };
 
 export const FONTS = {
