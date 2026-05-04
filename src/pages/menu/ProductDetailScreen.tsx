@@ -1,32 +1,19 @@
-/**
- * @file ProductDetailScreen.tsx
- * @desc Màn hình chi tiết sản phẩm — cho phép chọn size, mức đường/đá và topping.
- * @layer pages/menu
- */
-
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  View, Text, Image, StyleSheet, 
-  TouchableOpacity, ScrollView, SafeAreaView,
-  Dimensions, Platform
+  View, Text, StyleSheet, TouchableOpacity, Image,
+  SafeAreaView, StatusBar, ScrollView, Platform,
+  Dimensions,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
-import LinearGradient from 'react-native-linear-gradient';
-import { 
-  ChevronLeft, 
-  Minus, 
-  Plus, 
-  Star, 
-  Clock, 
-  Info,
-  ShoppingBag
+import {
+  ChevronLeft, Star, Minus, Plus, ShoppingBag, Heart,
 } from 'lucide-react-native';
-import Toast from 'react-native-toast-message';
+import Toast from '@/components/common/Toast';
 
-const { width } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ProductDetailScreen = () => {
   const route = useRoute<any>();
@@ -34,74 +21,105 @@ const ProductDetailScreen = () => {
   const { addToCart } = useCart();
   const { product } = route.params;
 
-  const [quantity, setQuantity]   = useState(1);
+  const [quantity, setQuantity] = useState(1);
   const [selectedAttributes, setSelectedAttributes] = useState<any[]>([]);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [toast, setToast] = useState({ visible: false, type: 'success' as 'success' | 'error' | 'info', title: '', message: '' });
 
-  // Bóc tách thuộc tính từ API (Ví dụ: nhóm theo loại nếu có attributeId)
   const attributes = product.productAttributes || [];
-  
-  // Tạm thời hiển thị tất cả thuộc tính dưới dạng các chip chọn
+
   const toggleAttribute = (attr: any) => {
-    if (selectedAttributes.find(a => a.id === attr.id)) {
-      setSelectedAttributes(selectedAttributes.filter(a => a.id !== attr.id));
+    if (selectedAttributes.find((a) => a.id === attr.id)) {
+      setSelectedAttributes(selectedAttributes.filter((a) => a.id !== attr.id));
     } else {
       setSelectedAttributes([...selectedAttributes, attr]);
     }
   };
 
   const extraPrice = selectedAttributes.reduce((sum, attr) => sum + (Number(attr.priceDelta) || 0), 0);
-  const basePrice = Number(product.basePrice) || Number(product.price) || 0;
+  const basePrice  = Number(product.basePrice) || Number(product.price) || 0;
   const totalPrice = (basePrice + extraPrice) * quantity;
 
   const handleAddToCart = () => {
-    addToCart({
-      ...product,
-      quantity,
-      selectedAttributes,
-      totalPrice: basePrice + extraPrice
-    });
-    Toast.show({
+    addToCart({ ...product, quantity, selectedAttributes, totalPrice: basePrice + extraPrice });
+    setToast({
+      visible: true,
       type: 'success',
-      text1: 'Đã thêm vào giỏ hàng',
-      text2: `${quantity} x ${product.name}`,
-      position: 'bottom',
+      title: 'Đã thêm vào giỏ hàng! 🎉',
+      message: `${quantity} x ${product.name}`,
     });
-    navigation.goBack();
+    setTimeout(() => navigation.goBack(), 1500);
   };
 
+  const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=800&q=80';
+
   return (
-    <View style={s.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
-        {/* Image Header */}
-        <View style={s.imageContainer}>
-          <Image source={{ uri: product.imageUrl || product.image }} style={s.image} resizeMode="cover" />
+    <View style={s.root}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+      {/* Toast */}
+      <Toast
+        visible={toast.visible}
+        type={toast.type}
+        title={toast.title}
+        message={toast.message}
+        onHide={() => setToast(t => ({ ...t, visible: false }))}
+      />
+
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+        {/* Hero Image */}
+        <View style={s.heroContainer}>
+          <Image
+            source={{ uri: product.imageUrl || product.image || FALLBACK_IMAGE }}
+            style={s.heroImage}
+            resizeMode="cover"
+          />
+          {/* Overlay gradient effect */}
+          <View style={s.heroOverlay} />
+
+          {/* Back button */}
           <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-            <ChevronLeft size={24} color={COLORS.primary} />
+            <ChevronLeft size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+
+          {/* Favorite button */}
+          <TouchableOpacity style={s.favBtn} onPress={() => setIsFavorited(!isFavorited)}>
+            <Heart size={20} color={isFavorited ? '#EF4444' : COLORS.textPrimary} fill={isFavorited ? '#EF4444' : 'transparent'} />
           </TouchableOpacity>
         </View>
 
+        {/* Info Card */}
         <View style={s.infoCard}>
-          {/* Title & Price */}
-          <View style={s.headerRow}>
-            <View style={s.titleGroup}>
-              <Text style={s.name}>{product.name}</Text>
-              <View style={s.ratingRow}>
-                <Star size={14} color={COLORS.gold} fill={COLORS.gold} />
-                <Text style={s.ratingText}>4.8 (120+ đánh giá)</Text>
-              </View>
-            </View>
-            <Text style={s.price}>{formatCurrency(basePrice)}</Text>
+          {/* Product name + price row */}
+          <View style={s.titleRow}>
+            <Text style={s.productName}>{product.name}</Text>
+            <Text style={s.productPrice}>{formatCurrency(basePrice)}</Text>
           </View>
 
-          <Text style={s.description}>{product.description || 'Hương vị cà phê nguyên bản được pha chế từ những hạt cà phê Arabica thượng hạng, mang đến trải nghiệm tỉnh táo và đầy sảng khoái.'}</Text>
+          {/* Rating */}
+          <View style={s.ratingRow}>
+            {[1,2,3,4,5].map(i => (
+              <Star key={i} size={14} color="#F59E0B" fill="#F59E0B" />
+            ))}
+            <Text style={s.ratingText}>4.8  •  120+ đánh giá</Text>
+          </View>
+
+          {/* Description */}
+          <Text style={s.description}>
+            {product.description ||
+              'Hương vị thức uống nguyên bản được pha chế từ nguyên liệu tươi ngon, mang đến trải nghiệm sảng khoái và đầy hương vị.'}
+          </Text>
+
+          {/* Divider */}
+          <View style={s.divider} />
 
           {/* Dynamic Attributes */}
           {attributes.length > 0 && (
-            <View style={s.optionSection}>
-              <Text style={s.optionTitle}>Tùy chọn thêm</Text>
+            <View style={s.section}>
+              <Text style={s.sectionTitle}>Tùy chọn thêm</Text>
               <View style={s.chipRow}>
                 {attributes.map((attr: any) => {
-                  const isActive = selectedAttributes.find(a => a.id === attr.id);
+                  const isActive = !!selectedAttributes.find((a) => a.id === attr.id);
                   return (
                     <TouchableOpacity
                       key={attr.id}
@@ -109,46 +127,53 @@ const ProductDetailScreen = () => {
                       onPress={() => toggleAttribute(attr)}
                     >
                       <Text style={[s.chipText, isActive && s.chipTextActive]}>
-                        {attr.name} (+{formatCurrency(attr.priceDelta)})
+                        {attr.name}
                       </Text>
+                      {attr.priceDelta > 0 && (
+                        <Text style={[s.chipPrice, isActive && s.chipTextActive]}>
+                          {' '}+{formatCurrency(attr.priceDelta)}
+                        </Text>
+                      )}
                     </TouchableOpacity>
                   );
                 })}
               </View>
             </View>
           )}
+
+          <View style={s.divider} />
+
+          {/* Quantity */}
+          <View style={s.qtySection}>
+            <Text style={s.sectionTitle}>Số lượng</Text>
+            <View style={s.qtyControls}>
+              <TouchableOpacity
+                style={[s.qtyBtn, quantity <= 1 && s.qtyBtnDisabled]}
+                onPress={() => setQuantity(Math.max(1, quantity - 1))}
+              >
+                <Minus size={16} color={quantity > 1 ? COLORS.primary : '#D1D5DB'} />
+              </TouchableOpacity>
+              <Text style={s.qtyText}>{quantity}</Text>
+              <TouchableOpacity style={s.qtyBtn} onPress={() => setQuantity(quantity + 1)}>
+                <Plus size={16} color={COLORS.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
+
+        <View style={{ height: 110 }} />
       </ScrollView>
 
-      {/* Footer Actions */}
+      {/* Bottom CTA */}
       <SafeAreaView style={s.footer}>
         <View style={s.footerContent}>
-          <View style={s.qtyControls}>
-            <TouchableOpacity 
-              style={s.qtyBtn} 
-              onPress={() => setQuantity(Math.max(1, quantity - 1))}
-            >
-              <Minus size={20} color={COLORS.primary} />
-            </TouchableOpacity>
-            <Text style={s.qtyText}>{quantity}</Text>
-            <TouchableOpacity 
-              style={s.qtyBtn} 
-              onPress={() => setQuantity(quantity + 1)}
-            >
-              <Plus size={20} color={COLORS.primary} />
-            </TouchableOpacity>
+          <View style={s.totalBlock}>
+            <Text style={s.totalLabel}>Tổng cộng</Text>
+            <Text style={s.totalPrice}>{formatCurrency(totalPrice)}</Text>
           </View>
-
           <TouchableOpacity style={s.addBtn} onPress={handleAddToCart}>
-            <LinearGradient
-              colors={[COLORS.accent, '#A0522D']}
-              style={s.addBtnGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              <ShoppingBag size={20} color={COLORS.white} style={s.addIcon} />
-              <Text style={s.addBtnText}>Thêm • {formatCurrency(totalPrice)}</Text>
-            </LinearGradient>
+            <ShoppingBag size={18} color={COLORS.white} />
+            <Text style={s.addBtnText}>Thêm vào giỏ</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -157,42 +182,109 @@ const ProductDetailScreen = () => {
 };
 
 const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: COLORS.white },
-  scrollContent:{ paddingBottom: 120 },
-  imageContainer: { width: '100%', height: width * 0.9, backgroundColor: COLORS.surfaceWarm },
-  image:        { width: '100%', height: '100%' },
-  backBtn:      { position: 'absolute', top: 50, left: 20, width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center', elevation: 4 },
-  infoCard:     { padding: 24, marginTop: -30, backgroundColor: COLORS.white, borderTopLeftRadius: 32, borderTopRightRadius: 32 },
-  headerRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  titleGroup:   { flex: 1 },
-  name:         { fontFamily: FONTS.bold, fontSize: 26, color: COLORS.primary },
-  ratingRow:    { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 4 },
-  ratingText:   { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textMuted },
-  price:        { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.accent },
-  description:  { fontFamily: FONTS.regular, fontSize: 15, color: COLORS.textSecondary, lineHeight: 22, marginBottom: 30 },
-  optionSection:{ marginBottom: 24 },
-  optionTitle:  { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary, marginBottom: 16 },
-  sizeRow:      { flexDirection: 'row', gap: 12 },
-  sizeBtn:      { flex: 1, height: 70, borderRadius: 16, borderWidth: 1.5, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white },
-  sizeBtnActive:{ borderColor: COLORS.accent, backgroundColor: 'rgba(139, 69, 19, 0.05)' },
-  sizeLabel:    { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary },
-  sizeLabelActive: { color: COLORS.accent },
-  sizeSub:      { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
-  sizeSubActive:{ color: COLORS.accent },
-  chipRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  chip:         { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceWarm },
-  chipActive:   { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  chipText:     { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
-  chipTextActive: { color: COLORS.white },
-  footer:       { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border },
-  footerContent:{ padding: 20, flexDirection: 'row', alignItems: 'center', gap: 16 },
-  qtyControls:  { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 16, padding: 4 },
-  qtyBtn:       { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  qtyText:      { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, paddingHorizontal: 12 },
-  addBtn:       { flex: 1, height: 56, borderRadius: 18, overflow: 'hidden' },
-  addBtnGradient: { width: '100%', height: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
-  addIcon:      { marginRight: 4 },
-  addBtnText:   { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
+  root: { flex: 1, backgroundColor: COLORS.white },
+
+  heroContainer: { width: SCREEN_WIDTH, height: SCREEN_WIDTH * 0.85, position: 'relative' },
+  heroImage: { width: '100%', height: '100%' },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+  },
+  backBtn: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 55 : 45,
+    left: 16,
+    width: 40, height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  favBtn: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 55 : 45,
+    right: 16,
+    width: 40, height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+
+  infoCard: {
+    marginTop: -24,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  productName: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.textPrimary, flex: 1, marginRight: 12 },
+  productPrice: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.primary },
+
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 16 },
+  ratingText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textMuted, marginLeft: 4 },
+
+  description: {
+    fontFamily: FONTS.regular, fontSize: 14,
+    color: COLORS.textSecondary, lineHeight: 22,
+    marginBottom: 24,
+  },
+  divider: { height: 1, backgroundColor: '#F3F4F6', marginBottom: 22 },
+
+  section: { marginBottom: 22 },
+  sectionTitle: { fontFamily: FONTS.semiBold, fontSize: 15, color: COLORS.textPrimary, marginBottom: 14 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: {
+    flexDirection: 'row',
+    paddingHorizontal: 14, paddingVertical: 9,
+    borderRadius: 20, borderWidth: 1.5, borderColor: '#E5E7EB',
+    backgroundColor: '#FAFAFA',
+  },
+  chipActive: { borderColor: COLORS.primary, backgroundColor: '#FFF7ED' },
+  chipText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textSecondary },
+  chipPrice: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted },
+  chipTextActive: { color: COLORS.primary },
+
+  qtySection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  qtyControls: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 50, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingHorizontal: 4, paddingVertical: 4, gap: 4,
+  },
+  qtyBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderWidth: 1, borderColor: '#E5E7EB',
+  },
+  qtyBtnDisabled: { borderColor: '#F3F4F6' },
+  qtyText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary, paddingHorizontal: 10, minWidth: 30, textAlign: 'center' },
+
+  footer: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1, borderTopColor: '#F3F4F6',
+  },
+  footerContent: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 14, gap: 20,
+  },
+  totalBlock: {},
+  totalLabel: { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted, marginBottom: 2 },
+  totalPrice: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.textPrimary },
+  addBtn: {
+    flex: 1, height: 54, borderRadius: 18,
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    justifyContent: 'center', alignItems: 'center', gap: 10,
+  },
+  addBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
 });
 
 export default ProductDetailScreen;

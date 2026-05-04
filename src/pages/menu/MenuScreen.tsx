@@ -1,226 +1,412 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, FlatList, TextInput,
-  TouchableOpacity, StyleSheet, Image,
-  ActivityIndicator, RefreshControl, SafeAreaView,
+  View, Text, StyleSheet, TouchableOpacity,
+  SafeAreaView, StatusBar, SectionList, Image,
+  TextInput, Dimensions, ActivityIndicator,
+  FlatList, RefreshControl, ScrollView, Platform,
 } from 'react-native';
-import { useTranslation }      from 'react-i18next';
-import { useNavigation }       from '@react-navigation/native';
-import { COLORS, FONTS, BORDER_RADIUS } from '@/styles/theme';
-import { useDebounce }         from '@/hooks/useDebounce';
+import { useNavigation } from '@react-navigation/native';
+import { COLORS, FONTS } from '@/styles/theme';
+import { Search, X, Plus, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
-import { formatCurrency }      from '@/utils';
-import { useCart }             from '@/context/CartContext';
-import { 
-  Search, 
-  X, 
-  Plus, 
-  ShoppingBag, 
-  Coffee as CoffeeIcon,
-} from 'lucide-react-native';
+import { formatCurrency } from '@/utils';
+import { useCart } from '@/context/CartContext';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useTranslation } from 'react-i18next';
+import Toast from '@/components/common/Toast';
+
+const { width: SCREEN_W } = Dimensions.get('window');
+
+/* ── Fallback images by drink type ── */
+const DRINK_FALLBACKS = [
+  'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=200&q=80',
+  'https://images.unsplash.com/photo-1515823064-d6e0c04616a4?auto=format&fit=crop&w=200&q=80',
+  'https://images.unsplash.com/photo-1558857563-b37102e99e00?auto=format&fit=crop&w=200&q=80',
+  'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=200&q=80',
+  'https://images.unsplash.com/photo-1622597467836-f3e5474e4b61?auto=format&fit=crop&w=200&q=80',
+];
+const getFallback = (id: number) => DRINK_FALLBACKS[id % DRINK_FALLBACKS.length];
+
+/* ── Product row card (GrabFood style) ── */
+const ProductRow = ({
+  item,
+  onPress,
+  onAddCart,
+}: {
+  item: any;
+  onPress: () => void;
+  onAddCart: () => void;
+}) => (
+  <TouchableOpacity style={pr.card} activeOpacity={0.85} onPress={onPress}>
+    <Image
+      source={{ uri: item.imageUrl || item.image || getFallback(item.id) }}
+      style={pr.image}
+      resizeMode="cover"
+    />
+    <View style={pr.info}>
+      <Text style={pr.name} numberOfLines={2}>{item.name}</Text>
+      <Text style={pr.desc} numberOfLines={2}>{item.description || 'Thức uống thơm ngon'}</Text>
+      <View style={pr.bottom}>
+        <Text style={pr.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
+        <TouchableOpacity style={pr.addBtn} onPress={onAddCart}>
+          <Plus size={15} color={COLORS.white} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  </TouchableOpacity>
+);
+
+const pr = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F2',
+    alignItems: 'center',
+  },
+  image: {
+    width: 86,
+    height: 86,
+    borderRadius: 14,
+    backgroundColor: '#F0F0F0',
+    flexShrink: 0,
+  },
+  info: { flex: 1, marginLeft: 14, justifyContent: 'space-between' },
+  name: { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary, marginBottom: 5, lineHeight: 20 },
+  desc: { fontFamily: FONTS.regular, fontSize: 12, color: '#9CA3AF', lineHeight: 17, marginBottom: 10 },
+  bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  price: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.primary },
+  addBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center', alignItems: 'center',
+  },
+});
+
+/* ── Section header ── */
+const SectionHeader = ({ title }: { title: string }) => (
+  <View style={sh.wrap}>
+    <View style={sh.accent} />
+    <Text style={sh.title}>{title}</Text>
+  </View>
+);
+const sh = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
+    borderTopWidth: 1,
+    borderTopColor: '#EFEFEF',
+    gap: 8,
+  },
+  accent: {
+    width: 3, height: 16,
+    borderRadius: 2,
+    backgroundColor: COLORS.primary,
+  },
+  title: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.textPrimary },
+});
+
+/* ═══════════════════════════════════════════════════════ */
 
 const MenuScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const { totalItems, addToCart } = useCart();
 
-  const [categories,       setCategories]       = useState<any[]>([]);
-  const [products,         setProducts]         = useState<any[]>([]);
-  const [searchText,       setSearchText]       = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<number | 'all'>('all');
-  const [loading,          setLoading]          = useState(true);
-  const [refreshing,       setRefreshing]        = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [searchText, setSearchText] = useState('');
+  const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [toast, setToast] = useState({ visible: false, title: '', message: '' });
 
-  const debouncedSearch = useDebounce(searchText, 400);
+  const sectionListRef = useRef<SectionList>(null);
+  const categoryListRef = useRef<FlatList>(null);
+  const isScrollingFromPress = useRef(false);
+  const debouncedSearch = useDebounce(searchText, 350);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [catRes, prodRes] = await Promise.all([
         fetchCategories({ branchId: 1 }),
-        fetchProducts({ branchId: 1, limit: 100 })
+        fetchProducts({ branchId: 1, limit: 100 }),
       ]);
-      setCategories(catRes.data?.rows || catRes.data || []);
-      setProducts(prodRes.data?.rows || prodRes.data || []);
-    } catch (error) {
-      console.error('Error loading menu data:', error);
+      const cats = catRes.data?.rows || catRes.data || [];
+      const prods = prodRes.data?.rows || prodRes.data || [];
+      setCategories(cats);
+      setAllProducts(prods);
+    } catch (err) {
+      console.error('[MenuScreen] load error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  // Filter products
-  const filtered = products.filter((p) => {
-    const matchCat    = selectedCategory === 'all' || p.categoryId === selectedCategory;
-    const matchSearch = p.name.toLowerCase().includes(debouncedSearch.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  /* Build sections: group products by category */
+  const sections = React.useMemo(() => {
+    const searchLower = debouncedSearch.toLowerCase();
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    loadData();
-  }, []);
+    /* "Tất cả" or active-category filter */
+    const relevantCats = activeCategory === 'all' ? categories : categories.filter(c => c.id === activeCategory);
 
-  const getCategoryIcon = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes('cà phê') || n.includes('coffee')) return 'https://cdn-icons-png.flaticon.com/512/924/924514.png';
-    if (n.includes('trà sữa') || n.includes('milk tea')) return 'https://cdn-icons-png.flaticon.com/512/3029/3029337.png';
-    if (n.includes('nước ngọt') || n.includes('soda')) return 'https://cdn-icons-png.flaticon.com/512/2722/2722527.png';
-    if (n.includes('matcha')) return 'https://cdn-icons-png.flaticon.com/512/9355/9355646.png';
-    return 'https://cdn-icons-png.flaticon.com/512/3121/3121768.png';
+    return relevantCats
+      .map((cat) => {
+        const items = allProducts.filter((p) => {
+          const matchCat = p.categoryId === cat.id;
+          const matchSearch = !debouncedSearch || p.name.toLowerCase().includes(searchLower);
+          return matchCat && matchSearch;
+        });
+        return { title: cat.name, catId: cat.id, data: items };
+      })
+      .filter((s) => s.data.length > 0);
+  }, [categories, allProducts, activeCategory, debouncedSearch]);
+
+  /* Pressing a category chip -> scroll SectionList */
+  const handleCategoryPress = (catId: number | 'all') => {
+    setActiveCategory(catId);
+    if (catId === 'all') {
+      sectionListRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: true, viewPosition: 0 });
+      return;
+    }
+    const idx = sections.findIndex((s) => s.catId === catId);
+    if (idx >= 0) {
+      isScrollingFromPress.current = true;
+      sectionListRef.current?.scrollToLocation({
+        sectionIndex: idx,
+        itemIndex: 0,
+        animated: true,
+        viewPosition: 0,
+      });
+      /* Reset flag after animation */
+      setTimeout(() => { isScrollingFromPress.current = false; }, 600);
+    }
+    /* Scroll category chip into view */
+    const catIdx = categories.findIndex((c) => c.id === catId);
+    categoryListRef.current?.scrollToIndex({ index: Math.max(0, catIdx), animated: true, viewPosition: 0.3 });
   };
 
-  const renderCategory = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={[styles.catChip, selectedCategory === item.id && styles.catChipActive]}
-      onPress={() => setSelectedCategory(item.id)}
-    >
-      <View style={styles.catContent}>
-        {item.id !== 'all' && (
-          <Image 
-            source={{ uri: item.imageUrl || item.image || getCategoryIcon(item.name) }} 
-            style={styles.catIcon} 
-          />
+  /* SectionList viewable change -> sync active category chip */
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (isScrollingFromPress.current) return;
+    const first = viewableItems.find((vi: any) => vi.isViewable && vi.section);
+    if (first?.section?.catId) {
+      setActiveCategory(first.section.catId);
+      const idx = categories.findIndex((c: any) => c.id === first.section.catId);
+      if (idx >= 0) {
+        categoryListRef.current?.scrollToIndex({ index: Math.max(0, idx), animated: true, viewPosition: 0.3 });
+      }
+    }
+  }).current;
+
+  const handleAddToCart = (item: any) => {
+    addToCart(item);
+    setToast({ visible: true, title: 'Đã thêm vào giỏ! 🎉', message: item.name });
+  };
+
+  const renderCategory = ({ item }: { item: any }) => {
+    const isActive = item.id === activeCategory || (item.id === 'all' && activeCategory === 'all');
+    return (
+      <TouchableOpacity
+        style={[s.catChip, isActive && s.catChipActive]}
+        onPress={() => handleCategoryPress(item.id)}
+      >
+        {item.imageUrl && (
+          <Image source={{ uri: item.imageUrl }} style={s.catIcon} />
         )}
-        <Text style={[styles.catChipText, selectedCategory === item.id && styles.catChipTextActive]}>
-          {item.name}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+        <Text style={[s.catText, isActive && s.catTextActive]} numberOfLines={1}>{item.name}</Text>
+      </TouchableOpacity>
+    );
+  };
 
-  const renderProduct = ({ item }: { item: any }) => (
-    <TouchableOpacity 
-      style={styles.productCard} 
-      activeOpacity={0.9}
-      onPress={() => navigation.navigate('ProductDetail', { product: item })}
-    >
-      <Image 
-        source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
-        style={styles.productImage} 
-        resizeMode="cover" 
-      />
-      <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.productDesc} numberOfLines={1}>{item.description}</Text>
-        <View style={styles.productBottom}>
-          <Text style={styles.productPrice}>{formatCurrency(item.basePrice || item.price)}</Text>
-          <TouchableOpacity style={styles.addBtn} onPress={() => addToCart(item)}>
-            <Plus size={20} color={COLORS.white} />
-          </TouchableOpacity>
+  const allCategoryData = [{ id: 'all', name: 'Tất cả', imageUrl: null }, ...categories];
+
+  if (loading) {
+    return (
+      <SafeAreaView style={s.container}>
+        <View style={s.loadingWrap}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={s.loadingText}>Đang tải thực đơn...</Text>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const categoriesWithAll = [{ id: 'all', name: 'Tất cả' }, ...categories];
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('menu.title')}</Text>
-        <TouchableOpacity style={styles.cartBtn} onPress={() => navigation.navigate('Cart')}>
-          <ShoppingBag size={24} color={COLORS.primary} />
+    <SafeAreaView style={s.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#D8F1F3" />
+
+      <Toast
+        visible={toast.visible}
+        type="success"
+        title={toast.title}
+        message={toast.message}
+        onHide={() => setToast(t => ({ ...t, visible: false }))}
+      />
+
+      {/* ── Header ── */}
+      <View style={s.header}>
+        <Text style={s.headerTitle}>Thực đơn</Text>
+        <TouchableOpacity style={s.cartBtn} onPress={() => navigation.navigate('Cart')}>
+          <ShoppingBag size={20} color={COLORS.textPrimary} />
           {totalItems > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{totalItems}</Text>
+            <View style={s.badge}>
+              <Text style={s.badgeText}>{totalItems > 99 ? '99+' : totalItems}</Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchWrapper}>
-        <Search size={20} color={COLORS.textMuted} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholder={t('menu.search')}
-          placeholderTextColor={COLORS.placeholder}
-        />
-        {searchText.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchText('')}>
-            <X size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
-        )}
+      {/* ── Search ── */}
+      <View style={s.searchRow}>
+        <View style={s.searchInputWrap}>
+          <Search size={17} color={COLORS.textMuted} />
+          <TextInput
+            style={s.searchInput}
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder="Tìm kiếm đồ uống..."
+            placeholderTextColor={COLORS.textMuted}
+            returnKeyType="search"
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchText('')}>
+              <X size={16} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      {/* Categories */}
-      <View>
+      {/* ── Category chips (horizontal scroll) ── */}
+      <View style={s.catBar}>
         <FlatList
-          data={categoriesWithAll}
+          ref={categoryListRef}
+          data={allCategoryData as any[]}
           renderItem={renderCategory}
           keyExtractor={(item) => item.id.toString()}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryList}
+          contentContainerStyle={s.catScroll}
+          onScrollToIndexFailed={() => {}}
         />
       </View>
 
-      {/* Products Grid */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+      {/* ── Products SectionList ── */}
+      {sections.length === 0 ? (
+        <View style={s.emptyWrap}>
+          <CoffeeIcon size={52} color="#E5E7EB" />
+          <Text style={s.emptyTitle}>Không tìm thấy sản phẩm</Text>
+          <Text style={s.emptyText}>Thử từ khóa khác hoặc chọn danh mục khác</Text>
         </View>
       ) : (
-        <FlatList
-          data={filtered}
-          renderItem={renderProduct}
+        <SectionList
+          ref={sectionListRef}
+          sections={sections}
           keyExtractor={(item) => item.id.toString()}
-          numColumns={2}
-          columnWrapperStyle={styles.productRow}
-          contentContainerStyle={styles.productList}
+          renderItem={({ item }) => (
+            <ProductRow
+              item={item}
+              onPress={() => navigation.navigate('ProductDetail', { product: item })}
+              onAddCart={() => handleAddToCart(item)}
+            />
+          )}
+          renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
+          stickySectionHeadersEnabled
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.accent} />}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <CoffeeIcon size={64} color={COLORS.border} />
-              <Text style={styles.emptyText}>Không tìm thấy sản phẩm</Text>
-            </View>
+          contentContainerStyle={{ paddingBottom: 100 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={COLORS.primary} colors={[COLORS.primary]} />
           }
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 20 }}
+          onScrollToIndexFailed={() => {}}
         />
       )}
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container:     { flex: 1, backgroundColor: COLORS.background },
-  header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10 },
-  headerTitle:   { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.primary },
-  cartBtn:       { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-  cartBadge:     { position: 'absolute', top: 0, right: 0, backgroundColor: COLORS.accent, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: COLORS.white },
-  cartBadgeText: { fontFamily: FONTS.bold, fontSize: 10, color: COLORS.white },
-  searchWrapper: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 16, backgroundColor: COLORS.white, borderRadius: 16, paddingHorizontal: 16, height: 52, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-  searchIcon:    { marginRight: 10 },
-  searchInput:   { flex: 1, fontFamily: FONTS.regular, fontSize: 15, color: COLORS.textPrimary },
-  categoryList:  { paddingHorizontal: 20, paddingBottom: 16, gap: 10 },
-  catChip:       { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, backgroundColor: COLORS.white, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, marginRight: 10 },
-  catChipActive: { backgroundColor: COLORS.primary },
-  catChipText:   { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
-  catChipTextActive: { color: COLORS.white },
-  catContent:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  catIcon:       { width: 20, height: 20, borderRadius: 10 },
-  productList:   { paddingHorizontal: 12, paddingBottom: 100 },
-  productRow:    { justifyContent: 'space-between', paddingHorizontal: 8, marginBottom: 16 },
-  productCard:   { width: '48%', backgroundColor: COLORS.white, borderRadius: 20, overflow: 'hidden', elevation: 4, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
-  productImage:  { width: '100%', height: 150 },
-  productInfo:   { padding: 12 },
-  productName:   { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary, marginBottom: 4 },
-  productDesc:   { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted, marginBottom: 12 },
-  productBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  productPrice:  { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.accent },
-  addBtn:        { width: 36, height: 36, borderRadius: 12, backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-  emptyContainer: { alignItems: 'center', paddingTop: 100, opacity: 0.5 },
-  emptyText:     { fontFamily: FONTS.regular, fontSize: 16, color: COLORS.textMuted, marginTop: 16 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+const s = StyleSheet.create({
+  container:   { flex: 1, backgroundColor: '#F2F3F5' },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  loadingText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textMuted },
+
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14,
+    backgroundColor: '#D8F1F3',
+    borderBottomWidth: 0,
+  },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.textPrimary },
+  cartBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.65)', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 0,
+  },
+  badge: {
+    position: 'absolute', top: -2, right: -2,
+    backgroundColor: COLORS.primary, borderRadius: 9,
+    minWidth: 17, height: 17,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: COLORS.white,
+  },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 9, color: COLORS.white },
+
+  searchRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#D8F1F3',
+    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12,
+    gap: 8,
+  },
+  searchInputWrap: {
+    flex: 1,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 22, paddingHorizontal: 12, height: 42,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 0,
+  },
+  searchInput: { flex: 1, fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textPrimary },
+
+  catBar: {
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1, borderBottomColor: '#EBEBEB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  catScroll: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
+  catChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: 20, backgroundColor: '#F0F0F0',
+    borderWidth: 1.5, borderColor: 'transparent',
+  },
+  catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  catIcon: { width: 18, height: 18, borderRadius: 9 },
+  catText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textSecondary },
+  catTextActive: { fontFamily: FONTS.semiBold, color: COLORS.white },
+
+  emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10, paddingBottom: 80 },
+  emptyTitle: { fontFamily: FONTS.semiBold, fontSize: 16, color: COLORS.textSecondary },
+  emptyText:  { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textMuted, textAlign: 'center', paddingHorizontal: 30 },
 });
 
 export default MenuScreen;
