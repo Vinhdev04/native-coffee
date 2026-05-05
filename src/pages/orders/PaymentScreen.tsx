@@ -127,8 +127,8 @@ const PaymentScreen = () => {
             setVnpayUrl(null);
             setVnpayOpened(false);
 
-            await speakPaymentSuccess(paidAmount, customerName);
             setPaymentDone(true);
+            speakPaymentSuccess(paidAmount, customerName).catch(console.error);
             
             Toast.show({
               type: 'success',
@@ -171,8 +171,9 @@ const PaymentScreen = () => {
             setVnpayUrl(null); // Đóng WebView
             setVnpayOpened(false);
             
-            await speakPaymentSuccess(paidAmount, customerName);
             setPaymentDone(true);
+            speakPaymentSuccess(paidAmount, customerName).catch(console.error);
+
             Toast.show({
               type: 'success', text1: '🎉 Thanh toán VNPay thành công!',
               text2: `Số tiền: ${formatCurrency(paidAmount)}`, visibilityTime: 3000,
@@ -224,13 +225,15 @@ const PaymentScreen = () => {
         return;
       }
 
-      setConfirmedAmount(apiAmount);
+      setConfirmedAmount(Number(totalAmount));
       setOrderAlreadyPaid(true);
-      await speakPaymentSuccess(apiAmount, customerName);
       setPaymentDone(true);
+      
+      speakPaymentSuccess(Number(totalAmount), customerName).catch(console.error);
+      
       Toast.show({
         type: 'success', text1: '🎉 Thanh toán thành công!',
-        text2: `Số tiền: ${formatCurrency(apiAmount)} • Tiền thừa: ${formatCurrency(cashReceived - apiAmount)}`,
+        text2: `Số tiền: ${formatCurrency(Number(totalAmount))} • Tiền thừa: ${formatCurrency(cashReceived - Number(totalAmount))}`,
         visibilityTime: 3000,
       });
       loadHistory();
@@ -481,21 +484,60 @@ const PaymentScreen = () => {
           </View>
           <TouchableOpacity
             style={s.vnpayConfirmBtn}
+            disabled={processing}
             onPress={async () => {
-              console.log('✅ [PaymentScreen] VNPay confirmed by user → playing TTS');
-              await speakPaymentSuccess(Number(totalAmount), customerName);
-              setPaymentDone(true);
-              Toast.show({
-                type: 'success',
-                text1: '🎉 Thanh toán VNPay thành công!',
-                text2: `Tổng tiền: ${formatCurrency(totalAmount)}`,
-                visibilityTime: 4000,
-              });
-              loadHistory();
+              try {
+                setProcessing(true);
+                const res = await getPaymentHistory(orderId);
+                const list = (res as any)?.data || (res as any)?.rows || res || [];
+                const rawList = Array.isArray(list) ? list : (list ? [list] : []);
+                const successRecord = rawList.find((p: any) => p.status === 'SUCCESS' || p.status === 'PAID');
+                
+                if (successRecord) {
+                  console.log('✅ [PaymentScreen] VNPay confirmed by BE → playing TTS');
+                  const paidAmount = parseFloat(successRecord.amount || totalAmount);
+                  setPaymentDone(true);
+                  setVnpayUrl(null);
+                  setVnpayOpened(false);
+
+                  speakPaymentSuccess(paidAmount, customerName).catch(console.error);
+
+                  Toast.show({
+                    type: 'success',
+                    text1: '🎉 Thanh toán VNPay thành công!',
+                    text2: `Tổng tiền: ${formatCurrency(paidAmount)}`,
+                    visibilityTime: 4000,
+                  });
+                  loadHistory();
+                  
+                  setTimeout(() => {
+                    navigation.navigate('Main', { screen: 'OrdersTab' });
+                  }, 2500);
+                } else {
+                  console.log('⚠️ [PaymentScreen] VNPay not yet successful on BE');
+                  Toast.show({
+                    type: 'error',
+                    text1: 'Thanh toán chưa hoàn tất',
+                    text2: 'Hệ thống chưa ghi nhận trạng thái thành công từ VNPay.',
+                  });
+                  loadHistory();
+                }
+              } catch (err) {
+                console.error('❌ [PaymentScreen] manual check error:', err);
+                Toast.show({ type: 'error', text1: 'Lỗi kiểm tra', text2: 'Không thể kiểm tra trạng thái.' });
+              } finally {
+                setProcessing(false);
+              }
             }}
           >
-            <CheckCircle size={18} color={COLORS.white} />
-            <Text style={s.confirmBtnText}>✅ Xác nhận đã thanh toán VNPay</Text>
+            {processing ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <>
+                <CheckCircle size={18} color={COLORS.white} />
+                <Text style={s.confirmBtnText}>✅ Xác nhận đã thanh toán VNPay</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       )}

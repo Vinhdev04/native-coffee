@@ -25,8 +25,10 @@ loadSpeech();
  * @param amount Tổng tiền (VNĐ)
  * @param customerName Tên khách hàng (tuỳ chọn)
  */
-export const speakPaymentSuccess = async (amount: number, customerName?: string) => {
-  const text = `Thanh toán thành công ${amount.toString()} đồng`;
+export const speakPaymentSuccess = (amount: number, customerName?: string) => {
+  // Định dạng số tiền có dấu phân cách nghìn cho dễ đọc/phát âm (nếu engine hỗ trợ)
+  const amountStr = amount.toString();
+  const text = `Đã nhận thanh toán ${amountStr} đồng. Xin cảm ơn!`;
 
   console.log(`🔊 [TTS] speakPaymentSuccess → text: "${text}"`);
 
@@ -36,12 +38,12 @@ export const speakPaymentSuccess = async (amount: number, customerName?: string)
   }
 
   try {
-    // Dừng bất kỳ phát âm nào đang chạy
-    await Speech.stop();
+    // Dừng phát âm cũ (không await để tránh delay khởi tạo âm thanh mới)
+    Speech.stop();
 
     Speech.speak(text, {
       language: 'vi-VN',
-      rate: 0.85,
+      rate: 1.0, // Tăng tốc độ để cảm giác phản hồi nhanh hơn
       pitch: 1.0,
       onStart: () => console.log('🔊 [TTS] Speaking started'),
       onDone: () => console.log('🔊 [TTS] Speaking done'),
