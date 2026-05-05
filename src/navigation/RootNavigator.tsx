@@ -2,6 +2,7 @@
  * @file RootNavigator.tsx
  * @desc Navigator gốc — bao AuthProvider + CartProvider + NavigationContainer,
  *       điều hướng Login ↔ Main theo trạng thái xác thực.
+ *       Thêm: OrderDetailScreen, PaymentScreen.
  * @layer navigation
  */
 
@@ -10,11 +11,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { View, ActivityIndicator, StatusBar } from 'react-native';
 
-import LoginScreen       from '@/pages/auth/LoginScreen';
-import RegisterScreen    from '@/pages/auth/RegisterScreen';
-import ProductDetailScreen from '@/pages/menu/ProductDetailScreen';
-import CartScreen          from '@/pages/cart/CartScreen';
-import MainNavigator     from '@/navigation/MainNavigator';
+import LoginScreen          from '@/pages/auth/LoginScreen';
+import RegisterScreen       from '@/pages/auth/RegisterScreen';
+import ProductDetailScreen  from '@/pages/menu/ProductDetailScreen';
+import CartScreen           from '@/pages/cart/CartScreen';
+import OrderDetailScreen    from '@/pages/orders/OrderDetailScreen';
+import PaymentScreen        from '@/pages/orders/PaymentScreen';
+import MainNavigator        from '@/navigation/MainNavigator';
 import { useAuth, AuthProvider } from '@/context/AuthContext';
 import { CartProvider }          from '@/context/CartContext';
 import { Colors }                from '@/constants/Colors';
@@ -39,14 +42,16 @@ const NavigationContent = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
-            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Login"    component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : (
           <>
-            <Stack.Screen name="Main" component={MainNavigator} />
+            <Stack.Screen name="Main"          component={MainNavigator} />
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-            <Stack.Screen name="Cart" component={CartScreen} />
+            <Stack.Screen name="Cart"          component={CartScreen} />
+            <Stack.Screen name="OrderDetail"   component={OrderDetailScreen} />
+            <Stack.Screen name="Payment"       component={PaymentScreen} />
           </>
         )}
       </Stack.Navigator>

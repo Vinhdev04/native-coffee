@@ -1,52 +1,122 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, FlatList, 
+  View, Text, StyleSheet, FlatList,
   TouchableOpacity, Image, SafeAreaView, ActivityIndicator,
-  Platform, StatusBar
+  Platform, StatusBar,
 } from 'react-native';
 import { useCart } from '@/context/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS, BORDER_RADIUS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
 import { ChevronLeft, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react-native';
-import { createOrder } from '@/services/orderService';
+import { createOrder, fetchActiveShiftSession } from '@/services/orderService';
 import Toast from 'react-native-toast-message';
+import { useAuth } from '@/context/AuthContext';
 
 const CartScreen = () => {
   const navigation = useNavigation<any>();
   const { items, totalPrice, updateQuantity, removeItem, clearCart } = useCart();
+  const { user } = useAuth();
   const [isCheckingOut, setIsCheckingOut] = React.useState(false);
 
   const handleCheckout = async () => {
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      console.warn('⚠️ [CartScreen] handleCheckout — cart is empty');
+      return;
+    }
+
     try {
       setIsCheckingOut(true);
-      const payload = {
+
+      // ── Step 1: Fetch active shift session ─────────────────────────────────
+      console.log('🕐 [CartScreen] Fetching active shift session...');
+      let shiftSessionId: number | null = null;
+
+      try {
+        const shiftRes = await fetchActiveShiftSession(1);
+        console.log('🕐 [CartScreen] shiftSession raw response:', JSON.stringify(shiftRes, null, 2));
+
+        // API response có thể là array hoặc {data: [...]}
+        const shifts: any[] = (shiftRes as any)?.data?.rows
+          || (shiftRes as any)?.data
+          || (shiftRes as any)?.rows
+          || shiftRes
+          || [];
+
+        const shiftArr = Array.isArray(shifts) ? shifts : [shifts];
+        const activeShift = shiftArr.find((s: any) => s.status === 'OPEN' || s.isActive) || shiftArr[0];
+
+        if (activeShift) {
+          shiftSessionId = activeShift.id;
+          console.log(`✅ [CartScreen] activeShift id=${shiftSessionId}`, JSON.stringify(activeShift));
+        } else {
+          console.warn('⚠️ [CartScreen] No active shift found, response:', JSON.stringify(shifts));
+        }
+      } catch (shiftErr) {
+        console.error('❌ [CartScreen] fetchActiveShiftSession error:', shiftErr);
+        // Thử tiếp tục mà không có shiftSessionId
+      }
+
+      if (!shiftSessionId) {
+        console.warn('⚠️ [CartScreen] No shiftSessionId — order may fail if required by API');
+      }
+
+      // ── Step 2: Build payload ──────────────────────────────────────────────
+      // Lấy tên khách hàng từ account đăng nhập, fallback 'Khách vãng lai'
+      const customerName = user?.fullName || (user as any)?.full_name
+        || user?.username || (user as any)?.name
+        || 'Khách vãng lai';
+      console.log(`👤 [CartScreen] customerName from auth: "${customerName}"`);
+
+      const payload: any = {
         branchId: 1,
+        ...(shiftSessionId ? { shiftSessionId } : {}),
+        customerName,
         items: items.map(item => ({
-          productId: item.id,
+          productId: Number(item.id),
+          selectedProductAttributeIds: item.selectedAttributes
+            ?.map((a: any) => Number(a.id))
+            .filter((id: number) => !isNaN(id)) || [],
           qty: item.quantity,
-          selectedProductAttributeIds: item.selectedAttributes?.map((a: any) => a.id) || [],
-          note: item.note || ''
-        }))
+          note: item.note || '',
+        })),
       };
 
-      await createOrder(payload as any);
-      
+      console.log('📦 [CartScreen] createOrder payload:', JSON.stringify(payload, null, 2));
+
+      // ── Step 3: Create order ───────────────────────────────────────────────
+      const res = await createOrder(payload);
+      console.log('📦 [CartScreen] createOrder response:', JSON.stringify(res, null, 2));
+
+      // Lấy orderId từ response
+      const newOrderId = (res as any)?.data?.id
+        || (res as any)?.id
+        || (res as any)?.data?.orderId;
+
+      console.log(`✅ [CartScreen] Order created — orderId=${newOrderId}`);
+
       Toast.show({
         type: 'success',
-        text1: 'Đặt hàng thành công!',
-        text2: 'Đơn hàng của bạn đang được xử lý.',
+        text1: '🎉 Đặt hàng thành công!',
+        text2: `Đơn #${newOrderId} đang được xử lý.`,
       });
-      
+
       clearCart();
-      navigation.navigate('Orders');
-    } catch (error) {
-      console.error('Checkout error:', error);
+
+      // Navigate đến OrderDetail nếu có ID, ngược lại về tab Orders
+      if (newOrderId) {
+        navigation.navigate('OrderDetail', { orderId: newOrderId });
+      } else {
+        console.warn('⚠️ [CartScreen] No orderId in response, navigating to OrdersTab');
+        navigation.navigate('Main', { screen: 'OrdersTab' });
+      }
+    } catch (error: any) {
+      console.error('❌ [CartScreen] handleCheckout error:', error);
+      console.error('❌ [CartScreen] error response:', JSON.stringify(error?.response?.data, null, 2));
       Toast.show({
         type: 'error',
         text1: 'Lỗi đặt hàng',
-        text2: 'Vui lòng thử lại sau.',
+        text2: error?.response?.data?.error_cont || error?.message || 'Vui lòng thử lại sau.',
       });
     } finally {
       setIsCheckingOut(false);
@@ -55,9 +125,9 @@ const CartScreen = () => {
 
   const renderItem = ({ item }: { item: any }) => (
     <View style={s.cartItem}>
-      <Image 
-        source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
-        style={s.image} 
+      <Image
+        source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }}
+        style={s.image}
       />
       <View style={s.itemInfo}>
         <View style={s.titleRow}>
@@ -69,21 +139,21 @@ const CartScreen = () => {
         <Text style={s.itemOptions} numberOfLines={2}>
           {[
             item.selectedAttributes?.map((a: any) => a.name).join(' • '),
-            item.note ? `Ghi chú: ${item.note}` : null
+            item.note ? `📝 ${item.note}` : null,
           ].filter(Boolean).join(' • ') || 'Không có tùy chọn'}
         </Text>
         <View style={s.priceQtyRow}>
           <Text style={s.itemPrice}>{formatCurrency(item.totalPrice || item.price)}</Text>
           <View style={s.quantityControl}>
-            <TouchableOpacity 
-              style={s.qtyBtn} 
+            <TouchableOpacity
+              style={s.qtyBtn}
               onPress={() => updateQuantity(item.cartId, Math.max(0, item.quantity - 1))}
             >
               <Minus size={14} color={COLORS.textPrimary} />
             </TouchableOpacity>
             <Text style={s.qtyText}>{item.quantity}</Text>
-            <TouchableOpacity 
-              style={s.qtyBtn} 
+            <TouchableOpacity
+              style={s.qtyBtn}
               onPress={() => updateQuantity(item.cartId, item.quantity + 1)}
             >
               <Plus size={14} color={COLORS.textPrimary} />
@@ -119,15 +189,15 @@ const CartScreen = () => {
               <Text style={s.totalLabel}>Tổng cộng</Text>
               <Text style={s.totalValue}>{formatCurrency(totalPrice)}</Text>
             </View>
-            <TouchableOpacity 
-              style={[s.checkoutBtn, isCheckingOut && { opacity: 0.7 }]} 
+            <TouchableOpacity
+              style={[s.checkoutBtn, isCheckingOut && { opacity: 0.7 }]}
               onPress={handleCheckout}
               disabled={isCheckingOut}
             >
               {isCheckingOut ? (
                 <ActivityIndicator color={COLORS.white} />
               ) : (
-                <Text style={s.checkoutText}>Thanh toán ngay</Text>
+                <Text style={s.checkoutText}>Đặt hàng ngay</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -137,8 +207,8 @@ const CartScreen = () => {
           <ShoppingBag size={80} color={COLORS.borderLight} />
           <Text style={s.emptyTitle}>Giỏ hàng trống</Text>
           <Text style={s.emptySubtitle}>Hãy chọn những món cà phê thơm ngon nhất nhé!</Text>
-          <TouchableOpacity 
-            style={s.shopBtn} 
+          <TouchableOpacity
+            style={s.shopBtn}
             onPress={() => navigation.navigate('Main')}
           >
             <Text style={s.shopBtnText}>Quay lại thực đơn</Text>
@@ -151,8 +221,8 @@ const CartScreen = () => {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.white },
-  header: { 
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
   },
@@ -161,14 +231,10 @@ const s = StyleSheet.create({
   clearText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.error },
 
   listContent: { padding: 16 },
-  cartItem: { 
-    flexDirection: 'row', 
-    padding: 16, 
-    marginBottom: 16, 
-    backgroundColor: COLORS.white, 
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
+  cartItem: {
+    flexDirection: 'row', padding: 16, marginBottom: 16,
+    backgroundColor: COLORS.white, borderRadius: 16,
+    borderWidth: 1, borderColor: '#F3F4F6',
   },
   image: { width: 80, height: 80, borderRadius: 12, backgroundColor: COLORS.backgroundSecondary },
   itemInfo: { flex: 1, marginLeft: 14, justifyContent: 'space-between' },
@@ -178,13 +244,9 @@ const s = StyleSheet.create({
   itemOptions: { fontFamily: FONTS.regular, fontSize: 12, color: '#6B7280', marginTop: 4, marginBottom: 8 },
   priceQtyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   itemPrice: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
-  quantityControl: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: COLORS.white, 
-    borderRadius: 8, 
-    borderWidth: 1, 
-    borderColor: '#F3F4F6' 
+  quantityControl: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
+    borderRadius: 8, borderWidth: 1, borderColor: '#F3F4F6',
   },
   qtyBtn: { width: 28, height: 28, justifyContent: 'center', alignItems: 'center' },
   qtyText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary, paddingHorizontal: 6 },
