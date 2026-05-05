@@ -15,7 +15,7 @@ import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated'
 import HomeScreen    from '@/pages/home/HomeScreen';
 import MenuScreen    from '@/pages/menu/MenuScreen';
 import OrderScreen   from '@/pages/orders/OrderScreen';
-import AccountScreen from '@/pages/account/AccountScreen';
+import AccountScreen from '@/pages/account/Account/AccountScreen';
 
 const Tab = createBottomTabNavigator();
 

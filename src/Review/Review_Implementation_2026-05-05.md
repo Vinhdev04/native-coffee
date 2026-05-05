@@ -40,6 +40,7 @@ Phiên này tập trung vào việc chuẩn hóa hệ thống màu sắc (Teal T
 - **Tối ưu UI**: Tự động nhóm các thuộc tính của sản phẩm theo nhóm (ví dụ: Size, Đá, Đường) dựa trên `attributeId`, giúp người dùng dễ dàng lựa chọn hơn so với danh sách phẳng trước đây.
 - **Fix lỗi crash `MenuScreen`**: Sửa lỗi `keyExtractor` gây crash ứng dụng khi dữ liệu sản phẩm bị thiếu `id`.
 - **Fix lỗi Login (nhanvien01)**: Khắc phục lỗi `[AUTHEN001] Invalid token` do `axiosClient` tự động gửi token cũ trong header của request `/auth/login`. Đã loại trừ các endpoint công khai khỏi việc gắn header Authorization.
+- **Fix lỗi đường dẫn (Import Error)**: Sửa lỗi "Unable to resolve module" tại `MainNavigator.tsx` do sai đường dẫn import `AccountScreen`. Đường dẫn đúng là `@/pages/account/Account/AccountScreen`.
 
 ---
 
