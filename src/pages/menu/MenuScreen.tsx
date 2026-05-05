@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   StatusBar, SectionList, Image,
   TextInput, ActivityIndicator,
-  FlatList, RefreshControl,
+  FlatList, RefreshControl, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -382,7 +382,8 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14,
+    paddingHorizontal: 16, paddingBottom: 14,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 14,
     backgroundColor: COLORS.teal,
     borderBottomWidth: 0,
   },
@@ -433,14 +434,14 @@ const s = StyleSheet.create({
   catScroll: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
   catChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: 20, backgroundColor: '#F0F0F0',
-    borderWidth: 1.5, borderColor: 'transparent',
+    paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: 12, backgroundColor: COLORS.white,
+    borderWidth: 1, borderColor: '#E5E7EB',
   },
   catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   catIcon: { width: 18, height: 18, borderRadius: 9 },
-  catText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textSecondary },
-  catTextActive: { fontFamily: FONTS.semiBold, color: COLORS.white },
+  catText: { fontFamily: FONTS.semiBold, fontSize: 13, color: '#6B7280' },
+  catTextActive: { color: COLORS.white },
 
   emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10, paddingBottom: 80 },
   emptyTitle: { fontFamily: FONTS.semiBold, fontSize: 16, color: COLORS.textSecondary },

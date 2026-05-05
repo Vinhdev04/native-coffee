@@ -144,7 +144,7 @@ const AccountScreen = () => {
         </View>
 
         <Text style={s.footerVersion}>Native Coffee © 2026</Text>
-        <View style={{ height: 50 }} />
+        <View style={{ height: 110 }} />
       </ScrollView>
     </SafeAreaView>
   );

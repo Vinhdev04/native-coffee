@@ -21,14 +21,14 @@ const BANNERS = [
     title: 'Trà Sữa Hảo Hạng',
     subtitle: 'Giảm 30% lần đầu đặt hàng',
     bg: '#FF7A00',
-    image: 'https://images.unsplash.com/photo-1558857563-b37102e99e00?auto=format&fit=crop&w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1558153026-646df72e2764?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: '2',
     title: 'Cà Phê Đặc Biệt',
     subtitle: 'Mua 2 tặng 1 mỗi ngày',
     bg: '#1E3A5F',
-    image: 'https://images.unsplash.com/photo-1515823064-d6e0c04616a4?auto=format&fit=crop&w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: '3',
@@ -338,6 +338,7 @@ const HomeScreen = () => {
           loading ? <ActivityIndicator style={{ marginVertical: 20 }} color={COLORS.primary} /> : <View style={{ height: 100 }} />
         )}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 110 }}
         refreshing={loading}
         onRefresh={() => loadProducts()}
       />
@@ -424,14 +425,14 @@ const s = StyleSheet.create({
   catScroll: { paddingHorizontal: 16, gap: 8 },
   catChip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, backgroundColor: '#F0F0F0',
-    borderWidth: 1.5, borderColor: 'transparent',
+    paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: 12, backgroundColor: COLORS.white,
+    borderWidth: 1, borderColor: '#E5E7EB',
   },
   catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   catIcon: { width: 18, height: 18, borderRadius: 9 },
-  catText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textSecondary },
-  catTextActive: { fontFamily: FONTS.semiBold, color: COLORS.white },
+  catText: { fontFamily: FONTS.semiBold, fontSize: 13, color: '#6B7280' },
+  catTextActive: { color: COLORS.white },
 
   /* Sections */
   section: { paddingHorizontal: 16, marginTop: 20 },

@@ -209,7 +209,7 @@ const s = StyleSheet.create({
   tabDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#D1D5DB' },
   tabDotActive: { backgroundColor: COLORS.white },
 
-  list: { paddingHorizontal: 20, paddingBottom: 40 },
+  list: { paddingHorizontal: 20, paddingBottom: 110 },
 
   orderCard: {
     backgroundColor: COLORS.white,

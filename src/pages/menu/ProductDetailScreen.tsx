@@ -11,7 +11,7 @@ import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
 import { fetchAttributes, fetchProductById } from '@/services/productService';
 import {
-  ChevronLeft, Star, Minus, Plus, ShoppingBag, Heart,
+  ChevronLeft, Star, Minus, Plus, ShoppingBag, Heart, CheckCircle2, Circle
 } from 'lucide-react-native';
 import Toast from '@/components/common/Toast';
 
@@ -177,7 +177,13 @@ const ProductDetailScreen = () => {
                         key={attr.id}
                         style={[s.chip, isActive && s.chipActive]}
                         onPress={() => toggleAttribute(attr)}
+                        activeOpacity={0.7}
                       >
+                        {isActive ? (
+                          <CheckCircle2 size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                        ) : (
+                          <Circle size={16} color="#D1D5DB" style={{ marginRight: 6 }} />
+                        )}
                         <Text style={[s.chipText, isActive && s.chipTextActive]}>
                           {attr.name}
                         </Text>
