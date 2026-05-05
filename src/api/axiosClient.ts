@@ -23,9 +23,12 @@ const axiosClient = axios.create({
 axiosClient.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("@token");
-    const isPublic = config.url?.startsWith("/public/");
+    const isPublic = config.url?.includes("/auth/login") || config.url?.includes("/auth/forgot_password") || config.url?.startsWith("/public/");
     if (token && !isPublic) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log(`🔑 [Token Attached] to ${config.url}`);
+    } else if (isPublic) {
+      console.log(`🔓 [Public Request] ${config.url} - No token attached`);
     }
     console.log(
       `☕ [API Request] ${config.method?.toUpperCase()} ${config.url}`,
