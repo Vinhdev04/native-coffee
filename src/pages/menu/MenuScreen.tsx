@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  SafeAreaView, StatusBar, SectionList, Image,
+  StatusBar, SectionList, Image,
   TextInput, ActivityIndicator,
   FlatList, RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { Search, X, Plus, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
@@ -242,8 +243,8 @@ const MenuScreen = () => {
   }
 
   return (
-    <SafeAreaView style={s.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#D8F1F3" />
+    <SafeAreaView style={s.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.teal} />
 
       <Toast
         visible={toast.visible}
@@ -311,7 +312,7 @@ const MenuScreen = () => {
         <SectionList
           ref={sectionListRef}
           sections={sections}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
           renderItem={({ item }) => (
             <ProductRow
               item={item}
@@ -343,7 +344,7 @@ const s = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14,
-    backgroundColor: '#D8F1F3',
+    backgroundColor: COLORS.teal,
     borderBottomWidth: 0,
   },
   headerTitle: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.textPrimary },
@@ -363,7 +364,7 @@ const s = StyleSheet.create({
 
   searchRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#D8F1F3',
+    backgroundColor: COLORS.teal,
     paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12,
     gap: 8,
   },

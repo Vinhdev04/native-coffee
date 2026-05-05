@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, SafeAreaView, Alert, StatusBar,
+  ScrollView, Alert, StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 import { COLORS, FONTS, SPACING } from '@/styles/theme';
 import {
@@ -86,8 +87,8 @@ const AccountScreen = () => {
 
 
   return (
-    <SafeAreaView style={s.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#D8F1F3" />
+    <SafeAreaView style={s.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.teal} />
 
       {/* Toast */}
       <Toast
@@ -125,9 +126,9 @@ const AccountScreen = () => {
         {/* ── Menu Groups ── */}
         <View style={s.groupCard}>
           <Text style={s.groupTitle}>Tài khoản</Text>
-          <MenuRow icon={<User size={18} color="#0B7F8C" />}     label="Thông tin cá nhân" onPress={showComingSoon} />
-          <MenuRow icon={<Lock size={18} color="#0B7F8C" />}     label="Đổi mật khẩu"     onPress={showComingSoon} />
-          <MenuRow icon={<Bell size={18} color="#0B7F8C" />}     label="Thông báo"          onPress={showComingSoon} />
+          <MenuRow icon={<User size={18} color={COLORS.tealIcon} />}     label="Thông tin cá nhân" onPress={showComingSoon} />
+          <MenuRow icon={<Lock size={18} color={COLORS.tealIcon} />}     label="Đổi mật khẩu"     onPress={showComingSoon} />
+          <MenuRow icon={<Bell size={18} color={COLORS.tealIcon} />}     label="Thông báo"          onPress={showComingSoon} />
         </View>
 
         <View style={s.groupCard}>
@@ -153,7 +154,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2F3F5' },
 
   profileHeader: {
-    backgroundColor: '#D8F1F3',
+    backgroundColor: COLORS.teal,
     alignItems: 'center',
     paddingTop: 28,
     paddingBottom: 44,
@@ -217,7 +218,7 @@ const s = StyleSheet.create({
   },
   menuIconWrap: {
     width: 36, height: 36, borderRadius: 11,
-    backgroundColor: '#EBF8FA',
+    backgroundColor: COLORS.tealLight,
     justifyContent: 'center', alignItems: 'center',
   },
   menuIconDanger: { backgroundColor: '#FFF1F2' },

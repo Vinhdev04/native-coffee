@@ -1,13 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
-  SafeAreaView, StatusBar, ScrollView, Platform,
+  StatusBar, ScrollView, Platform,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
+import { fetchAttributes } from '@/services/productService';
 import {
   ChevronLeft, Star, Minus, Plus, ShoppingBag, Heart,
 } from 'lucide-react-native';
@@ -25,8 +27,41 @@ const ProductDetailScreen = () => {
   const [selectedAttributes, setSelectedAttributes] = useState<any[]>([]);
   const [isFavorited, setIsFavorited] = useState(false);
   const [toast, setToast] = useState({ visible: false, type: 'success' as 'success' | 'error' | 'info', title: '', message: '' });
+  const [attributeGroups, setAttributeGroups] = useState<Record<number, string>>({});
+  const [loadingAttr, setLoadingAttr] = useState(false);
+
+  useEffect(() => {
+    const loadAttributes = async () => {
+      try {
+        setLoadingAttr(true);
+        const res = await fetchAttributes();
+        const data = res.data?.rows || res.data || [];
+        const mapping: Record<number, string> = {};
+        data.forEach((a: any) => {
+          mapping[a.id] = a.name;
+        });
+        setAttributeGroups(mapping);
+      } catch (err) {
+        console.error('[ProductDetail] fetch attributes error:', err);
+      } finally {
+        setLoadingAttr(false);
+      }
+    };
+    loadAttributes();
+  }, []);
 
   const attributes = product.productAttributes || [];
+
+  /* Group attributes by their group (attributeId) */
+  const groupedAttributes = React.useMemo(() => {
+    const groups: Record<number, any[]> = {};
+    attributes.forEach((attr: any) => {
+      const gid = attr.attributeId || 0;
+      if (!groups[gid]) groups[gid] = [];
+      groups[gid].push(attr);
+    });
+    return groups;
+  }, [attributes]);
 
   const toggleAttribute = (attr: any) => {
     if (selectedAttributes.find((a) => a.id === attr.id)) {
@@ -113,33 +148,36 @@ const ProductDetailScreen = () => {
           {/* Divider */}
           <View style={s.divider} />
 
-          {/* Dynamic Attributes */}
-          {attributes.length > 0 && (
-            <View style={s.section}>
-              <Text style={s.sectionTitle}>Tùy chọn thêm</Text>
-              <View style={s.chipRow}>
-                {attributes.map((attr: any) => {
-                  const isActive = !!selectedAttributes.find((a) => a.id === attr.id);
-                  return (
-                    <TouchableOpacity
-                      key={attr.id}
-                      style={[s.chip, isActive && s.chipActive]}
-                      onPress={() => toggleAttribute(attr)}
-                    >
-                      <Text style={[s.chipText, isActive && s.chipTextActive]}>
-                        {attr.name}
-                      </Text>
-                      {attr.priceDelta > 0 && (
-                        <Text style={[s.chipPrice, isActive && s.chipTextActive]}>
-                          {' '}+{formatCurrency(attr.priceDelta)}
+          {/* Grouped Attributes */}
+          {Object.entries(groupedAttributes).map(([gid, items]) => {
+            const groupName = attributeGroups[Number(gid)] || 'Tùy chọn';
+            return (
+              <View key={gid} style={s.section}>
+                <Text style={s.sectionTitle}>{groupName}</Text>
+                <View style={s.chipRow}>
+                  {items.map((attr: any) => {
+                    const isActive = !!selectedAttributes.find((a) => a.id === attr.id);
+                    return (
+                      <TouchableOpacity
+                        key={attr.id}
+                        style={[s.chip, isActive && s.chipActive]}
+                        onPress={() => toggleAttribute(attr)}
+                      >
+                        <Text style={[s.chipText, isActive && s.chipTextActive]}>
+                          {attr.name}
                         </Text>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
+                        {attr.priceDelta > 0 && (
+                          <Text style={[s.chipPrice, isActive && s.chipTextActive]}>
+                            {' '}+{formatCurrency(attr.priceDelta)}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          )}
+            );
+          })}
 
           <View style={s.divider} />
 
@@ -159,13 +197,15 @@ const ProductDetailScreen = () => {
               </TouchableOpacity>
             </View>
           </View>
+
+          <View style={s.divider} />
         </View>
 
         <View style={{ height: 110 }} />
       </ScrollView>
 
       {/* Bottom CTA */}
-      <SafeAreaView style={s.footer}>
+      <SafeAreaView style={s.footer} edges={['bottom', 'left', 'right']}>
         <View style={s.footerContent}>
           <View style={s.totalBlock}>
             <Text style={s.totalLabel}>Tổng cộng</Text>

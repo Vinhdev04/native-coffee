@@ -39,3 +39,10 @@ export const fetchCategories = async (params?: { branchId?: number }) => {
   const response = await axiosClient.get('/product-categories', { params });
   return response;
 };
+/**
+ * Lấy danh sách nhóm thuộc tính (Size, Mức đường, Đá, Topping...)
+ */
+export const fetchAttributes = async () => {
+  const response = await axiosClient.get('/attributes');
+  return response;
+};

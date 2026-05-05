@@ -57,6 +57,11 @@ export const Colors = {
   overlay: 'rgba(0, 0, 0, 0.5)',     // Overlay tối
   overlayLight: 'rgba(0, 0, 0, 0.2)', // Overlay nhạt
   placeholder: '#D1D5DB',
+
+  // === TEAL THEME ===
+  teal: '#D8F1F3',
+  tealLight: '#EBF8FA',
+  tealIcon: '#0B7F8C',
 };
 
 export type ColorType = keyof typeof Colors;

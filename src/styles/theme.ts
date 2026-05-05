@@ -69,6 +69,11 @@ export const COLORS = {
   // === OVERLAY ===
   overlay: 'rgba(0, 0, 0, 0.5)',
   overlayLight: 'rgba(0, 0, 0, 0.2)',
+
+  // === TEAL THEME ===
+  teal: '#D8F1F3',
+  tealLight: '#EBF8FA',
+  tealIcon: '#0B7F8C',
 };
 
 export const FONTS = {

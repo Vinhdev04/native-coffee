@@ -23,7 +23,7 @@
 - POST /account/change-password : Đổi mật khẩu
 
 ## [FOLDER: PRODUCT]
-- GET    /products              : Danh sách sản phẩm (Params: branchId=1, limit=100)
+- GET    /products              : Danh sách sản phẩm (Params: branchId=1, limit=100 [MAX: 100])
 - POST   /products              : Tạo sản phẩm mới
   * **Header**: Authorization: Bearer <token>
   * **Body**:
@@ -54,7 +54,7 @@
 - DELETE /product-categories/{id} : Xóa danh mục
 
 ## [FOLDER: ORDER]
-- GET  /orders                  : Danh sách đơn hàng (Params: branchId, status, keySearch)
+- GET  /orders                  : Danh sách đơn hàng (Params: branchId, status, keySearch, limit=100 [MAX: 100])
 - POST /orders                  : Tạo đơn hàng mới
   * **Header**: 
     - Authorization: Bearer <token>
