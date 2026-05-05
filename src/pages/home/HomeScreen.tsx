@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   SafeAreaView, StatusBar, ScrollView, Image, FlatList,
-  Dimensions, Animated, ActivityIndicator,
+  Dimensions, Animated, ActivityIndicator, Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
@@ -265,7 +265,7 @@ const HomeScreen = () => {
   );
 
   return (
-    <SafeAreaView style={s.safeArea}>
+    <SafeAreaView style={s.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor="#D8F1F3" />
 
       <Toast
@@ -355,7 +355,7 @@ const s = StyleSheet.create({
   stickyHeader: {
     backgroundColor: '#D8F1F3',
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 12 : 12,
     paddingBottom: 14,
     zIndex: 10,
   },

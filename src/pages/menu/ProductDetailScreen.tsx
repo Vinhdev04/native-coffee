@@ -2,14 +2,14 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
   StatusBar, ScrollView, Platform,
-  Dimensions,
+  Dimensions, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
-import { fetchAttributes } from '@/services/productService';
+import { fetchAttributes, fetchProductById } from '@/services/productService';
 import {
   ChevronLeft, Star, Minus, Plus, ShoppingBag, Heart,
 } from 'lucide-react-native';
@@ -29,34 +29,50 @@ const ProductDetailScreen = () => {
   const [toast, setToast] = useState({ visible: false, type: 'success' as 'success' | 'error' | 'info', title: '', message: '' });
   const [attributeGroups, setAttributeGroups] = useState<Record<number, string>>({});
   const [loadingAttr, setLoadingAttr] = useState(false);
+  const [fullProduct, setFullProduct] = useState<any>(product);
+  const [loadingProduct, setLoadingProduct] = useState(false);
 
   useEffect(() => {
-    const loadAttributes = async () => {
+    const loadData = async () => {
       try {
         setLoadingAttr(true);
-        const res = await fetchAttributes();
-        const data = res.data?.rows || res.data || [];
+        setLoadingProduct(true);
+        
+        // Fetch both attributes mapping and full product details
+        const [attrRes, prodRes] = await Promise.all([
+          fetchAttributes(),
+          fetchProductById(product.id),
+        ]);
+
+        // Map global attributes (e.g., id 1 -> "Size")
+        const attrData = attrRes.data?.rows || attrRes.data || [];
         const mapping: Record<number, string> = {};
-        data.forEach((a: any) => {
+        attrData.forEach((a: any) => {
           mapping[a.id] = a.name;
         });
         setAttributeGroups(mapping);
+
+        // Update product with full details including productAttributes
+        if (prodRes.data) {
+          setFullProduct(prodRes.data);
+        }
       } catch (err) {
-        console.error('[ProductDetail] fetch attributes error:', err);
+        console.error('[ProductDetail] fetch data error:', err);
       } finally {
         setLoadingAttr(false);
+        setLoadingProduct(false);
       }
     };
-    loadAttributes();
-  }, []);
+    loadData();
+  }, [product.id]);
 
-  const attributes = product.productAttributes || [];
+  const attributes = fullProduct.options || fullProduct.productAttributes || [];
 
-  /* Group attributes by their group (attributeId) */
+  /* Group attributes by their group (attributeName or attributeId) */
   const groupedAttributes = React.useMemo(() => {
-    const groups: Record<number, any[]> = {};
+    const groups: Record<string, any[]> = {};
     attributes.forEach((attr: any) => {
-      const gid = attr.attributeId || 0;
+      const gid = attr.attributeName || attr.attributeId || 'Tùy chọn';
       if (!groups[gid]) groups[gid] = [];
       groups[gid].push(attr);
     });
@@ -75,8 +91,10 @@ const ProductDetailScreen = () => {
   const basePrice  = Number(product.basePrice) || Number(product.price) || 0;
   const totalPrice = (basePrice + extraPrice) * quantity;
 
+  const [note, setNote] = useState('');
+
   const handleAddToCart = () => {
-    addToCart({ ...product, quantity, selectedAttributes, totalPrice: basePrice + extraPrice });
+    addToCart({ ...product, quantity, selectedAttributes, totalPrice: basePrice + extraPrice, note });
     setToast({
       visible: true,
       type: 'success',
@@ -131,14 +149,6 @@ const ProductDetailScreen = () => {
             <Text style={s.productPrice}>{formatCurrency(basePrice)}</Text>
           </View>
 
-          {/* Rating */}
-          <View style={s.ratingRow}>
-            {[1,2,3,4,5].map(i => (
-              <Star key={i} size={14} color="#F59E0B" fill="#F59E0B" />
-            ))}
-            <Text style={s.ratingText}>4.8  •  120+ đánh giá</Text>
-          </View>
-
           {/* Description */}
           <Text style={s.description}>
             {product.description ||
@@ -149,11 +159,16 @@ const ProductDetailScreen = () => {
           <View style={s.divider} />
 
           {/* Grouped Attributes */}
-          {Object.entries(groupedAttributes).map(([gid, items]) => {
-            const groupName = attributeGroups[Number(gid)] || 'Tùy chọn';
+          {Object.entries(groupedAttributes).map(([groupKey, items]) => {
+            // groupKey could be attributeName like "SIZE", or attributeId like "1".
+            const isNumeric = !isNaN(Number(groupKey));
+            const groupName = isNumeric && attributeGroups[Number(groupKey)] 
+              ? attributeGroups[Number(groupKey)] 
+              : groupKey;
+
             return (
-              <View key={gid} style={s.section}>
-                <Text style={s.sectionTitle}>{groupName}</Text>
+              <View key={groupKey} style={s.section}>
+                <Text style={s.sectionTitle}>{groupName.toUpperCase()}</Text>
                 <View style={s.chipRow}>
                   {items.map((attr: any) => {
                     const isActive = !!selectedAttributes.find((a) => a.id === attr.id);
@@ -178,6 +193,21 @@ const ProductDetailScreen = () => {
               </View>
             );
           })}
+
+          <View style={s.divider} />
+
+          {/* Note section */}
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>GHI CHÚ</Text>
+            <TextInput
+              style={s.noteInput}
+              placeholder="Ví dụ: Ít đường, nhiều đá..."
+              placeholderTextColor={COLORS.textMuted}
+              value={note}
+              onChangeText={setNote}
+              multiline
+            />
+          </View>
 
           <View style={s.divider} />
 
@@ -266,9 +296,6 @@ const s = StyleSheet.create({
   productName: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.textPrimary, flex: 1, marginRight: 12 },
   productPrice: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.primary },
 
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 16 },
-  ratingText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textMuted, marginLeft: 4 },
-
   description: {
     fontFamily: FONTS.regular, fontSize: 14,
     color: COLORS.textSecondary, lineHeight: 22,
@@ -289,6 +316,15 @@ const s = StyleSheet.create({
   chipText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textSecondary },
   chipPrice: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted },
   chipTextActive: { color: COLORS.primary },
+
+  noteInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1, borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16, paddingVertical: 12,
+    fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textPrimary,
+    minHeight: 46, textAlignVertical: 'top',
+  },
 
   qtySection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   qtyControls: {
