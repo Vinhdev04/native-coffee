@@ -17,6 +17,8 @@ import ProductDetailScreen  from '@/pages/menu/ProductDetailScreen';
 import CartScreen           from '@/pages/cart/CartScreen';
 import OrderDetailScreen    from '@/pages/orders/OrderDetailScreen';
 import PaymentScreen        from '@/pages/orders/PaymentScreen';
+import AccountInfoScreen    from '@/pages/account/UpdateProfile/UpdateProfileScreen';
+import ChangePasswordScreen from '@/pages/account/ChangePassword/ChangePasswordScreen';
 import MainNavigator        from '@/navigation/MainNavigator';
 import { useAuth, AuthProvider } from '@/context/AuthContext';
 import { CartProvider }          from '@/context/CartContext';
@@ -52,6 +54,8 @@ const NavigationContent = () => {
             <Stack.Screen name="Cart"          component={CartScreen} />
             <Stack.Screen name="OrderDetail"   component={OrderDetailScreen} />
             <Stack.Screen name="Payment"       component={PaymentScreen} />
+            <Stack.Screen name="UpdateProfile" component={AccountInfoScreen} />
+            <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
           </>
         )}
       </Stack.Navigator>

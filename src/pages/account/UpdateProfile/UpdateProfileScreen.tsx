@@ -1,270 +1,149 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  Image,
-} from "react-native";
-import MaterialIcon from "react-native-vector-icons/MaterialCommunityIcons";
-import { Colors } from "~/constants/Colors";
-import { Layout } from "~/constants/Constants";
-import { Typography } from "~/constants/Typography";
-import { useAuth } from "~/context/AuthContext";
-import { useNavigation } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
-import Toast from "react-native-toast-message";
-import { launchImageLibrary } from "react-native-image-picker";
-import { ActivityIndicator } from "react-native";
-import { AccountSocket } from "~/socket/modules/AccountSocket";
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { X, User, Mail, Phone, Calendar, Store, Smile } from 'lucide-react-native';
+import { COLORS, FONTS } from '@/styles/theme';
+import { useAuth } from '@/context/AuthContext';
+import dayjs from 'dayjs';
 
-const UpdateProfileScreen = () => {
-  const { user } = useAuth();
+const AccountInfoScreen = () => {
   const navigation = useNavigation();
-  const { t } = useTranslation();
-  const [loading, setLoading] = useState(false);
-  const { login, token } = useAuth();
-  const [avatar, setAvatar] = useState(user?.avatar || null);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const { user } = useAuth();
 
-  React.useEffect(() => {
-    if (user) {
-      setAvatar(user.avatar || null);
-      setName(user.name || user.full_name || user.userName || "");
-      setEmail(user.email || "");
-      setPhone(user.phone || user.phone_number || "");
-    }
-  }, [user]);
-
-  const handleSelectAvatar = async () => {
-    const result = await launchImageLibrary({
-      mediaType: "photo",
-      quality: 0.8,
-    });
-
-    if (result.assets && result.assets.length > 0) {
-      setAvatar(result.assets[0].uri || null);
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!user || !name) return;
-
-    try {
-      setLoading(true);
-      const payload = {
-        id: user.id,
-        name: name,
-        phone: phone,
-        email: email,
-        staff_id: user.staff_id || 0,
-        permission_level: user.permission_level || "0",
-      };
-
-      const response: any = await AccountSocket.update(payload);
-
-      if (response && (response.res_code === 0 || response.status === 200)) {
-        Toast.show({
-          type: "success",
-          text1: t("success"),
-          text2: "Thông tin cá nhân đã được cập nhật",
-        });
-
-        // Cập nhật lại AuthContext
-        if (token) {
-          // Ở đây ta có thể giả định server trả về user mới hoặc ta tự merge
-          const updatedUser = { ...user, name, phone, email };
-          await login(token, updatedUser);
-        }
-
-        navigation.goBack();
-      } else {
-        Toast.show({
-          type: "error",
-          text1: t("failed"),
-          text2: response?.message || "Không thể cập nhật thông tin",
-        });
-      }
-    } catch (error) {
-      console.error("Update profile error", error);
-      Toast.show({
-        type: "error",
-        text1: t("error"),
-        text2: t("conn_error_msg"),
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const displayName = user?.fullName || user?.username || 'Chưa cập nhật';
+  const displayEmail = user?.email || 'Chưa cập nhật';
+  const displayPhone = user?.phone || user?.phone_number || 'Chưa cập nhật';
+  const displayDate = user?.created_at ? dayjs(user.created_at).format('DD/MM/YYYY') : 'N/A';
+  const displayRole = user?.permissions?.[0]?.roleName?.trim() || user?.role || 'Nhân viên';
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialIcon name="arrow-left" size={28} color={Colors.primary} />
+    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
+      {/* Header */}
+      <View style={s.header}>
+        <Text style={s.headerTitle}>Thông Tin Tài Khoản</Text>
+        <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()}>
+          <X size={20} color="#9CA3AF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t("update_profile")}</Text>
-        <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.avatarSection}>
-          <View style={styles.avatarLarge}>
-            {avatar ? (
-              <Image source={{ uri: avatar }} style={styles.avatarImage} />
-            ) : (
-              <MaterialIcon name="account" size={60} color={Colors.primary} />
-            )}
+      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        {/* Avatar Section */}
+        <View style={s.avatarSection}>
+          <View style={s.avatarWrap}>
+            <Smile size={36} color="#F97316" />
           </View>
-          {/* <TouchableOpacity style={styles.changeAvatarBtn} onPress={handleSelectAvatar}>
-               <Text style={styles.changeAvatarText}>{t('change_avatar')}</Text>
-            </TouchableOpacity> */}
+          <Text style={s.profileName}>{displayName}</Text>
+          <Text style={s.profileEmail}>{displayEmail}</Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t("full_name")}</Text>
-            <View style={styles.inputBox}>
-              <MaterialIcon
-                name="account-outline"
-                size={20}
-                color={Colors.secondary}
-              />
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder={t("enter_full_name")}
-              />
+        {/* Info Cards */}
+        <View style={s.cardsWrap}>
+          <View style={s.infoCard}>
+            <View style={s.iconBox}>
+              <User size={18} color="#F97316" />
+            </View>
+            <View style={s.cardBody}>
+              <Text style={s.cardLabel}>Họ và tên</Text>
+              <Text style={s.cardValue}>{displayName}</Text>
             </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t("email")}</Text>
-            <View style={styles.inputBox}>
-              <MaterialIcon
-                name="email-outline"
-                size={20}
-                color={Colors.secondary}
-              />
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                placeholder={t("enter_email")}
-              />
+          <View style={s.infoCard}>
+            <View style={s.iconBox}>
+              <Mail size={18} color="#F97316" />
+            </View>
+            <View style={s.cardBody}>
+              <Text style={s.cardLabel}>Email</Text>
+              <Text style={s.cardValue}>{displayEmail}</Text>
             </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t("phone")}</Text>
-            <View style={styles.inputBox}>
-              <MaterialIcon
-                name="phone-outline"
-                size={20}
-                color={Colors.secondary}
-              />
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                placeholder={t("enter_phone")}
-              />
+          <View style={s.infoCard}>
+            <View style={s.iconBox}>
+              <Phone size={18} color="#F97316" />
+            </View>
+            <View style={s.cardBody}>
+              <Text style={s.cardLabel}>Số điện thoại</Text>
+              <Text style={s.cardValue}>{displayPhone}</Text>
             </View>
           </View>
 
-          <TouchableOpacity
-            style={[styles.saveBtn, loading && { opacity: 0.7 }]}
-            onPress={handleUpdate}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.saveBtnText}>{t("save_changes")}</Text>
-            )}
-          </TouchableOpacity>
+          <View style={s.infoCard}>
+            <View style={s.iconBox}>
+              <Calendar size={18} color="#F97316" />
+            </View>
+            <View style={s.cardBody}>
+              <Text style={s.cardLabel}>Ngày tham gia</Text>
+              <Text style={s.cardValue}>{displayDate}</Text>
+            </View>
+          </View>
+
+          <View style={s.infoCard}>
+            <View style={s.iconBox}>
+              <Store size={18} color="#F97316" />
+            </View>
+            <View style={s.cardBody}>
+              <Text style={s.cardLabel}>Chức vụ</Text>
+              <Text style={s.cardValue}>{displayRole}</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#FFF' },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Layout.headerPaddingHorizontal,
-    paddingTop: Layout.headerPaddingTop,
-    paddingBottom: Layout.headerPaddingBottom,
-    backgroundColor: Colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 12 : 16,
+    paddingBottom: 16,
   },
-  headerTitle: {
-    fontFamily: Typography.fontFamily.bold,
-    fontSize: 18,
-    color: Colors.primary,
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: '#111827' },
+  closeBtn: {
+    width: 36, height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center', alignItems: 'center',
   },
-  content: { padding: 20 },
-  avatarSection: { alignItems: "center", marginBottom: 30 },
-  avatarLarge: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.surfaceContainerLow,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    overflow: "hidden",
+  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  
+  avatarSection: { alignItems: 'center', marginTop: 10, marginBottom: 32 },
+  avatarWrap: {
+    width: 80, height: 80,
+    borderRadius: 24,
+    backgroundColor: '#FFEDD5',
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 16,
   },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  changeAvatarBtn: { marginTop: 10 },
-  changeAvatarText: {
-    fontFamily: Typography.fontFamily.semiBold,
-    fontSize: 13,
-    color: Colors.primary,
-  },
-  form: { gap: 20 },
-  inputGroup: { gap: 8 },
-  label: { fontFamily: Typography.fontFamily.bold, fontSize: 14, color: Colors.onSurface },
-  inputBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 50,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  input: {
-    flex: 1,
-    marginLeft: 10,
-    fontFamily: Typography.fontFamily.medium,
-    fontSize: 15,
-    color: Colors.onSurface,
-  },
-  saveBtn: {
-    backgroundColor: Colors.primary,
-    height: 56,
+  profileName: { fontFamily: FONTS.bold, fontSize: 18, color: '#111827', marginBottom: 4 },
+  profileEmail: { fontFamily: FONTS.regular, fontSize: 13, color: '#9CA3AF' },
+
+  cardsWrap: { gap: 12 },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
+    padding: 16,
   },
-  saveBtnText: { fontFamily: Typography.fontFamily.bold, fontSize: 16, color: Colors.white },
+  iconBox: {
+    width: 44, height: 44,
+    borderRadius: 12,
+    backgroundColor: '#FFF',
+    justifyContent: 'center', alignItems: 'center',
+    marginRight: 14,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02, shadowRadius: 4, elevation: 1,
+  },
+  cardBody: { flex: 1 },
+  cardLabel: { fontFamily: FONTS.medium, fontSize: 12, color: '#9CA3AF', marginBottom: 2 },
+  cardValue: { fontFamily: FONTS.semiBold, fontSize: 15, color: '#111827' },
 });
 
-export default UpdateProfileScreen;
+export default AccountInfoScreen;

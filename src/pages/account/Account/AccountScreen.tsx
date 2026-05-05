@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Image, StatusBar, Alert, Platform,
+  ScrollView, Image, StatusBar, Platform, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -12,20 +12,16 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { COLORS, FONTS } from '@/styles/theme';
 import Toast from '@/components/common/Toast';
+import { useNavigation } from '@react-navigation/native';
 
 const AccountScreen = () => {
+  const navigation = useNavigation();
   const { user, logout } = useAuth();
   const [toast, setToast] = useState({ visible: false, title: '', message: '' });
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
   const displayName = user?.fullName || user?.username || 'Trần Thị Nhân Viên';
   const displayRole = user?.role || 'Nhân viên bán hàng';
-
-  const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn chắc chắn muốn đăng xuất?', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: 'Đăng xuất', style: 'destructive', onPress: logout },
-    ]);
-  };
 
   const MenuItem = ({ icon: Icon, label, onPress }: any) => (
     <TouchableOpacity style={s.menuItem} onPress={onPress} activeOpacity={0.7}>
@@ -102,21 +98,51 @@ const AccountScreen = () => {
         {/* ── Settings List ── */}
         <View style={s.menuSection}>
           <Text style={s.sectionTitle}>CÀI ĐẶT</Text>
-          <MenuItem icon={User} label="Thông Tin Tài Khoản" onPress={() => {}} />
-          <MenuItem icon={Lock} label="Đổi Mật Khẩu" onPress={() => {}} />
+          <MenuItem icon={User} label="Thông Tin Tài Khoản" onPress={() => navigation.navigate('UpdateProfile' as never)} />
+          <MenuItem icon={Lock} label="Đổi Mật Khẩu" onPress={() => navigation.navigate('ChangePassword' as never)} />
           <MenuItem icon={Printer} label="Cài Đặt Máy In" onPress={() => {}} />
           <MenuItem icon={Globe} label="Ngôn Ngữ" onPress={() => {}} />
           <MenuItem icon={Headset} label="Hỗ Trợ" onPress={() => {}} />
         </View>
 
         {/* ── Logout Button ── */}
-        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+        <TouchableOpacity style={s.logoutBtn} onPress={() => setLogoutModalVisible(true)}>
           <LogOut size={22} color="#EF4444" />
           <Text style={s.logoutText}>Đăng Xuất</Text>
         </TouchableOpacity>
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* ── Custom Logout Modal ── */}
+      <Modal
+        visible={logoutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutModalVisible(false)}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <View style={s.modalIconWrap}>
+              <LogOut size={28} color="#EF4444" />
+            </View>
+            <Text style={s.modalTitle}>Đăng xuất?</Text>
+            <Text style={s.modalSub}>Bạn sẽ quay lại màn hình chọn vai trò</Text>
+            
+            <View style={s.modalActions}>
+              <TouchableOpacity style={s.btnCancel} onPress={() => setLogoutModalVisible(false)}>
+                <Text style={s.btnCancelText}>Ở lại</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.btnConfirm} onPress={() => {
+                setLogoutModalVisible(false);
+                logout();
+              }}>
+                <Text style={s.btnConfirmText}>Đăng xuất</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -230,6 +256,59 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: '#FEE2E2',
   },
   logoutText: { fontFamily: FONTS.bold, fontSize: 16, color: '#EF4444' },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalIconWrap: {
+    width: 60, height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: { fontFamily: FONTS.bold, fontSize: 20, color: '#111827', marginBottom: 6 },
+  modalSub: { fontFamily: FONTS.regular, fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
+  modalActions: { flexDirection: 'row', gap: 12, width: '100%' },
+  btnCancel: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+  },
+  btnCancelText: { fontFamily: FONTS.semiBold, fontSize: 15, color: '#374151' },
+  btnConfirm: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  btnConfirmText: { fontFamily: FONTS.bold, fontSize: 15, color: '#FFF' },
 });
 
 export default AccountScreen;

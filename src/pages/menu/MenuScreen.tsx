@@ -26,35 +26,74 @@ const DRINK_FALLBACKS = [
 ];
 const getFallback = (id: number) => DRINK_FALLBACKS[id % DRINK_FALLBACKS.length];
 
-const ProductRow = ({ item, onPress, onAddCart }: { item: any; onPress: () => void; onAddCart: () => void; }) => (
-  <TouchableOpacity style={pr.card} activeOpacity={0.9} onPress={onPress}>
-    <Image source={{ uri: item.imageUrl || item.image || getFallback(item.id) }} style={pr.image} resizeMode="cover" />
-    <View style={pr.info}>
-      <View style={{ flex: 1 }}>
-        <Text style={pr.name} numberOfLines={1}>{item.name}</Text>
-        <Text style={pr.desc} numberOfLines={2}>
-          {item.description || item.categoryName || 'Hương vị tươi ngon mỗi ngày.'}
-        </Text>
+// ─── Highlight Text Component ─────────────────────────────────────────────────
+const HighlightText = ({
+  text, highlight, style, highlightStyle,
+}: { text: string; highlight: string; style?: any; highlightStyle?: any }) => {
+  if (!highlight.trim()) return <Text style={style}>{text}</Text>;
+  const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <Text style={style}>
+      {parts.map((part, i) =>
+        regex.test(part)
+          ? <Text key={i} style={[highlightStyle]}>{part}</Text>
+          : <Text key={i}>{part}</Text>
+      )}
+    </Text>
+  );
+};
+
+const ProductRow = ({ item, onPress, onAddCart, searchText }: { item: any; onPress: () => void; onAddCart: () => void; searchText: string }) => {
+  const isMatch = searchText.trim() && item.name.toLowerCase().includes(searchText.toLowerCase().trim());
+  return (
+    <TouchableOpacity 
+      style={[pr.card, isMatch && pr.cardHighlight]} 
+      activeOpacity={0.9} 
+      onPress={onPress}
+    >
+      <Image source={{ uri: item.imageUrl || item.image || getFallback(item.id) }} style={pr.image} resizeMode="cover" />
+      <View style={pr.info}>
+        <View style={{ flex: 1 }}>
+          <HighlightText
+            text={item.name}
+            highlight={searchText}
+            style={pr.name}
+            highlightStyle={pr.nameHighlight}
+          />
+          <Text style={pr.desc} numberOfLines={2}>
+            {item.description || item.categoryName || 'Hương vị tươi ngon mỗi ngày.'}
+          </Text>
+        </View>
+        <View style={pr.bottom}>
+          <Text style={pr.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
+          <TouchableOpacity style={pr.addBtn} onPress={onAddCart}>
+            <Text style={pr.addBtnText}>Thêm</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={pr.bottom}>
-        <Text style={pr.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
-        <TouchableOpacity style={pr.addBtn} onPress={onAddCart}>
-          <Text style={pr.addBtnText}>Thêm</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 const pr = StyleSheet.create({
   card: {
     flexDirection: 'row', padding: 12, marginHorizontal: 16, marginVertical: 8,
     backgroundColor: COLORS.white, borderRadius: 22, shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
+    borderWidth: 1.5, borderColor: 'transparent',
+  },
+  cardHighlight: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
   },
   image: { width: 95, height: 95, borderRadius: 18, backgroundColor: '#F3F4F6' },
   info: { flex: 1, marginLeft: 14, justifyContent: 'space-between', paddingVertical: 2 },
   name: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary },
+  nameHighlight: {
+    backgroundColor: '#FDE68A', color: COLORS.primary,
+    fontFamily: FONTS.bold, borderRadius: 3,
+  },
   desc: { fontFamily: FONTS.regular, fontSize: 12, color: '#9CA3AF', lineHeight: 16 },
   bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   price: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
@@ -121,6 +160,16 @@ const MenuScreen = () => {
     }
   };
 
+  const allCats = React.useMemo(() => [{ id: 'all', name: 'Tất cả', imageUrl: null }, ...categories], [categories]);
+
+  // Auto scroll category bar to show active pill
+  const scrollCatBarToActive = React.useCallback((catId: number | 'all') => {
+    const idx = allCats.findIndex(c => c.id === catId);
+    if (idx >= 0) {
+      categoryListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
+    }
+  }, [allCats]);
+
   const sections = React.useMemo(() => {
     const searchLower = debouncedSearch.toLowerCase();
     return categories
@@ -148,6 +197,21 @@ const MenuScreen = () => {
       setTimeout(() => { isScrollingFromPress.current = false; }, 600);
     }
   };
+
+  // Detect visible section when scrolling → update active category
+  const onViewableItemsChanged = React.useCallback(({ viewableItems }: any) => {
+    if (isScrollingFromPress.current || debouncedSearch) return;
+    if (viewableItems.length > 0) {
+      const topItem = viewableItems[0];
+      const catId = topItem.section?.catId;
+      if (catId && catId !== activeCategory) {
+        setActiveCategory(catId);
+        scrollCatBarToActive(catId);
+      }
+    }
+  }, [activeCategory, debouncedSearch, scrollCatBarToActive]);
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
 
   const renderCategory = ({ item }: { item: any }) => {
     const isActive = item.id === activeCategory || (item.id === 'all' && activeCategory === 'all');
@@ -234,10 +298,12 @@ const MenuScreen = () => {
           ref={sectionListRef}
           sections={sections}
           keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
-          renderItem={({ item }) => <ProductRow item={item} onPress={() => handleProductPress(item)} onAddCart={() => handleProductPress(item)} />}
+          renderItem={({ item }) => <ProductRow item={item} onPress={() => handleProductPress(item)} onAddCart={() => handleProductPress(item)} searchText={debouncedSearch} />}
           renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
           stickySectionHeadersEnabled
           showsVerticalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig.current}
           contentContainerStyle={{ paddingBottom: 100 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />}
         />

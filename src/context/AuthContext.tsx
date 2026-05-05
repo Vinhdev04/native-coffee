@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {
         ...data.user,
         permissions: data.permissions || [],
-        role: data.role_name || data.user.role || null,
+        role: data.permissions?.[0]?.roleName || data.role_name || data.user.role || null,
       };
     }
     return data;

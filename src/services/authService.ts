@@ -48,3 +48,11 @@ export const getMeApi = async () => {
   const response = await axiosClient.get('/auth/me');
   return response;
 };
+
+/**
+ * Đổi mật khẩu tài khoản hiện tại
+ */
+export const changePasswordApi = async (payload: { oldPassword?: string, newPassword: string, confirmPassword: string }) => {
+  const response = await axiosClient.post('/account/change-password', payload);
+  return response;
+};

@@ -45,27 +45,34 @@ const HighlightText = ({
 // ─── Product Card ─────────────────────────────────────────────────────────────
 const ProductCard = ({
   item, onPress, onAdd, searchText,
-}: { item: any; onPress: () => void; onAdd: () => void; searchText: string }) => (
-  <TouchableOpacity style={pc.card} onPress={onPress} activeOpacity={0.88}>
-    <Image
-      source={{ uri: item.imageUrl || item.image || fallback(item.id) }}
-      style={pc.image} resizeMode="cover"
-    />
-    <View style={pc.info}>
-      <HighlightText
-        text={item.name}
-        highlight={searchText}
-        style={pc.name}
-        highlightStyle={pc.nameHighlight}
+}: { item: any; onPress: () => void; onAdd: () => void; searchText: string }) => {
+  const isMatch = searchText.trim() && item.name.toLowerCase().includes(searchText.toLowerCase().trim());
+  return (
+    <TouchableOpacity 
+      style={[pc.card, isMatch && pc.cardHighlight]} 
+      onPress={onPress} 
+      activeOpacity={0.88}
+    >
+      <Image
+        source={{ uri: item.imageUrl || item.image || fallback(item.id) }}
+        style={pc.image} resizeMode="cover"
       />
-      <Text style={pc.cat} numberOfLines={2}>{item.description || item.categoryName || 'Thức uống'}</Text>
-      <Text style={pc.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
-    </View>
-    <TouchableOpacity style={pc.addBtn} onPress={onAdd}>
-      <Text style={pc.addBtnText}>Thêm</Text>
+      <View style={pc.info}>
+        <HighlightText
+          text={item.name}
+          highlight={searchText}
+          style={pc.name}
+          highlightStyle={pc.nameHighlight}
+        />
+        <Text style={pc.cat} numberOfLines={2}>{item.description || item.categoryName || 'Thức uống'}</Text>
+        <Text style={pc.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
+      </View>
+      <TouchableOpacity style={pc.addBtn} onPress={onAdd}>
+        <Text style={pc.addBtnText}>Thêm</Text>
+      </TouchableOpacity>
     </TouchableOpacity>
-  </TouchableOpacity>
-);
+  );
+};
 
 const pc = StyleSheet.create({
   card: {
@@ -74,12 +81,17 @@ const pc = StyleSheet.create({
     marginBottom: 10,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05, shadowRadius: 5, elevation: 2,
+    borderWidth: 1.5, borderColor: 'transparent',
+  },
+  cardHighlight: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
   },
   image: { width: 80, height: 80, borderRadius: 12, backgroundColor: '#F3F4F6', flexShrink: 0 },
   info: { flex: 1, marginLeft: 14, gap: 3 },
   name: { fontFamily: FONTS.semiBold, fontSize: 15, color: '#111827' },
   nameHighlight: {
-    backgroundColor: '#FFF3CD', color: COLORS.primary,
+    backgroundColor: '#FDE68A', color: COLORS.primary,
     fontFamily: FONTS.bold, borderRadius: 3,
   },
   cat: { fontFamily: FONTS.regular, fontSize: 12, color: '#9CA3AF', lineHeight: 17 },
