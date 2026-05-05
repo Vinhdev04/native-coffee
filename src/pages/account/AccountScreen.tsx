@@ -42,6 +42,19 @@ const MenuRow = ({
   </TouchableOpacity>
 );
 
+/* ── Stats data ── (defined OUTSIDE component to avoid reanimated worklet transform) */
+const STATS = [
+  { label: 'Dơn hàng', value: '24', iconColor: COLORS.primary, iconName: 'bag'   },
+  { label: 'Yêu thích', value: '8',  iconColor: '#EF4444',      iconName: 'heart' },
+  { label: 'Điểm tích', value: '320', iconColor: '#F59E0B',    iconName: 'award' },
+];
+
+const StatIcon = ({ name, color }: { name: string; color: string }) => {
+  if (name === 'bag')   return <ShoppingBag size={20} color={color} />;
+  if (name === 'heart') return <Heart size={20} color={color} />;
+  return <Award size={20} color={color} />;
+};
+
 const AccountScreen = () => {
   const { user, logout } = useAuth();
   const [toast, setToast] = useState({ visible: false, type: 'info' as 'success' | 'error' | 'info', title: '', message: '' });
@@ -71,11 +84,6 @@ const AccountScreen = () => {
     );
   };
 
-  const STATS = [
-    { label: 'Đơn hàng', value: '24', icon: <ShoppingBag size={20} color={COLORS.primary} /> },
-    { label: 'Yêu thích', value: '8',  icon: <Heart size={20} color='#EF4444' /> },
-    { label: 'Điểm tích', value: '320', icon: <Award size={20} color='#F59E0B' /> },
-  ];
 
   return (
     <SafeAreaView style={s.container}>
@@ -105,7 +113,7 @@ const AccountScreen = () => {
           {STATS.map((stat, i) => (
             <React.Fragment key={stat.label}>
               <View style={s.statItem}>
-                {stat.icon}
+                <StatIcon name={stat.iconName} color={stat.iconColor} />
                 <Text style={s.statValue}>{stat.value}</Text>
                 <Text style={s.statLabel}>{stat.label}</Text>
               </View>

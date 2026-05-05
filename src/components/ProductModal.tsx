@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { X, Minus, Plus, Edit3 } from 'lucide-react-native';
 import { COLORS, FONTS } from '@/styles/theme';
+import { formatCurrency } from '@/utils';
 
 const { height } = Dimensions.get('window');
 
@@ -124,7 +125,7 @@ export const ProductModal = ({
                   <Text style={styles.productName}>{product.name}</Text>
                 </View>
                 <Text style={styles.productDescription}>{product.description}</Text>
-                <Text style={styles.productPrice}>{new Intl.NumberFormat('vi-VN').format(unitPrice)}đ</Text>
+                <Text style={styles.productPrice}>{formatCurrency(unitPrice)}</Text>
               </View>
 
               {/* Options Section */}
@@ -232,7 +233,7 @@ export const ProductModal = ({
             
             <TouchableOpacity style={styles.actionBtn} onPress={handleAction}>
               <Text style={styles.actionBtnText}>
-                {editItem ? 'Cập nhật đơn hàng' : `Thêm ${new Intl.NumberFormat('vi-VN').format(totalPrice)}đ`}
+                {editItem ? 'Cập nhật đơn hàng' : `Thêm ${formatCurrency(totalPrice)}`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -353,7 +354,7 @@ const styles = StyleSheet.create({
   },
   sizeBtnActive: {
     borderColor: COLORS.primary,
-    backgroundColor: COLORS.chips.light,
+    backgroundColor: COLORS.primaryLight,
   },
   sizeLabel: {
     fontSize: 14,

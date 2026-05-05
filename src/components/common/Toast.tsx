@@ -1,13 +1,14 @@
 /**
  * @file Toast.tsx
- * @desc A simple, beautiful toast notification component built without external libraries.
+ * @desc Animated toast notification component (no external libraries).
+ *       Uses only Animated.spring to avoid Easing conflicts with reanimated/plugin.
  * @layer components/common
  */
 
 import React, { useEffect, useRef } from 'react';
-import { Animated, Text, View, StyleSheet, Easing } from 'react-native';
+import { Animated, Text, View, StyleSheet } from 'react-native';
 import { COLORS, FONTS } from '@/styles/theme';
-import { CheckCircle, AlertCircle, Info, X } from 'lucide-react-native';
+import { CheckCircle, AlertCircle, Info } from 'lucide-react-native';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -20,66 +21,77 @@ interface ToastProps {
   duration?: number;
 }
 
-const CONFIGS = {
-  success: {
-    bg: '#F0FDF4',
-    border: '#22C55E',
-    icon: <CheckCircle size={20} color="#22C55E" />,
-    titleColor: '#166534',
-  },
-  error: {
-    bg: '#FFF1F2',
-    border: '#EF4444',
-    icon: <AlertCircle size={20} color="#EF4444" />,
-    titleColor: '#991B1B',
-  },
-  info: {
-    bg: '#EFF6FF',
-    border: COLORS.primary,
-    icon: <Info size={20} color={COLORS.primary} />,
-    titleColor: COLORS.primary,
-  },
+/* Static config to avoid JSX inside data being treated as worklets */
+const CONFIGS: Record<ToastType, { bg: string; border: string; titleColor: string; iconType: ToastType }> = {
+  success: { bg: '#F0FDF4', border: '#22C55E', titleColor: '#166534', iconType: 'success' },
+  error:   { bg: '#FFF1F2', border: '#EF4444', titleColor: '#991B1B', iconType: 'error'   },
+  info:    { bg: '#EFF6FF', border: COLORS.primary, titleColor: COLORS.primary, iconType: 'info' },
 };
 
-const Toast = ({ visible, type = 'success', title, message, onHide, duration = 3000 }: ToastProps) => {
-  const translateY = useRef(new Animated.Value(-100)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+/* Separate icon component to avoid JSX in config object */
+const ToastIcon = ({ type }: { type: ToastType }) => {
+  if (type === 'success') return <CheckCircle size={20} color="#22C55E" />;
+  if (type === 'error')   return <AlertCircle size={20} color="#EF4444" />;
+  return <Info size={20} color={COLORS.primary} />;
+};
+
+const Toast = ({
+  visible,
+  type = 'success',
+  title,
+  message,
+  onHide,
+  duration = 3000,
+}: ToastProps) => {
+  const translateY = useRef(new Animated.Value(-120)).current;
+  const opacity    = useRef(new Animated.Value(0)).current;
+  const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (visible) {
+      /* Clear any pending hide timer */
+      if (timerRef.current) clearTimeout(timerRef.current);
+
+      /* Slide in */
       Animated.parallel([
         Animated.spring(translateY, {
           toValue: 0,
           useNativeDriver: true,
-          tension: 80,
-          friction: 10,
+          tension: 70,
+          friction: 12,
         }),
-        Animated.timing(opacity, {
+        Animated.spring(opacity, {
           toValue: 1,
-          duration: 200,
           useNativeDriver: true,
+          tension: 70,
+          friction: 12,
         }),
       ]).start();
 
-      const timer = setTimeout(() => {
-        hide();
+      /* Auto-hide after duration */
+      timerRef.current = setTimeout(() => {
+        slideOut();
       }, duration);
-      return () => clearTimeout(timer);
     }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [visible]);
 
-  const hide = () => {
+  const slideOut = () => {
     Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: -100,
-        duration: 250,
-        easing: Easing.in(Easing.quad),
+      Animated.spring(translateY, {
+        toValue: -120,
         useNativeDriver: true,
+        tension: 100,
+        friction: 8,
       }),
-      Animated.timing(opacity, {
+      Animated.spring(opacity, {
         toValue: 0,
-        duration: 250,
         useNativeDriver: true,
+        tension: 100,
+        friction: 8,
       }),
     ]).start(() => onHide());
   };
@@ -100,10 +112,18 @@ const Toast = ({ visible, type = 'success', title, message, onHide, duration = 3
         },
       ]}
     >
-      <View style={s.icon}>{cfg.icon}</View>
+      <View style={s.iconWrap}>
+        <ToastIcon type={type} />
+      </View>
       <View style={s.textGroup}>
-        <Text style={[s.title, { color: cfg.titleColor }]}>{title}</Text>
-        {message ? <Text style={s.message} numberOfLines={2}>{message}</Text> : null}
+        <Text style={[s.title, { color: cfg.titleColor }]} numberOfLines={2}>
+          {title}
+        </Text>
+        {!!message && (
+          <Text style={s.message} numberOfLines={2}>
+            {message}
+          </Text>
+        )}
       </View>
     </Animated.View>
   );
@@ -112,24 +132,25 @@ const Toast = ({ visible, type = 'success', title, message, onHide, duration = 3
 const s = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 55,
+    top: 60,
     left: 16,
     right: 16,
     zIndex: 9999,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: 14,
     borderLeftWidth: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 10,
+    elevation: 12,
   },
-  icon: { marginRight: 12 },
+  iconWrap:  { marginRight: 12 },
   textGroup: { flex: 1 },
-  title: { fontFamily: FONTS.semiBold, fontSize: 14 },
+  title:   { fontFamily: FONTS.semiBold, fontSize: 14, lineHeight: 20 },
   message: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
 });
 

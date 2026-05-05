@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { Plus, Star, Package } from 'lucide-react-native';
 import { COLORS, FONTS } from '@/styles/theme';
+import { formatCurrency } from '@/utils';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - 48 - 16) / 2;
@@ -67,7 +68,7 @@ export const ProductQuickCard = ({
           {description || 'Sản phẩm tuyệt hảo từ Chips'}
         </Text>
         <Text style={styles.price}>
-          {new Intl.NumberFormat('vi-VN').format(price)}đ
+          {formatCurrency(price)}
         </Text>
       </View>
     </TouchableOpacity>

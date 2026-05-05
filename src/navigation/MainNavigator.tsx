@@ -19,25 +19,14 @@ import AccountScreen from '@/pages/account/AccountScreen';
 
 const Tab = createBottomTabNavigator();
 
-/** Icon tab có animation scale khi active */
-const AnimatedTabIcon = ({
+const TabIcon = ({
   icon: Icon,
   color,
-  focused,
 }: {
   icon: any;
   color: string;
-  focused: boolean;
 }) => {
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(focused ? 1.2 : 1, { damping: 12, stiffness: 120 }) }],
-  }));
-
-  return (
-    <Animated.View style={animatedStyle}>
-      <Icon size={24} color={color} />
-    </Animated.View>
-  );
+  return <Icon size={24} color={color} />;
 };
 
 const MainNavigator = () => {
@@ -74,8 +63,8 @@ const MainNavigator = () => {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Trang chủ',
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon icon={Home} color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon icon={Home} color={color} />
           ),
         }}
       />
@@ -84,8 +73,8 @@ const MainNavigator = () => {
         component={MenuScreen}
         options={{
           tabBarLabel: t('menu.title'),
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon icon={Coffee} color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon icon={Coffee} color={color} />
           ),
         }}
       />
@@ -94,8 +83,8 @@ const MainNavigator = () => {
         component={OrderScreen}
         options={{
           tabBarLabel: t('orders.title'),
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon icon={ClipboardList} color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon icon={ClipboardList} color={color} />
           ),
         }}
       />
@@ -104,8 +93,8 @@ const MainNavigator = () => {
         component={AccountScreen}
         options={{
           tabBarLabel: t('account.title'),
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon icon={User} color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon icon={User} color={color} />
           ),
         }}
       />

@@ -9,7 +9,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
 import { APP_CONFIG } from "@/constants/Config";
-import { getStoredToken } from "@/context/AuthContext";
+// Removed AuthContext import to break require cycle
 
 const axiosClient = axios.create({
   baseURL: APP_CONFIG.apiUrl,
@@ -22,7 +22,7 @@ const axiosClient = axios.create({
 // LOG REQUEST & Gắn Token
 axiosClient.interceptors.request.use(
   async (config) => {
-    const token = await getStoredToken();
+    const token = await AsyncStorage.getItem("@token");
     const isPublic = config.url?.startsWith("/public/");
     if (token && !isPublic) {
       config.headers.Authorization = `Bearer ${token}`;

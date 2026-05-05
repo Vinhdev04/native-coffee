@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   SafeAreaView, StatusBar, SectionList, Image,
-  TextInput, Dimensions, ActivityIndicator,
-  FlatList, RefreshControl, ScrollView, Platform,
+  TextInput, ActivityIndicator,
+  FlatList, RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
@@ -12,10 +12,9 @@ import { fetchCategories, fetchProducts } from '@/services/productService';
 import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useTranslation } from 'react-i18next';
 import Toast from '@/components/common/Toast';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+
 
 /* ── Fallback images by drink type ── */
 const DRINK_FALLBACKS = [
@@ -116,7 +115,6 @@ const sh = StyleSheet.create({
 /* ═══════════════════════════════════════════════════════ */
 
 const MenuScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const { totalItems, addToCart } = useCart();
 
