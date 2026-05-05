@@ -182,29 +182,32 @@ const MenuScreen = () => {
 
   return (
     <SafeAreaView style={s.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
       <Toast visible={toast.visible} type="success" title={toast.title} message={toast.message} onHide={() => setToast(t => ({ ...t, visible: false }))} />
 
       <View style={s.header}>
-        <Text style={s.headerTitle}>Thực đơn</Text>
+        <View>
+          <Text style={s.headerTitle}>Thực đơn</Text>
+          <Text style={s.headerSub}>{allProducts.length} món</Text>
+        </View>
         <TouchableOpacity style={s.cartBtn} onPress={() => navigation.navigate('Cart')}>
-          <ShoppingBag size={20} color={COLORS.textPrimary} />
+          <ShoppingBag size={20} color="#fff" />
           {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText}>{totalItems}</Text></View>}
         </TouchableOpacity>
       </View>
 
       <View style={s.searchRow}>
         <View style={s.searchInputWrap}>
-          <Search size={17} color={COLORS.textMuted} />
+          <Search size={17} color="#9CA3AF" />
           <TextInput
             style={s.searchInput}
             value={searchText}
             onChangeText={setSearchText}
             placeholder="Tìm kiếm đồ uống..."
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor="#9CA3AF"
           />
           {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchText('')}><X size={16} color={COLORS.textMuted} /></TouchableOpacity>
+            <TouchableOpacity onPress={() => setSearchText('')}><X size={16} color="#9CA3AF" /></TouchableOpacity>
           )}
         </View>
       </View>
@@ -246,24 +249,34 @@ const MenuScreen = () => {
 };
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
+  container: { flex: 1, backgroundColor: '#F5F5F8' },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   loadingText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textMuted },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 10, paddingTop: Platform.OS === 'ios' ? 10 : (StatusBar.currentHeight || 0) + 10, backgroundColor: COLORS.white },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 26, color: '#111827' },
-  cartBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-  badge: { position: 'absolute', top: 2, right: 2, backgroundColor: '#F97316', borderRadius: 10, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: COLORS.white },
-  badgeText: { fontFamily: FONTS.bold, fontSize: 9, color: COLORS.white },
-  searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, paddingHorizontal: 16, paddingTop: 6, paddingBottom: 16 },
-  searchInputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F3F4F6', borderRadius: 16, paddingHorizontal: 16, height: 48 },
-  searchInput: { flex: 1, fontFamily: FONTS.medium, fontSize: 15, color: '#111827' },
-  catBar: { backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: '#EBEBEB' },
+
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingBottom: 14,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
+    backgroundColor: '#1A1A2E',
+  },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 24, color: '#fff' },
+  headerSub: { fontFamily: FONTS.regular, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+  cartBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  badge: { position: 'absolute', top: -2, right: -2, backgroundColor: COLORS.primary, borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#1A1A2E' },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 9, color: '#fff' },
+
+  searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 14 },
+  searchInputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 14, height: 46 },
+  searchInput: { flex: 1, fontFamily: FONTS.medium, fontSize: 14, color: '#374151' },
+
+  catBar: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   catScroll: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
-  catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, backgroundColor: COLORS.white, borderWidth: 1, borderColor: '#E5E7EB' },
+  catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1.5, borderColor: 'transparent' },
   catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   catIcon: { width: 18, height: 18, borderRadius: 9 },
   catText: { fontFamily: FONTS.semiBold, fontSize: 13, color: '#6B7280' },
-  catTextActive: { color: COLORS.white },
+  catTextActive: { color: '#fff' },
+
   emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10, paddingBottom: 80 },
   emptyTitle: { fontFamily: FONTS.semiBold, fontSize: 16, color: COLORS.textSecondary },
 });

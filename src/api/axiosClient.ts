@@ -77,19 +77,31 @@ axiosClient.interceptors.response.use(
     return res;
   },
   (error) => {
+    const url = error.config?.url || '';
+    const isNetworkError = !error.response; // Không có response = network/server down
+    const isBackgroundCheck = url.includes('/auth/me');
+
     console.error(
-      "❌ [API Response Error]",
+      '❌ [API Response Error]',
       error.response?.data || error.message,
     );
+
+    // Không show toast cho background auth check khi server không kết nối được
+    if (isBackgroundCheck && isNetworkError) {
+      return Promise.reject(error);
+    }
+
     const message =
       error.response?.data?.error_cont ||
-      error.message ||
-      "Kết nối máy chủ thất bại";
+      (isNetworkError ? 'Không kết nối được máy chủ. Vui lòng kiểm tra mạng.' : error.message) ||
+      'Kết nối máy chủ thất bại';
+
     Toast.show({
-      type: "error",
-      text1: "Lỗi kết nối",
+      type: 'error',
+      text1: isNetworkError ? '📡 Mất kết nối' : 'Lỗi kết nối',
       text2: message,
-      position: "bottom",
+      position: 'bottom',
+      visibilityTime: 3000,
     });
     return Promise.reject(error);
   },

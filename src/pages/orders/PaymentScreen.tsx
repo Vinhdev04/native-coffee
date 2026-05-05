@@ -128,7 +128,7 @@ const PaymentScreen = () => {
             setVnpayOpened(false);
 
             setPaymentDone(true);
-            speakPaymentSuccess(paidAmount, customerName).catch(console.error);
+            speakPaymentSuccess(paidAmount, customerName);
             
             Toast.show({
               type: 'success',
@@ -172,7 +172,7 @@ const PaymentScreen = () => {
             setVnpayOpened(false);
             
             setPaymentDone(true);
-            speakPaymentSuccess(paidAmount, customerName).catch(console.error);
+            speakPaymentSuccess(paidAmount, customerName);
 
             Toast.show({
               type: 'success', text1: '🎉 Thanh toán VNPay thành công!',
@@ -209,14 +209,13 @@ const PaymentScreen = () => {
       const res = await payCash(orderId, cashReceived);
       console.log(`✅ [PaymentScreen] payCash full response:`, JSON.stringify(res, null, 2));
 
-      // ✅ FIX: Dùng res_code === 0 làm tiêu chí chính
-      // vì một số trường hợp API không trả về data.isSuccess
+      // ✅ Thành công khi: res_code=0 VÀ có paymentId trong data
       const resCode = (res as any)?.res_code;
       const data    = (res as any)?.data;
-      const isSuccess = resCode === 0 || data?.isSuccess === true;
+      const isSuccess = resCode === 0 && (data?.paymentId != null || data?.isSuccess === true);
       const apiAmount  = parseFloat(data?.amount || String(cashReceived));
 
-      console.log(`💵 [PaymentScreen] resCode=${resCode}, isSuccess=${isSuccess}, apiAmount=${apiAmount}`);
+      console.log(`💵 [PaymentScreen] resCode=${resCode}, isSuccess=${isSuccess}, paymentId=${data?.paymentId}, apiAmount=${apiAmount}`);
 
       if (!isSuccess) {
         const errMsg = (res as any)?.error_cont || data?.message || 'Thanh toán không thành công.';
@@ -229,7 +228,7 @@ const PaymentScreen = () => {
       setOrderAlreadyPaid(true);
       setPaymentDone(true);
       
-      speakPaymentSuccess(Number(totalAmount), customerName).catch(console.error);
+      speakPaymentSuccess(Number(totalAmount), customerName);
       
       Toast.show({
         type: 'success', text1: '🎉 Thanh toán thành công!',
@@ -500,7 +499,7 @@ const PaymentScreen = () => {
                   setVnpayUrl(null);
                   setVnpayOpened(false);
 
-                  speakPaymentSuccess(paidAmount, customerName).catch(console.error);
+                  speakPaymentSuccess(paidAmount, customerName);
 
                   Toast.show({
                     type: 'success',
