@@ -10,6 +10,7 @@ import { COLORS, FONTS } from '@/styles/theme';
 import Toast from '@/components/common/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { changePasswordApi } from '@/services/authService';
+import { encryptWithRSA } from '@/utils/encryption';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 
@@ -40,10 +41,23 @@ const ChangePasswordScreen = () => {
   const handleSubmit = async (values: any, { resetForm }: any) => {
     try {
       setLoading(true);
+      
+      let encryptedOld = values.oldPassword;
+      let encryptedNew = values.newPassword;
+      let encryptedConfirm = values.confirmPassword;
+      
+      try {
+        encryptedOld = await encryptWithRSA(values.oldPassword);
+        encryptedNew = await encryptWithRSA(values.newPassword);
+        encryptedConfirm = await encryptWithRSA(values.confirmPassword);
+      } catch (err) {
+        console.warn('RSA encryption failed', err);
+      }
+
       const response: any = await changePasswordApi({
-        oldPassword: values.oldPassword,
-        newPassword: values.newPassword,
-        confirmPassword: values.confirmPassword,
+        oldPassword: encryptedOld,
+        newPassword: encryptedNew,
+        confirmPassword: encryptedConfirm,
       });
 
       if (response && (response.res_code === 0 || response.status === 200)) {
