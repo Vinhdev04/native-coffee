@@ -3,10 +3,11 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   SafeAreaView, StatusBar, ScrollView, Image, FlatList,
   Dimensions, Animated, ActivityIndicator, Platform,
+  TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
-import { MapPin, ChevronDown, Bell, Heart, Search, Plus, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
+import { MapPin, ChevronDown, Bell, Heart, Search, X, Plus, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
 import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
@@ -128,6 +129,7 @@ const HomeScreen = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [banner, setBanner] = useState(0);
+  const [searchText, setSearchText] = useState('');
   const [toast, setToast] = useState({ visible: false, title: '', msg: '' });
 
   const bannerRef = useRef<ScrollView>(null);
@@ -199,6 +201,10 @@ const HomeScreen = () => {
     if (loading) return;
     loadProducts();
   }, [activeCat]);
+
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   const handleAdd = (item: any) => {
     addToCart(item);
@@ -303,10 +309,23 @@ const HomeScreen = () => {
             </TouchableOpacity>
           </View>
         </View>
-        <TouchableOpacity style={s.search} onPress={() => navigation.navigate('MenuTab')}>
+        <View style={s.search}>
           <Search size={16} color={COLORS.textMuted} />
-          <Text style={s.searchText}>Tìm kiếm thức uống...</Text>
-        </TouchableOpacity>
+          <TextInput 
+            style={s.searchText}
+            placeholder="Tìm kiếm thức uống..."
+            placeholderTextColor={COLORS.textMuted}
+            value={searchText}
+            onChangeText={setSearchText}
+            returnKeyType="search"
+            onSubmitEditing={() => navigation.navigate('MenuTab', { search: searchText })}
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchText('')}>
+              <X size={16} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* ── Sticky Categories (Horizontal Scroll) ── */}
@@ -322,7 +341,7 @@ const HomeScreen = () => {
       </View>
 
       <FlatList
-        data={products}
+        data={filteredProducts}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={{ paddingHorizontal: 16 }}>

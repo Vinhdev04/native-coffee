@@ -22,29 +22,24 @@ import CartScreen    from '@/pages/cart/CartScreen'; // Add CartScreen
 const Tab = createBottomTabNavigator();
 
 const TabIcon = ({ focused, icon: Icon, label, badgeCount }: { focused: boolean, icon: any, label: string, badgeCount?: number }) => {
-  if (focused) {
-    return (
-      <View style={s.activeTabPill}>
-        <Icon size={20} color={COLORS.white} strokeWidth={2.5} />
-        <Text style={s.activeTabText}>{label}</Text>
-      </View>
-    );
-  }
-
+  const color = focused ? '#F97316' : '#9CA3AF';
   return (
-    <View style={s.inactiveTabIcon}>
-      <Icon size={24} color="#9CA3AF" strokeWidth={1.5} />
-      {badgeCount !== undefined && badgeCount > 0 && (
-        <View style={s.badge}>
-          <Text style={s.badgeText}>{badgeCount}</Text>
-        </View>
-      )}
+    <View style={[s.tabItem, focused && s.tabItemActive]}>
+      {focused && <View style={s.topIndicator} />}
+      <View style={[s.iconWrap, focused && s.iconWrapActive]}>
+        <Icon size={20} color={color} strokeWidth={focused ? 2.5 : 1.5} />
+        {badgeCount !== undefined && badgeCount > 0 && (
+          <View style={s.badge}>
+            <Text style={s.badgeText}>{badgeCount}</Text>
+          </View>
+        )}
+      </View>
+      <Text style={[s.tabLabel, focused && s.tabLabelActive]} numberOfLines={1}>{label}</Text>
     </View>
   );
 };
 
 const MainNavigator = () => {
-  const { t } = useTranslation();
   const { totalItems } = useCart();
 
   return (
@@ -59,27 +54,14 @@ const MainNavigator = () => {
         name="HomeTab"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Home} label="Sảnh" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Home} label="Trang chủ" />,
         }}
       />
       <Tab.Screen
         name="MenuTab"
         component={MenuScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Menu} label="Thực đơn" />,
-        }}
-      />
-      <Tab.Screen
-        name="CartTab"
-        component={CartScreen}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('Cart');
-          },
-        })}
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label="Giỏ hàng" badgeCount={totalItems} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label="Đặt hàng" />,
         }}
       />
       <Tab.Screen
@@ -102,59 +84,74 @@ const MainNavigator = () => {
 
 const s = StyleSheet.create({
   tabBar: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 30 : 20,
-    left: 16,
-    right: 16,
-    backgroundColor: 'rgba(28, 21, 16, 0.96)', // Slightly translucent dark capsule
-    borderRadius: 40,
-    height: 64,
-    borderTopWidth: 0,
-    elevation: 10,
+    backgroundColor: COLORS.white,
+    height: Platform.OS === 'ios' ? 88 : 68,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    elevation: 0,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    paddingHorizontal: 8,
-    paddingBottom: 0,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    paddingBottom: Platform.OS === 'ios' ? 25 : 8,
+    paddingTop: 0,
   },
-  activeTabPill: {
-    flexDirection: 'row',
+  tabItem: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    gap: 8,
+    justifyContent: 'center',
+    height: '100%',
+    paddingHorizontal: 2,
   },
-  activeTabText: {
-    color: COLORS.white,
-    fontFamily: FONTS.bold,
-    fontSize: 14,
+  tabItemActive: {},
+  topIndicator: {
+    position: 'absolute',
+    top: -1,
+    width: 32,
+    height: 3,
+    backgroundColor: '#F97316',
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
   },
-  inactiveTabIcon: {
+  iconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
-    width: 48,
-    height: 48,
+    marginBottom: 1,
+  },
+  iconWrapActive: {
+    backgroundColor: '#FFF7ED',
+  },
+  tabLabel: {
+    fontSize: 10,
+    fontFamily: FONTS.medium,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    width: '100%',
+  },
+  tabLabelActive: {
+    color: '#F97316',
+    fontFamily: FONTS.bold,
   },
   badge: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    backgroundColor: COLORS.primary,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: 0,
+    right: 0,
+    backgroundColor: '#F97316',
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#1E140A',
+    borderWidth: 1,
+    borderColor: COLORS.white,
   },
   badgeText: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
-    fontSize: 9,
+    fontSize: 7,
   }
 });
 

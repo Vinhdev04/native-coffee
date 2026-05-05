@@ -4,6 +4,7 @@ import {
   TouchableOpacity, Image, SafeAreaView, ActivityIndicator,
   Platform, StatusBar
 } from 'react-native';
+import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import { useCart } from '@/context/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS, BORDER_RADIUS } from '@/styles/theme';
@@ -53,99 +54,117 @@ const CartScreen = () => {
     }
   };
 
+  const renderRightActions = (progress: any, dragX: any, cartId: string) => {
+    return (
+      <TouchableOpacity 
+        style={s.deleteAction} 
+        onPress={() => removeItem(cartId)}
+        activeOpacity={0.7}
+      >
+        <Trash2 size={24} color={COLORS.white} />
+      </TouchableOpacity>
+    );
+  };
+
   const renderItem = ({ item }: { item: any }) => (
-    <View style={s.cartItem}>
-      <Image 
-        source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
-        style={s.image} 
-      />
-      <View style={s.itemInfo}>
-        <View style={s.titleRow}>
-          <Text style={s.itemName} numberOfLines={1}>{item.name}</Text>
-          <TouchableOpacity style={s.deleteBtn} onPress={() => removeItem(item.cartId)}>
-            <Trash2 size={18} color="#9CA3AF" />
-          </TouchableOpacity>
-        </View>
-        <Text style={s.itemOptions} numberOfLines={2}>
-          {[
-            item.selectedAttributes?.map((a: any) => a.name).join(' • '),
-            item.note ? `Ghi chú: ${item.note}` : null
-          ].filter(Boolean).join(' • ') || 'Không có tùy chọn'}
-        </Text>
-        <View style={s.priceQtyRow}>
-          <Text style={s.itemPrice}>{formatCurrency(item.totalPrice || item.price)}</Text>
-          <View style={s.quantityControl}>
-            <TouchableOpacity 
-              style={s.qtyBtn} 
-              onPress={() => updateQuantity(item.cartId, Math.max(0, item.quantity - 1))}
-            >
-              <Minus size={14} color={COLORS.textPrimary} />
-            </TouchableOpacity>
-            <Text style={s.qtyText}>{item.quantity}</Text>
-            <TouchableOpacity 
-              style={s.qtyBtn} 
-              onPress={() => updateQuantity(item.cartId, item.quantity + 1)}
-            >
-              <Plus size={14} color={COLORS.textPrimary} />
-            </TouchableOpacity>
+    <Swipeable
+      renderRightActions={(p, d) => renderRightActions(p, d, item.cartId)}
+      friction={2}
+      rightThreshold={40}
+    >
+      <View style={s.cartItem}>
+        <Image 
+          source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
+          style={s.image} 
+        />
+        <View style={s.itemInfo}>
+          <View style={s.titleRow}>
+            <Text style={s.itemName} numberOfLines={1}>{item.name}</Text>
+          </View>
+          <Text style={s.itemOptions} numberOfLines={2}>
+            {[
+              item.selectedAttributes?.map((a: any) => a.name).join(' • '),
+              item.note ? `Ghi chú: ${item.note}` : null
+            ].filter(Boolean).join(' • ') || 'Không có tùy chọn'}
+          </Text>
+          <View style={s.priceQtyRow}>
+            <Text style={s.itemPrice}>{formatCurrency(item.totalPrice || item.price)}</Text>
+            <View style={s.quantityControl}>
+              <TouchableOpacity 
+                style={s.qtyBtn} 
+                onPress={() => updateQuantity(item.cartId, Math.max(0, item.quantity - 1))}
+              >
+                <Minus size={14} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+              <Text style={s.qtyText}>{item.quantity}</Text>
+              <TouchableOpacity 
+                style={s.qtyBtn} 
+                onPress={() => updateQuantity(item.cartId, item.quantity + 1)}
+              >
+                <Plus size={14} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
-    </View>
+    </Swipeable>
   );
 
   return (
-    <SafeAreaView style={s.container}>
-      <View style={s.header}>
-        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <ChevronLeft size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Giỏ hàng</Text>
-        <TouchableOpacity onPress={clearCart}>
-          <Text style={s.clearText}>Xóa hết</Text>
-        </TouchableOpacity>
-      </View>
-
-      {items.length > 0 ? (
-        <>
-          <FlatList
-            data={items}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.cartId}
-            contentContainerStyle={s.listContent}
-          />
-          <View style={s.footer}>
-            <View style={s.totalRow}>
-              <Text style={s.totalLabel}>Tổng cộng</Text>
-              <Text style={s.totalValue}>{formatCurrency(totalPrice)}</Text>
-            </View>
-            <TouchableOpacity 
-              style={[s.checkoutBtn, isCheckingOut && { opacity: 0.7 }]} 
-              onPress={handleCheckout}
-              disabled={isCheckingOut}
-            >
-              {isCheckingOut ? (
-                <ActivityIndicator color={COLORS.white} />
-              ) : (
-                <Text style={s.checkoutText}>Thanh toán ngay</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </>
-      ) : (
-        <View style={s.emptyContainer}>
-          <ShoppingBag size={80} color={COLORS.borderLight} />
-          <Text style={s.emptyTitle}>Giỏ hàng trống</Text>
-          <Text style={s.emptySubtitle}>Hãy chọn những món cà phê thơm ngon nhất nhé!</Text>
-          <TouchableOpacity 
-            style={s.shopBtn} 
-            onPress={() => navigation.navigate('Main')}
-          >
-            <Text style={s.shopBtnText}>Quay lại thực đơn</Text>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={s.container}>
+        <View style={s.header}>
+          <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+            <ChevronLeft size={24} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={s.headerTitle}>Giỏ hàng</Text>
+          <TouchableOpacity onPress={clearCart}>
+            <Text style={s.clearText}>Xóa hết</Text>
           </TouchableOpacity>
         </View>
-      )}
-    </SafeAreaView>
+
+        {items.length > 0 ? (
+          <>
+            <FlatList
+              data={items}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.cartId}
+              contentContainerStyle={s.listContent}
+              showsVerticalScrollIndicator={false}
+            />
+            <View style={s.footer}>
+              <View style={s.totalRow}>
+                <Text style={s.totalLabel}>Tổng cộng</Text>
+                <Text style={s.totalValue}>{formatCurrency(totalPrice)}</Text>
+              </View>
+              <TouchableOpacity 
+                style={[s.checkoutBtn, isCheckingOut && { opacity: 0.7 }]} 
+                onPress={handleCheckout}
+                disabled={isCheckingOut}
+              >
+                {isCheckingOut ? (
+                  <ActivityIndicator color={COLORS.white} />
+                ) : (
+                  <Text style={s.checkoutText}>Thanh toán ngay</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <View style={s.emptyContainer}>
+            <ShoppingBag size={80} color={COLORS.borderLight} />
+            <Text style={s.emptyTitle}>Giỏ hàng trống</Text>
+            <Text style={s.emptySubtitle}>Hãy chọn những món cà phê thơm ngon nhất nhé!</Text>
+            <TouchableOpacity 
+              style={s.shopBtn} 
+              onPress={() => navigation.navigate('Main')}
+            >
+              <Text style={s.shopBtnText}>Quay lại thực đơn</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
 
@@ -174,7 +193,16 @@ const s = StyleSheet.create({
   itemInfo: { flex: 1, marginLeft: 14, justifyContent: 'space-between' },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   itemName: { flex: 1, fontFamily: FONTS.bold, fontSize: 15, color: '#111827', marginRight: 8 },
-  deleteBtn: { padding: 2 },
+  deleteAction: {
+    backgroundColor: COLORS.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: 110, // Match item height approx
+    borderRadius: 16,
+    marginBottom: 16,
+    marginLeft: 10,
+  },
   itemOptions: { fontFamily: FONTS.regular, fontSize: 12, color: '#6B7280', marginTop: 4, marginBottom: 8 },
   priceQtyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   itemPrice: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
