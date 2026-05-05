@@ -1,52 +1,109 @@
 /**
  * @file orderService.ts
- * @desc Service quản lý đơn hàng — cung cấp các hàm gọi API để tạo đơn,
- *       lấy lịch sử đơn hàng và cập nhật trạng thái đơn.
+ * @desc Service quản lý đơn hàng — tạo đơn (đúng payload API), lấy danh sách,
+ *       chi tiết, cập nhật trạng thái, fetch ca làm việc hiện tại.
  * @layer services
  */
 
 import axiosClient from '@/api/axiosClient';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface CreateOrderItem {
+  productId: number | string;
+  selectedProductAttributeIds: number[];
+  qty: number;
+  note?: string;
+}
+
+export interface CreateOrderPayload {
+  branchId: number;
+  shiftSessionId: number;
+  customerName?: string;
+  customerPhone?: string;
+  note?: string;
+  items: CreateOrderItem[];
+}
+
+// ─── Shift Session ────────────────────────────────────────────────────────────
+
+/**
+ * Lấy ca bán hàng đang mở cho branchId
+ * GET /shift-sessions?branchId={branchId}&status=OPEN
+ */
+export const fetchActiveShiftSession = async (branchId = 1) => {
+  console.log(`🕐 [OrderService] fetchActiveShiftSession → branchId=${branchId}`);
+  const response = await axiosClient.get('/shift-sessions', {
+    params: { branchId, status: 'OPEN', limit: 1 },
+  });
+  console.log('🕐 [OrderService] shiftSessions response:', response);
+  return response;
+};
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
 /**
  * Tạo đơn hàng mới
+ * POST /orders  (idempotency-key tự sinh để tránh duplicate)
  */
-export const createOrder = async (payload: {
-  items: {
-    productId: string;
-    quantity:  number;
-    size:      string;
-    sweetness: string;
-    toppings:  string[];
-    note?:     string;
-  }[];
-  note?: string;
-}) => {
-  const response = await axiosClient.post('/orders', payload);
-  return response;
-};
+export const createOrder = async (payload: CreateOrderPayload) => {
+  const idempotencyKey = `order-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  console.log(`📦 [OrderService] createOrder payload:`, JSON.stringify(payload, null, 2));
+  console.log(`🔑 [OrderService] idempotency-key: ${idempotencyKey}`);
 
-/**
- * Lấy danh sách đơn hàng của user
- */
-export const fetchOrders = async (params?: { page?: number; limit?: number; status?: string; branchId?: number }) => {
-  const response = await axiosClient.get('/orders', { 
-    params: { branchId: 1, ...params } 
+  const response = await axiosClient.post('/orders', payload, {
+    headers: { 'idempotency-key': idempotencyKey },
   });
+  console.log(`📦 [OrderService] createOrder response:`, response);
   return response;
 };
 
 /**
- * Lấy chi tiết đơn hàng
+ * Lấy danh sách đơn hàng
+ * GET /orders?branchId=1&limit=50
  */
-export const fetchOrderById = async (id: string) => {
+export const fetchOrders = async (params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  branchId?: number;
+  keySearch?: string;
+}) => {
+  const finalParams = { branchId: 1, limit: 50, ...params };
+  console.log(`📋 [OrderService] fetchOrders params:`, finalParams);
+  const response = await axiosClient.get('/orders', { params: finalParams });
+  console.log(`📋 [OrderService] fetchOrders → total:`, (response as any)?.data?.total ?? 'N/A');
+  return response;
+};
+
+/**
+ * Lấy chi tiết đơn hàng (kèm items và logs)
+ * GET /orders/{id}
+ */
+export const fetchOrderById = async (id: number | string) => {
+  console.log(`🔍 [OrderService] fetchOrderById → id=${id}`);
   const response = await axiosClient.get(`/orders/${id}`);
+  console.log(`🔍 [OrderService] fetchOrderById response:`, response);
   return response;
 };
 
 /**
- * Hủy đơn hàng
+ * Cập nhật trạng thái đơn hàng
+ * PUT /orders/{id}/status  body: { orderStatus: "PAID" | "PENDING_PAYMENT" | "COMPLETED" | "CANCELLED" }
  */
-export const cancelOrder = async (id: string) => {
-  const response = await axiosClient.patch(`/orders/${id}/cancel`);
+export const updateOrderStatus = async (
+  id: number | string,
+  orderStatus: 'PENDING_PAYMENT' | 'PAID' | 'COMPLETED' | 'CANCELLED',
+) => {
+  console.log(`🔄 [OrderService] updateOrderStatus → id=${id}, orderStatus=${orderStatus}`);
+  const response = await axiosClient.put(`/orders/${id}/status`, { orderStatus });
+  console.log(`🔄 [OrderService] updateOrderStatus response:`, response);
   return response;
+};
+
+/**
+ * Hủy đơn hàng (set status CANCELLED)
+ */
+export const cancelOrder = async (id: number | string) => {
+  return updateOrderStatus(id, 'CANCELLED');
 };
