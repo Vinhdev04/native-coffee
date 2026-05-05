@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   SafeAreaView, StatusBar, ScrollView, Image, FlatList,
-  Dimensions, Animated,
+  Dimensions, Animated, ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
-import { MapPin, ChevronDown, Bell, Heart, Search, Plus, ShoppingBag } from 'lucide-react-native';
+import { MapPin, ChevronDown, Bell, Heart, Search, Plus, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
 import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
@@ -66,10 +66,11 @@ const MiniProductCard = ({
     />
     <View style={mp.info}>
       <Text style={mp.name} numberOfLines={1}>{item.name}</Text>
+      <Text style={mp.cat} numberOfLines={1}>{item.categoryName || 'Sản phẩm'}</Text>
       <Text style={mp.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
     </View>
     <TouchableOpacity style={mp.addBtn} onPress={onAdd}>
-      <Plus size={14} color={COLORS.white} />
+      <Plus size={18} color={COLORS.white} />
     </TouchableOpacity>
   </TouchableOpacity>
 );
@@ -79,27 +80,37 @@ const mp = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 8,
+    borderRadius: 18,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: '#F8F8F8',
   },
   image: {
-    width: 54,
-    height: 54,
-    borderRadius: 10,
-    backgroundColor: '#F5F5F5',
+    width: 80,
+    height: 80,
+    borderRadius: 14,
+    backgroundColor: '#F9FAFB',
     flexShrink: 0,
   },
-  info: { flex: 1, marginLeft: 10 },
-  name: { fontFamily: FONTS.semiBold, fontSize: 13, color: COLORS.textPrimary, marginBottom: 3 },
-  price: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.primary },
+  info: { flex: 1, marginLeft: 16, justifyContent: 'center' },
+  name: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.textPrimary, marginBottom: 2 },
+  cat: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted, marginBottom: 6 },
+  price: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
   addBtn: {
-    width: 28, height: 28, borderRadius: 14,
+    width: 36, height: 36, borderRadius: 18,
     backgroundColor: COLORS.primary,
     justifyContent: 'center', alignItems: 'center',
-    marginLeft: 8,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
 
@@ -110,15 +121,21 @@ const HomeScreen = () => {
   const { totalItems, addToCart } = useCart();
 
   const [categories, setCategories] = useState<any[]>([]);
-  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [activeCat, setActiveCat] = useState<number | 'all'>('all');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [banner, setBanner] = useState(0);
   const [toast, setToast] = useState({ visible: false, title: '', msg: '' });
 
   const bannerRef = useRef<ScrollView>(null);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadCategories();
+    loadProducts(1, true);
+  }, []);
 
   /* Auto-rotate banner */
   useEffect(() => {
@@ -128,38 +145,124 @@ const HomeScreen = () => {
         bannerRef.current?.scrollTo({ x: next * (SW - 32), animated: true });
         return next;
       });
-    }, 3500);
+    }, 4500);
     return () => clearInterval(t);
   }, []);
 
-  const loadData = async () => {
+  const loadCategories = async () => {
+    try {
+      const res = await fetchCategories({ branchId: 1 });
+      setCategories(res.data?.rows || res.data || []);
+    } catch (err) {
+      console.error('[HomeScreen] cat error:', err);
+    }
+  };
+
+  const loadProducts = async () => {
+    if (loadingMore) return;
+
     try {
       setLoading(true);
-      const [catRes, prodRes] = await Promise.all([
-        fetchCategories({ branchId: 1 }),
-        fetchProducts({ branchId: 1, limit: 50 }),
-      ]);
-      setCategories(catRes.data?.rows || catRes.data || []);
-      setAllProducts(prodRes.data?.rows || prodRes.data || []);
+
+      const res = await fetchProducts({
+        branchId: 1,
+        limit: 50,
+        categoryId: activeCat === 'all' ? undefined : activeCat,
+      });
+
+      const newItems = res.data?.rows || res.data || [];
+      // Remove duplicates just in case
+      const uniqueItems = newItems.reduce((acc: any[], current: any) => {
+        const x = acc.find(item => item.id === current.id);
+        if (!x) {
+          return acc.concat([current]);
+        } else {
+          return acc;
+        }
+      }, []);
+
+      setProducts(uniqueItems);
+      setHasMore(false); // API doesn't support pagination currently
     } catch (err) {
-      console.error('[HomeScreen] load error:', err);
+      console.error('[HomeScreen] prod error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  /* Filter products by active category */
-  const displayProducts = activeCat === 'all'
-    ? allProducts
-    : allProducts.filter((p) => p.categoryId === activeCat);
+  const handleCategoryChange = (catId: number | 'all') => {
+    setActiveCat(catId);
+    setProducts([]);
+  };
+
+  useEffect(() => {
+    if (loading) return;
+    loadProducts();
+  }, [activeCat]);
 
   const handleAdd = (item: any) => {
     addToCart(item);
     setToast({ visible: true, title: 'Đã thêm vào giỏ! 🎉', msg: item.name });
   };
 
-  /* Category chips */
-  const allCats = [{ id: 'all', name: 'Tất cả', imageUrl: null }, ...categories];
+  const renderCategory = ({ item }: { item: any }) => {
+    const isActive = item.id === activeCat || (item.id === 'all' && activeCat === 'all');
+    return (
+      <TouchableOpacity
+        style={[s.catChip, isActive && s.catChipActive]}
+        onPress={() => handleCategoryChange(item.id)}
+      >
+        {item.imageUrl ? (
+          <Image source={{ uri: item.imageUrl }} style={s.catIcon} />
+        ) : (
+          item.id === 'all' ? null : <CoffeeIcon size={16} color={isActive ? COLORS.white : COLORS.textSecondary} />
+        )}
+        <Text style={[s.catText, isActive && s.catTextActive]}>{item.name}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const allCategoryData = [{ id: 'all', name: 'Tất cả', imageUrl: null }, ...categories];
+
+  const renderHeader = () => (
+    <View>
+      {/* ── Banner Slider ── */}
+      <View style={s.bannerSection}>
+        <ScrollView
+          ref={bannerRef}
+          horizontal pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={s.bannerScroll}
+          onMomentumScrollEnd={(e) => {
+            setBanner(Math.round(e.nativeEvent.contentOffset.x / (SW - 32)));
+          }}
+        >
+          {BANNERS.map((b) => (
+            <View key={b.id} style={[s.bannerCard, { backgroundColor: b.bg }]}>
+              <View style={s.bannerText}>
+                <Text style={s.bannerTitle}>{b.title}</Text>
+                <Text style={s.bannerSub}>{b.subtitle}</Text>
+                <TouchableOpacity style={s.bannerBtn} onPress={() => navigation.navigate('MenuTab')}>
+                  <Text style={s.bannerBtnTxt}>Đặt ngay →</Text>
+                </TouchableOpacity>
+              </View>
+              <Image source={{ uri: b.image }} style={s.bannerImg} />
+            </View>
+          ))}
+        </ScrollView>
+        {/* Dots */}
+        <View style={s.dots}>
+          {BANNERS.map((_, i) => (
+            <View key={i} style={[s.dot, i === banner && s.dotActive]} />
+          ))}
+        </View>
+      </View>
+
+      <View style={[s.section, { marginBottom: 10 }]}>
+        <Text style={s.sectionTitle}>Đặt ngay tại quán</Text>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={s.safeArea}>
@@ -173,161 +276,76 @@ const HomeScreen = () => {
         onHide={() => setToast(t => ({ ...t, visible: false }))}
       />
 
-      <ScrollView style={s.container} showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
-
-        {/* ── Sticky Header ── */}
-        <View style={s.stickyHeader}>
-          <View style={s.headerRow}>
-            <View style={s.locationBox}>
-              <View style={s.locationDot}><MapPin size={12} color={COLORS.primary} /></View>
-              <View>
-                <Text style={s.locationLabel}>Bán tại quán</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                  <Text style={s.locationName}>Native Coffee</Text>
-                  <ChevronDown size={13} color={COLORS.textPrimary} />
-                </View>
+      {/* Sticky Header remains separate from FlatList for best performance */}
+      <View style={s.stickyHeader}>
+        <View style={s.headerRow}>
+          <View style={s.locationBox}>
+            <View style={s.locationDot}><MapPin size={12} color={COLORS.primary} /></View>
+            <View>
+              <Text style={s.locationLabel}>Bán tại quán</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                <Text style={s.locationName}>Native Coffee</Text>
+                <ChevronDown size={13} color={COLORS.textPrimary} />
               </View>
             </View>
-            <View style={s.headerRight}>
-              <TouchableOpacity style={s.iconBtn}>
-                <Bell size={17} color={COLORS.textPrimary} />
-              </TouchableOpacity>
-              <TouchableOpacity style={s.cartIconBtn} onPress={() => navigation.navigate('Cart')}>
-                <ShoppingBag size={17} color={COLORS.textPrimary} />
-                {totalItems > 0 && (
-                  <View style={s.cartBadge}>
-                    <Text style={s.cartBadgeText}>{totalItems}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
           </View>
-          {/* Search bar */}
-          <TouchableOpacity style={s.search} onPress={() => navigation.navigate('Menu')}>
-            <Search size={16} color={COLORS.textMuted} />
-            <Text style={s.searchText}>Tìm kiếm thức uống...</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Banner Slider ── */}
-        <View style={s.bannerSection}>
-          <ScrollView
-            ref={bannerRef}
-            horizontal pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            style={s.bannerScroll}
-            onMomentumScrollEnd={(e) => {
-              setBanner(Math.round(e.nativeEvent.contentOffset.x / (SW - 32)));
-            }}
-          >
-            {BANNERS.map((b) => (
-              <View key={b.id} style={[s.bannerCard, { backgroundColor: b.bg }]}>
-                <View style={s.bannerText}>
-                  <Text style={s.bannerTitle}>{b.title}</Text>
-                  <Text style={s.bannerSub}>{b.subtitle}</Text>
-                  <TouchableOpacity style={s.bannerBtn} onPress={() => navigation.navigate('Menu')}>
-                    <Text style={s.bannerBtnTxt}>Đặt ngay →</Text>
-                  </TouchableOpacity>
+          <View style={s.headerRight}>
+            <TouchableOpacity style={s.iconBtn}>
+              <Bell size={17} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={s.cartIconBtn} onPress={() => navigation.navigate('Cart')}>
+              <ShoppingBag size={17} color={COLORS.textPrimary} />
+              {totalItems > 0 && (
+                <View style={s.cartBadge}>
+                  <Text style={s.cartBadgeText}>{totalItems}</Text>
                 </View>
-                <Image source={{ uri: b.image }} style={s.bannerImg} />
-              </View>
-            ))}
-          </ScrollView>
-          {/* Dots */}
-          <View style={s.dots}>
-            {BANNERS.map((_, i) => (
-              <View key={i} style={[s.dot, i === banner && s.dotActive]} />
-            ))}
+              )}
+            </TouchableOpacity>
           </View>
         </View>
+        <TouchableOpacity style={s.search} onPress={() => navigation.navigate('MenuTab')}>
+          <Search size={16} color={COLORS.textMuted} />
+          <Text style={s.searchText}>Tìm kiếm thức uống...</Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* ── Category chips ── */}
-        {categories.length > 0 && (
-          <View style={s.section}>
-            <View style={s.sectionHead}>
-              <Text style={s.sectionTitle}>Danh mục</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Menu')}>
-                <Text style={s.sectionMore}>Xem thực đơn →</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catScroll}>
-              {allCats.map((cat) => {
-                const isActive = cat.id === activeCat || (cat.id === 'all' && activeCat === 'all');
-                return (
-                  <TouchableOpacity
-                    key={cat.id}
-                    style={[s.catChip, isActive && s.catChipActive]}
-                    onPress={() => setActiveCat(cat.id as any)}
-                  >
-                    {cat.imageUrl ? (
-                      <Image source={{ uri: cat.imageUrl }} style={s.catIcon} />
-                    ) : null}
-                    <Text style={[s.catText, isActive && s.catTextActive]}>{cat.name}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+      {/* ── Sticky Categories (Horizontal Scroll) ── */}
+      <View style={s.catBar}>
+        <FlatList
+          data={allCategoryData}
+          renderItem={renderCategory}
+          keyExtractor={(item) => item.id.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.catScroll}
+        />
+      </View>
+
+      <FlatList
+        data={products}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={{ paddingHorizontal: 16 }}>
+            <MiniProductCard
+              item={item}
+              onPress={() => navigation.navigate('ProductDetail', { product: item })}
+              onAdd={() => handleAdd(item)}
+            />
           </View>
         )}
-
-        {/* ── Quick Order: Product rows ── */}
-        <View style={s.section}>
-          <View style={s.sectionHead}>
-            <Text style={s.sectionTitle}>Đặt ngay tại quán</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Menu')}>
-              <Text style={s.sectionMore}>Xem thêm →</Text>
-            </TouchableOpacity>
-          </View>
-
-          {loading ? (
-            <View style={s.loadingBox}>
-              <View style={s.skeleton} />
-              <View style={s.skeleton} />
-              <View style={s.skeleton} />
-            </View>
-          ) : displayProducts.length === 0 ? (
-            <View style={s.emptyBox}>
-              <Text style={s.emptyText}>Không có sản phẩm</Text>
-            </View>
-          ) : (
-            <View>
-              {displayProducts.slice(0, 8).map((item) => (
-                <MiniProductCard
-                  key={item.id}
-                  item={item}
-                  onPress={() => navigation.navigate('ProductDetail', { product: item })}
-                  onAdd={() => handleAdd(item)}
-                />
-              ))}
-              {displayProducts.length > 8 && (
-                <TouchableOpacity style={s.viewAllBtn} onPress={() => navigation.navigate('Menu')}>
-                  <Text style={s.viewAllText}>Xem tất cả {displayProducts.length} sản phẩm →</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-        </View>
-
-        {/* ── Big promo footer banner ── */}
-        <View style={s.bigBanner}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80' }}
-            style={s.bigBannerImg}
-          />
-          <View style={s.bigBannerOverlay}>
-            <Text style={s.bigBannerTitle}>Native Coffee</Text>
-            <Text style={s.bigBannerSub}>Thức uống ngon, phục vụ tận tâm</Text>
-            <TouchableOpacity style={s.bigBannerCta} onPress={() => navigation.navigate('Menu')}>
-              <Text style={s.bigBannerCtaTxt}>Xem thực đơn</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={{ height: 110 }} />
-      </ScrollView>
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={() => (
+          loading ? <ActivityIndicator style={{ marginVertical: 20 }} color={COLORS.primary} /> : <View style={{ height: 100 }} />
+        )}
+        showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={() => loadProducts()}
+      />
     </SafeAreaView>
   );
 };
+
+// ... keep BANNERS, FALLBACKS, fallback ...
 
 const s = StyleSheet.create({
   safeArea:  { flex: 1, backgroundColor: '#D8F1F3' },
@@ -339,7 +357,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 14,
-    borderBottomWidth: 0,
+    zIndex: 10,
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   locationBox: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
@@ -353,12 +371,10 @@ const s = StyleSheet.create({
   iconBtn: {
     width: 34, height: 34, borderRadius: 17,
     backgroundColor: 'rgba(255,255,255,0.65)', justifyContent: 'center', alignItems: 'center',
-    borderWidth: 0,
   },
   cartIconBtn: {
     width: 34, height: 34, borderRadius: 17,
     backgroundColor: 'rgba(255,255,255,0.65)', justifyContent: 'center', alignItems: 'center',
-    borderWidth: 0,
   },
   cartBadge: {
     position: 'absolute', top: -2, right: -2,
@@ -372,12 +388,8 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: COLORS.white,
     borderRadius: 24, paddingHorizontal: 14, height: 44,
-    borderWidth: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
   searchText: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textMuted, flex: 1 },
 
@@ -399,54 +411,33 @@ const s = StyleSheet.create({
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.18)' },
   dotActive: { width: 16, backgroundColor: COLORS.primary, borderRadius: 3 },
 
-  /* Sections */
-  section: { paddingHorizontal: 16, marginTop: 20 },
-  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary },
-  sectionMore:  { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.primary },
-
-  /* Category chips */
-  catScroll: { gap: 8, paddingRight: 4 },
+  /* Category Scroll (Sticky) */
+  catBar: {
+    backgroundColor: COLORS.white,
+    paddingTop: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 2,
+    zIndex: 9,
+  },
+  catScroll: { paddingHorizontal: 16, gap: 8 },
   catChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 18, backgroundColor: '#F0F0F0',
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 20, backgroundColor: '#F0F0F0',
     borderWidth: 1.5, borderColor: 'transparent',
   },
-  catChipActive: { backgroundColor: '#FFF3E8', borderColor: COLORS.primary },
-  catIcon: { width: 16, height: 16, borderRadius: 8 },
-  catText: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.textSecondary },
-  catTextActive: { fontFamily: FONTS.semiBold, color: COLORS.primary },
+  catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  catIcon: { width: 18, height: 18, borderRadius: 9 },
+  catText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textSecondary },
+  catTextActive: { fontFamily: FONTS.semiBold, color: COLORS.white },
 
-  /* Loading skeletons */
-  loadingBox: { gap: 8 },
-  skeleton: { height: 72, borderRadius: 12, backgroundColor: '#F0F0F0' },
-
-  /* Empty */
-  emptyBox:  { alignItems: 'center', paddingVertical: 24 },
-  emptyText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textMuted },
-
-  /* View all */
-  viewAllBtn: {
-    marginTop: 4, paddingVertical: 12,
-    backgroundColor: '#FFF3E8',
-    borderRadius: 12, alignItems: 'center',
-    borderWidth: 1, borderColor: '#FFE0C2',
-  },
-  viewAllText: { fontFamily: FONTS.semiBold, fontSize: 13, color: COLORS.primary },
-
-  /* Big banner */
-  bigBanner: { marginHorizontal: 16, marginTop: 24, borderRadius: 18, overflow: 'hidden', height: 160 },
-  bigBannerImg: { width: '100%', height: '100%', resizeMode: 'cover' },
-  bigBannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.42)',
-    padding: 18, justifyContent: 'flex-end',
-  },
-  bigBannerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.white, marginBottom: 2 },
-  bigBannerSub:   { fontFamily: FONTS.regular, fontSize: 11, color: 'rgba(255,255,255,0.85)', marginBottom: 10 },
-  bigBannerCta:   { alignSelf: 'flex-start', backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16 },
-  bigBannerCtaTxt:{ fontFamily: FONTS.bold, fontSize: 12, color: COLORS.white },
+  /* Sections */
+  section: { paddingHorizontal: 16, marginTop: 20 },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  sectionTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary },
 });
 
 export default HomeScreen;
+

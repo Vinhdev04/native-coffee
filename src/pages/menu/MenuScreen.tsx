@@ -44,12 +44,12 @@ const ProductRow = ({
       resizeMode="cover"
     />
     <View style={pr.info}>
-      <Text style={pr.name} numberOfLines={2}>{item.name}</Text>
-      <Text style={pr.desc} numberOfLines={2}>{item.description || 'Thức uống thơm ngon'}</Text>
+      <Text style={pr.name} numberOfLines={1}>{item.name}</Text>
+      <Text style={pr.desc} numberOfLines={1}>{item.categoryName || 'Sản phẩm'}</Text>
       <View style={pr.bottom}>
         <Text style={pr.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
         <TouchableOpacity style={pr.addBtn} onPress={onAddCart}>
-          <Plus size={15} color={COLORS.white} />
+          <Plus size={16} color={COLORS.white} />
         </TouchableOpacity>
       </View>
     </View>
@@ -59,29 +59,41 @@ const ProductRow = ({
 const pr = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    padding: 12,
+    marginHorizontal: 16,
+    marginVertical: 6,
     backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F2',
+    borderRadius: 18,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F9FAFB',
   },
   image: {
-    width: 86,
-    height: 86,
+    width: 84,
+    height: 84,
     borderRadius: 14,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#F3F4F6',
     flexShrink: 0,
   },
-  info: { flex: 1, marginLeft: 14, justifyContent: 'space-between' },
-  name: { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary, marginBottom: 5, lineHeight: 20 },
-  desc: { fontFamily: FONTS.regular, fontSize: 12, color: '#9CA3AF', lineHeight: 17, marginBottom: 10 },
+  info: { flex: 1, marginLeft: 16, justifyContent: 'center' },
+  name: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.textPrimary, marginBottom: 2 },
+  desc: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted, marginBottom: 8 },
   bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  price: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.primary },
+  price: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
   addBtn: {
-    width: 30, height: 30, borderRadius: 15,
+    width: 32, height: 32, borderRadius: 16,
     backgroundColor: COLORS.primary,
     justifyContent: 'center', alignItems: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
 
@@ -157,8 +169,9 @@ const MenuScreen = () => {
   const sections = React.useMemo(() => {
     const searchLower = debouncedSearch.toLowerCase();
 
-    /* "Tất cả" or active-category filter */
-    const relevantCats = activeCategory === 'all' ? categories : categories.filter(c => c.id === activeCategory);
+    // Always show all categories, do NOT filter by activeCategory 
+    // so the user can scroll through the entire list continuously.
+    const relevantCats = categories;
 
     return relevantCats
       .map((cat) => {
@@ -170,7 +183,7 @@ const MenuScreen = () => {
         return { title: cat.name, catId: cat.id, data: items };
       })
       .filter((s) => s.data.length > 0);
-  }, [categories, allProducts, activeCategory, debouncedSearch]);
+  }, [categories, allProducts, debouncedSearch]);
 
   /* Pressing a category chip -> scroll SectionList */
   const handleCategoryPress = (catId: number | 'all') => {
@@ -197,17 +210,42 @@ const MenuScreen = () => {
   };
 
   /* SectionList viewable change -> sync active category chip */
+  const scrollY = useRef(0);
+  
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (isScrollingFromPress.current) return;
+    if (isScrollingFromPress.current || searchText.length > 0) return;
+    
+    // If we are at the very top, force "Tất cả"
+    if (scrollY.current < 20) {
+      if (activeCategory !== 'all') {
+        setActiveCategory('all');
+        categoryListRef.current?.scrollToIndex({ index: 0, animated: true, viewPosition: 0.5 });
+      }
+      return;
+    }
+
     const first = viewableItems.find((vi: any) => vi.isViewable && vi.section);
-    if (first?.section?.catId) {
-      setActiveCategory(first.section.catId);
-      const idx = categories.findIndex((c: any) => c.id === first.section.catId);
-      if (idx >= 0) {
-        categoryListRef.current?.scrollToIndex({ index: Math.max(0, idx), animated: true, viewPosition: 0.3 });
+    if (first) {
+      const sectionCatId = first.section.catId;
+      if (sectionCatId !== activeCategory) {
+        setActiveCategory(sectionCatId);
+
+        // Scroll category chip into view
+        const idx = categories.findIndex((c: any) => c.id === sectionCatId);
+        if (idx >= 0) {
+          categoryListRef.current?.scrollToIndex({
+            index: idx + 1, // +1 because 'all' is at index 0
+            animated: true,
+            viewPosition: 0.5
+          });
+        }
       }
     }
   }).current;
+
+  const handleScroll = (e: any) => {
+    scrollY.current = e.nativeEvent.contentOffset.y;
+  };
 
   const handleAddToCart = (item: any) => {
     addToCart(item);
@@ -327,6 +365,7 @@ const MenuScreen = () => {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={COLORS.primary} colors={[COLORS.primary]} />
           }
+          onScroll={handleScroll}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={{ itemVisiblePercentThreshold: 20 }}
           onScrollToIndexFailed={() => {}}
