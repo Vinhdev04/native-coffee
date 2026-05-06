@@ -71,7 +71,7 @@ const formatDateTime = (raw: string) => {
 };
 
 // ─── Bottom Sheet Component ───────────────────────────────────────────────────
-const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: () => void; onPayment: () => void }) => {
+export const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: () => void; onPayment: () => void }) => {
   if (!order) return null;
   const statusKey = order.orderStatus || order.status || 'PENDING';
   const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.PENDING_PAYMENT;
@@ -155,7 +155,7 @@ const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: 
           <View style={bs.qrContainer}>
             <View style={bs.qrWrapper}>
               <QRCode
-                value={JSON.stringify({ action: 'view_order', orderId: order.id })}
+                value={`https://bill-dev.chips.com.vn/order/${order.id}`}
                 size={120}
                 color={COLORS.textPrimary}
                 backgroundColor="transparent"

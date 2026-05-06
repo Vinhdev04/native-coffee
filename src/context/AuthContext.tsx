@@ -11,6 +11,7 @@ import { APP_CONFIG } from '@/constants/Config';
 import { UserDetail, LoginResponse } from '@/pages/auth/types';
 import { BaseResponse } from '@/pages/types';
 import { getMeApi, logoutApi } from '@/services/authService';
+import socketClient from '@/socket/SocketClient';
 
 interface AuthContextData {
   isAuthenticated: boolean;
@@ -61,6 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const parsedUser = JSON.parse(storedUser);
         setUser(flattenUser(parsedUser));
         setIsAuthenticated(true);
+        
+        socketClient.initialize(APP_CONFIG.socketUrl, storedToken);
 
         getMeApi()
           .then((res) => {
@@ -91,6 +94,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(newToken);
       setUser(flattened);
       setIsAuthenticated(true);
+      
+      socketClient.initialize(APP_CONFIG.socketUrl, newToken);
 
       getMeApi()
         .then((response) => {
@@ -123,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(null);
       setUser(null);
       setIsAuthenticated(false);
+      socketClient.disconnect();
       
       console.log('✅ Logout successful (local state cleared)');
     } catch (error) {

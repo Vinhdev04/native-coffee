@@ -4,49 +4,92 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Alert, Modal, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Camera, CameraType } from 'react-native-camera-kit';
 import { ChevronLeft, QrCode, Zap } from 'lucide-react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import Toast from 'react-native-toast-message';
+import { OrderBottomSheet } from './OrderScreen';
+import { fetchOrderById } from '@/services/orderService';
 
 const ScanQRScreen = () => {
   const navigation = useNavigation<any>();
   const [scanned, setScanned] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [loadingOrder, setLoadingOrder] = useState(false);
 
-  const handleReadCode = (event: any) => {
-    if (scanned) return;
+  const handleReadCode = async (event: any) => {
+    if (scanned || loadingOrder || selectedOrder) return;
     
     const qrValue = event.nativeEvent.codeStringValue;
     console.log('Scanned QR:', qrValue);
     
+    let orderId = null;
+
     try {
+      // 1. Cố gắng parse theo định dạng JSON cũ (Backward compatibility)
       const data = JSON.parse(qrValue);
       if (data.action === 'view_order' && data.orderId) {
-        setScanned(true);
-        Toast.show({
-          type: 'success',
-          text1: 'Đã nhận diện mã đơn hàng',
-          text2: `Đang mở đơn #${data.orderId}`,
-        });
-        
-        // Return to previous screen and navigate to OrderDetail
-        navigation.goBack();
-        setTimeout(() => {
-          navigation.navigate('OrderDetail', { orderId: data.orderId });
-        }, 300);
-      } else {
-        Toast.show({ type: 'error', text1: 'Mã QR không hợp lệ' });
+        orderId = data.orderId;
       }
     } catch (e) {
-      Toast.show({ type: 'error', text1: 'Mã QR không đúng định dạng Bill Chips' });
+      // 2. Nếu không phải JSON, kiểm tra xem có phải định dạng URL mới không
+      if (qrValue.includes('/order/')) {
+        const parts = qrValue.split('/order/');
+        if (parts.length > 1) {
+          const potentialId = parts[1].split('?')[0].split('/')[0];
+          if (potentialId && !isNaN(Number(potentialId))) {
+            orderId = Number(potentialId);
+          }
+        }
+      }
     }
-    
-    // Reset scanned state after 3s to allow scanning again
+
+    if (orderId) {
+      setScanned(true);
+      setLoadingOrder(true);
+      
+      try {
+        const res = await fetchOrderById(orderId);
+        const detail = (res as any)?.data ?? res;
+        setSelectedOrder(detail);
+      } catch (err) {
+        Toast.show({ type: 'error', text1: 'Lỗi', text2: 'Không thể lấy dữ liệu đơn hàng' });
+        // Cho quét lại ngay nếu lỗi
+        setTimeout(() => setScanned(false), 2000);
+      } finally {
+        setLoadingOrder(false);
+      }
+
+    } else {
+      Toast.show({ type: 'error', text1: 'Mã QR không hợp lệ' });
+      // Reset scanned state after 3s to allow scanning again
+      setTimeout(() => {
+        setScanned(false);
+      }, 3000);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSelectedOrder(null);
+    // Cho phép quét lại sau 2 giây đóng Modal
     setTimeout(() => {
       setScanned(false);
-    }, 3000);
+    }, 2000);
+  };
+
+  const handlePayment = () => {
+    if (!selectedOrder) return;
+    const total = parseFloat(selectedOrder.totalAmount || selectedOrder.total || '0');
+    const orderId = selectedOrder.id;
+    const customerName = selectedOrder.customerName;
+    handleCloseModal();
+    navigation.navigate('Payment', {
+      orderId: orderId,
+      totalAmount: total,
+      customerName: customerName,
+    });
   };
 
   return (
@@ -72,15 +115,30 @@ const ScanQRScreen = () => {
           onReadCode={handleReadCode}
         />
         
-        <View style={s.overlay}>
-          <View style={s.instructionBox}>
-            <QrCode size={24} color={COLORS.primary} style={{ marginBottom: 8 }} />
-            <Text style={s.instructionText}>
-              Di chuyển camera lại gần mã QR trên hóa đơn hoặc ứng dụng để xem chi tiết
-            </Text>
+        {loadingOrder && (
+          <View style={s.loadingOverlay}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={s.loadingText}>Đang lấy thông tin đơn...</Text>
           </View>
-        </View>
+        )}
+        
+        {!loadingOrder && !selectedOrder && (
+          <View style={s.overlay}>
+            <View style={s.instructionBox}>
+              <QrCode size={24} color={COLORS.primary} style={{ marginBottom: 8 }} />
+              <Text style={s.instructionText}>
+                Di chuyển camera lại gần mã QR trên hóa đơn hoặc ứng dụng để xem chi tiết
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
+
+      <Modal visible={!!selectedOrder} transparent animationType="slide" onRequestClose={handleCloseModal}>
+        {selectedOrder && (
+          <OrderBottomSheet order={selectedOrder} onClose={handleCloseModal} onPayment={handlePayment} />
+        )}
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -117,6 +175,18 @@ const s = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontFamily: FONTS.medium,
+    color: '#fff',
+    fontSize: 15,
+  }
 });
 
 export default ScanQRScreen;

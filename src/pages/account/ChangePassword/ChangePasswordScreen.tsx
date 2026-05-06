@@ -47,9 +47,9 @@ const ChangePasswordScreen = () => {
       let encryptedConfirm = values.confirmPassword;
       
       try {
-        encryptedOld = await encryptWithRSA(values.oldPassword);
-        encryptedNew = await encryptWithRSA(values.newPassword);
-        encryptedConfirm = await encryptWithRSA(values.confirmPassword);
+        encryptedOld = await encryptWithRSA(values.oldPassword.trim());
+        encryptedNew = await encryptWithRSA(values.newPassword.trim());
+        encryptedConfirm = await encryptWithRSA(values.confirmPassword.trim());
       } catch (err) {
         console.warn('RSA encryption failed', err);
       }

@@ -9,7 +9,8 @@ export const APP_CONFIG = {
   appName: process.env.EXPO_PUBLIC_APP_NAME || "Bill Chips",
   appVersion: process.env.EXPO_PUBLIC_APP_VERSION || "1.0.0",
   version: process.env.EXPO_PUBLIC_APP_VERSION || "1.0.0",
-  apiUrl: process.env.EXPO_PUBLIC_API_URL || "https://api.nativecoffee.com.vn",
+  apiUrl:
+    process.env.EXPO_PUBLIC_API_URL || "https://bill-dev.chips.com.vn/api",
   socketUrl:
     process.env.EXPO_PUBLIC_SOCKET_URL ||
     `${process.env.EXPO_PUBLIC_API_URL}/socket.io`,
