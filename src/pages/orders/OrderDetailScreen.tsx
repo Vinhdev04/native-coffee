@@ -19,6 +19,7 @@ import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
 import { fetchOrderById, cancelOrder } from '@/services/orderService';
 import Toast from 'react-native-toast-message';
+import { orderCache } from '@/utils/orderCache';
 
 // ─── Status Config ─────────────────────────────────────────────────────────────
 // ✅ API dùng field `orderStatus`, không phải `status`
@@ -88,6 +89,11 @@ const OrderDetailScreen = () => {
       const orderData = (res as any)?.data ?? res;
       console.log(`✅ [OrderDetailScreen] orderStatus=${orderData?.orderStatus}, paymentStatus=${orderData?.paymentStatus}`);
       setOrder(orderData);
+      // Cập nhật cache số món
+      if (orderData?.items) {
+        orderCache.setCount(orderId, orderData.items.length);
+      }
+
     } catch (err) {
       console.error('❌ [OrderDetailScreen] loadOrder error:', err);
       Toast.show({ type: 'error', text1: 'Không tải được đơn hàng', text2: 'Vui lòng thử lại.' });

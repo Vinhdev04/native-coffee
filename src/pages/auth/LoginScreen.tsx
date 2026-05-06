@@ -71,7 +71,7 @@ const LoginScreen = () => {
       if ((response?.res_code === 0 || token) && finalUserData) {
         if (token) {
           await login(token, finalUserData);
-          Toast.show({ type: 'success', text1: '☕ Chào mừng đến Native Coffee!', position: 'bottom' });
+          Toast.show({ type: 'success', text1: '☕ Chào mừng đến Bill Chips!', position: 'bottom' });
         } else {
           Toast.show({ type: 'error', text1: 'Không tìm thấy Token xác thực', position: 'bottom' });
         }

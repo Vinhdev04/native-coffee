@@ -19,6 +19,7 @@ import {
   Package, Clock, CheckCircle, XCircle, ChevronRight,
   RefreshCw, Receipt, CreditCard, AlertTriangle, X,
 } from 'lucide-react-native';
+import { orderCache } from '@/utils/orderCache';
 
 const { height: SH } = Dimensions.get('window');
 
@@ -175,7 +176,18 @@ const OrderScreen = () => {
       setLoading(true);
       const res = await fetchOrders({ limit: 100 });
       const all: any[] = (res as any)?.data?.rows || (res as any)?.data || (res as any)?.rows || res || [];
-      setAllOrders(all);
+      // Merge cache toàn cục vào orders mới load
+      const globalCache = orderCache.getAll();
+      const merged = all.map((o: any) => {
+        const cached = globalCache[o.id];
+        return cached !== undefined ? { ...o, itemCount: cached } : o;
+      });
+      setAllOrders(merged);
+
+      if (merged.length > 0) {
+        console.log('🔍 [OrderScreen] First order data:', JSON.stringify(merged[0], null, 2));
+      }
+
     } catch (err) {
       console.error('❌ [OrderScreen] loadOrders error:', err);
     } finally {
@@ -213,10 +225,19 @@ const OrderScreen = () => {
   const handleOrderPress = async (item: any) => {
     try {
       setSheetLoading(true);
-      setSelectedOrder(item); // show sheet immediately with basic data
+      setSelectedOrder(item);
       const res = await fetchOrderById(item.id);
       const detail = (res as any)?.data ?? res;
       setSelectedOrder(detail);
+      // Lưu vào cache và cập nhật list ngay lập tức
+      if (detail?.items) {
+        const count = detail.items.length;
+        orderCache.setCount(item.id, count);
+        setAllOrders(prev => prev.map(o =>
+          o.id === item.id ? { ...o, itemCount: count } : o
+        ));
+      }
+
     } catch {
       setSelectedOrder(item);
     } finally {
@@ -241,8 +262,11 @@ const OrderScreen = () => {
     const StatusIcon = cfg.Icon;
     const items: any[] = item.items || item.orderItems || [];
     const total = parseFloat(item.totalAmount || item.total || '0');
-    const previewName = items[0]?.productNameSnapshot || items[0]?.productName || items[0]?.name;
-    const itemCount = items.length || item.itemCount || 0;
+    const previewName = items[0]?.productNameSnapshot || items[0]?.productName || items[0]?.name || item.customerName || '';
+    // API danh sách trả về số món qua nhiều tên field khác nhau
+    const rawCount = item.itemCount ?? item.totalItems ?? item.item_count ?? item.total_items ?? null;
+    const itemCount = rawCount !== null ? rawCount : items.length;
+    const itemCountLabel = itemCount > 0 ? `${itemCount} món` : (items.length === 0 ? '— món' : '0 món');
 
     return (
       <TouchableOpacity style={s.orderCard} activeOpacity={0.88} onPress={() => handleOrderPress(item)}>
@@ -270,7 +294,7 @@ const OrderScreen = () => {
         )}
 
         <View style={s.cardBottom}>
-          <Text style={s.itemCountText}>{itemCount} món</Text>
+          <Text style={s.itemCountText}>{itemCountLabel}</Text>
           <Text style={s.orderTotal}>{formatCurrency(total)}</Text>
         </View>
       </TouchableOpacity>
@@ -284,9 +308,10 @@ const OrderScreen = () => {
       {/* Header */}
       <View style={s.header}>
         <View>
-          <Text style={s.headerTitle}>Đơn hàng</Text>
-          <Text style={s.headerSub}>{allOrders.length} đơn tổng cộng</Text>
+          <Text style={s.headerTitle}>Bill Chips</Text>
+          <Text style={s.headerSub}>Quản lý đơn hàng ({allOrders.length})</Text>
         </View>
+
         <TouchableOpacity style={s.refreshBtn} onPress={onRefresh}>
           <RefreshCw size={18} color="#fff" />
         </TouchableOpacity>

@@ -107,7 +107,7 @@ const RegisterScreen = () => {
                     <CoffeeIcon size={24} color={COLORS.white} />
                   </View>
                   <Text style={s.title}>Tạo tài khoản</Text>
-                  <Text style={s.subtitle}>Khởi đầu hành trình thưởng thức cà phê cùng Native Coffee</Text>
+                  <Text style={s.subtitle}>Khởi đầu hành trình trải nghiệm cùng Bill Chips</Text>
                 </View>
 
                 {/* Form Card */}

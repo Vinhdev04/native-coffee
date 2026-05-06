@@ -13,6 +13,7 @@ import { ChevronLeft, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react-nati
 import { createOrder, fetchActiveShiftSession } from '@/services/orderService';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '@/context/AuthContext';
+import { orderCache } from '@/utils/orderCache';
 
 const CartScreen = () => {
   const navigation = useNavigation<any>();
@@ -95,6 +96,9 @@ const CartScreen = () => {
         || (res as any)?.data?.orderId;
 
       console.log(`✅ [CartScreen] Order created — orderId=${newOrderId}`);
+      if (newOrderId) {
+        orderCache.setCount(newOrderId, items.length);
+      }
 
       Toast.show({
         type: 'success',

@@ -68,8 +68,9 @@ const ProductCard = ({
         <Text style={pc.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
       </View>
       <TouchableOpacity style={pc.addBtn} onPress={onAdd}>
-        <Text style={pc.addBtnText}>Thêm</Text>
+        <Plus size={18} color="#fff" />
       </TouchableOpacity>
+
     </TouchableOpacity>
   );
 };
@@ -97,10 +98,16 @@ const pc = StyleSheet.create({
   cat: { fontFamily: FONTS.regular, fontSize: 12, color: '#9CA3AF', lineHeight: 17 },
   price: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.primary, marginTop: 2 },
   addBtn: {
-    backgroundColor: COLORS.primary, borderRadius: 20,
-    paddingHorizontal: 14, paddingVertical: 8, marginLeft: 10,
+    width: 36, height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center',
+    marginLeft: 10,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3, shadowRadius: 5,
+    elevation: 4,
   },
-  addBtnText: { fontFamily: FONTS.bold, fontSize: 13, color: '#fff' },
 });
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -224,8 +231,8 @@ const HomeScreen = () => {
         {/* Title Row */}
         <View style={s.titleRow}>
           <View>
-            <Text style={s.brandName}>Native Coffee</Text>
-            <Text style={s.brandSub}>Đặt món tại quán</Text>
+            <Text style={s.brandName}>Bill Chips</Text>
+            <Text style={s.brandSub}>Hệ thống quản lý bán hàng</Text>
           </View>
           <View style={s.headerRight}>
             <TouchableOpacity style={s.iconBtn}><Bell size={18} color="rgba(255,255,255,0.75)" /></TouchableOpacity>
