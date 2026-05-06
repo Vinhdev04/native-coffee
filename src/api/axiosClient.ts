@@ -53,11 +53,13 @@ axiosClient.interceptors.response.use(
       "AUTHEN001",
       "AUTHEN002",
       "AUTHEN003",
+      "SYS010", // Session expired error code
     ];
 
     // Chỉ coi là lỗi nếu có res_code và res_code khác 0
     if (res && res.hasOwnProperty('res_code') && res.res_code !== 0) {
-      if (AUTH_ERROR_CODES.includes(res.error_code)) {
+      const isAuthError = AUTH_ERROR_CODES.includes(res.error_code) || res.data?.message === "AUTHEN000";
+      if (isAuthError) {
         Toast.show({
           type: "error",
           text1: "Phiên đăng nhập hết hạn",
