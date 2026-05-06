@@ -17,9 +17,10 @@ import { formatCurrency } from '@/utils';
 import { fetchOrders, fetchOrderById } from '@/services/orderService';
 import {
   Package, Clock, CheckCircle, XCircle, ChevronRight,
-  RefreshCw, Receipt, CreditCard, AlertTriangle, X,
+  RefreshCw, Receipt, CreditCard, AlertTriangle, X, QrCode, ScanLine
 } from 'lucide-react-native';
 import { orderCache } from '@/utils/orderCache';
+import QRCode from 'react-native-qrcode-svg';
 
 const { height: SH } = Dimensions.get('window');
 
@@ -148,6 +149,24 @@ const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: 
             </View>
           </View>
         </ScrollView>
+
+        {/* QR Code Section for Paid Orders */}
+        {!canPay && (
+          <View style={bs.qrContainer}>
+            <View style={bs.qrWrapper}>
+              <QRCode
+                value={JSON.stringify({ action: 'view_order', orderId: order.id })}
+                size={120}
+                color={COLORS.textPrimary}
+                backgroundColor="transparent"
+              />
+            </View>
+            <View style={bs.qrInfo}>
+              <QrCode size={16} color={COLORS.textMuted} />
+              <Text style={bs.qrText}>Quét để xem chi tiết</Text>
+            </View>
+          </View>
+        )}
 
         {/* CTA */}
         {canPay && (
@@ -312,9 +331,15 @@ const OrderScreen = () => {
           <Text style={s.headerSub}>Quản lý đơn hàng ({allOrders.length})</Text>
         </View>
 
-        <TouchableOpacity style={s.refreshBtn} onPress={onRefresh}>
-          <RefreshCw size={18} color="#fff" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <TouchableOpacity style={s.refreshBtn} onPress={() => navigation.navigate('ScanQR')}>
+            <ScanLine size={18} color="#fff" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={s.refreshBtn} onPress={onRefresh}>
+            <RefreshCw size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Summary Card */}
@@ -517,6 +542,36 @@ const bs = StyleSheet.create({
     shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8,
   },
   payBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
+  qrContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  qrWrapper: {
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  qrInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+  },
+  qrText: {
+    fontFamily: FONTS.medium,
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
 });
 
 export default OrderScreen;

@@ -20,17 +20,10 @@ import { encryptWithRSA }  from '@/utils/encryption';
 import { loginApi }      from '@/services/authService';
 import Toast               from 'react-native-toast-message';
 import LinearGradient     from 'react-native-linear-gradient';
-import { 
-  User, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Coffee as CoffeeIcon, 
-  ChevronRight,
-  Fingerprint
-} from 'lucide-react-native';
+import { User, Lock, Eye, EyeOff, ChevronRight, ShieldCheck, Users } from 'lucide-react-native';
 
 const BG_IMAGE = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1000&auto=format&fit=crop';
+
 
 const LoginScreen = () => {
   const { t }    = useTranslation();
@@ -41,6 +34,7 @@ const LoginScreen = () => {
   const [password,  setPassword]  = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPass,  setShowPass]  = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'ADMIN' | 'STAFF' | null>(null);
 
   const handleLogin = async () => {
     if (!userName.trim() || !password.trim()) {
@@ -50,9 +44,10 @@ const LoginScreen = () => {
 
     setIsLoading(true);
     try {
-      let encryptedPassword = password;
+      const cleanPassword = password.trim();
+      let encryptedPassword = cleanPassword;
       try { 
-        encryptedPassword = await encryptWithRSA(password); 
+        encryptedPassword = await encryptWithRSA(cleanPassword); 
       } catch (_) {
         console.warn('RSA encryption failed');
       }
@@ -98,101 +93,139 @@ const LoginScreen = () => {
     }
   };
 
+  const renderRoleSelection = () => (
+    <View style={styles.roleContainer}>
+      <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <Image 
+            source={require('@/assets/images/logo.png')} 
+            style={styles.logoImg} 
+            resizeMode="contain" 
+          />
+        </View>
+        <Text style={styles.brandName}>Bill Chips</Text>
+        <Text style={styles.tagline}>Chọn vai trò để bắt đầu làm việc</Text>
+      </View>
+
+      <View style={styles.cardsWrapper}>
+        <TouchableOpacity 
+          style={styles.roleCard}
+          activeOpacity={0.8}
+          onPress={() => setSelectedRole('ADMIN')}
+        >
+          <View style={styles.roleIconWrapper}>
+            <ShieldCheck size={24} color={COLORS.white} />
+          </View>
+          <View style={styles.roleTextWrapper}>
+            <Text style={styles.roleTitle}>Quản Lý (Admin)</Text>
+            <Text style={styles.roleDesc}>Dashboard, thống kê, quản lý thực đơn</Text>
+          </View>
+          <View style={styles.roleArrow}>
+            <ChevronRight size={16} color={COLORS.primary} />
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.roleCard}
+          activeOpacity={0.8}
+          onPress={() => setSelectedRole('STAFF')}
+        >
+          <View style={[styles.roleIconWrapper, { backgroundColor: '#E06B22' }]}>
+            <Users size={24} color={COLORS.white} />
+          </View>
+          <View style={styles.roleTextWrapper}>
+            <Text style={styles.roleTitle}>Nhân Viên</Text>
+            <Text style={styles.roleDesc}>Đặt hàng, theo dõi đơn, thanh toán</Text>
+          </View>
+          <View style={styles.roleArrow}>
+            <ChevronRight size={16} color={COLORS.primary} />
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.footerBranding}>Bill Chips v1.0 • Made with love</Text>
+    </View>
+  );
+
+  const renderLoginForm = () => (
+    <View style={styles.formContainer}>
+      <TouchableOpacity style={styles.backButton} onPress={() => setSelectedRole(null)} activeOpacity={0.7}>
+        <View style={styles.backIconWrapper}>
+          <ChevronRight size={18} color={COLORS.textPrimary} style={{ transform: [{ rotate: '180deg' }] }} />
+        </View>
+        <Text style={styles.backText}>Quay lại</Text>
+      </TouchableOpacity>
+      
+      <Text style={styles.welcomeText}>
+        Đăng nhập {selectedRole === 'ADMIN' ? 'Quản lý' : 'Nhân viên'}
+      </Text>
+      
+      <View style={styles.inputContainer}>
+        <User size={20} color={COLORS.textMuted} />
+        <TextInput
+          style={styles.input}
+          placeholder="Tên đăng nhập"
+          placeholderTextColor={COLORS.textMuted}
+          value={userName}
+          onChangeText={setUserName}
+          autoCapitalize="none"
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <Lock size={20} color={COLORS.textMuted} />
+        <TextInput
+          style={styles.input}
+          placeholder="Mật khẩu"
+          placeholderTextColor={COLORS.textMuted}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPass}
+        />
+        <TouchableOpacity onPress={() => setShowPass(!showPass)}>
+          {showPass ? <EyeOff size={20} color={COLORS.textMuted} /> : <Eye size={20} color={COLORS.textMuted} />}
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity style={styles.forgotPass}>
+        <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.loginBtn, isLoading && styles.btnDisabled]}
+        onPress={handleLogin}
+        disabled={isLoading}
+        activeOpacity={0.85}
+      >
+        {isLoading ? (
+          <ActivityIndicator color={COLORS.white} />
+        ) : (
+          <Text style={styles.loginBtnText}>Đăng nhập</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" transparent backgroundColor="transparent" />
-      <ImageBackground source={{ uri: BG_IMAGE }} style={styles.bgImage}>
-        <LinearGradient
-          colors={['transparent', 'rgba(17, 9, 5, 0.8)', COLORS.primary]}
-          style={styles.gradient}
+      <StatusBar barStyle="dark-content" transparent backgroundColor="transparent" />
+      <LinearGradient
+        colors={['#FEF9F5', '#FFF0E5']}
+        style={styles.gradient}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.keyboardView}
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent} 
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <ScrollView 
-              contentContainerStyle={styles.scrollContent} 
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Header / Logo */}
-              <View style={styles.header}>
-                <View style={styles.logoBadge}>
-                  <CoffeeIcon size={40} color={COLORS.white} />
-                </View>
-                <Text style={styles.brandName}>NATIVE{'\n'}COFFEE</Text>
-                <View style={styles.divider} />
-                <Text style={styles.tagline}>Premium Coffee Experience</Text>
-              </View>
-
-              {/* Form Section */}
-              <View style={styles.formContainer}>
-                <Text style={styles.welcomeText}>Chào mừng trở lại!</Text>
-                
-                {/* Username Input */}
-                <View style={styles.inputContainer}>
-                  <User size={20} color={COLORS.textMuted} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Tên đăng nhập"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={userName}
-                    onChangeText={setUserName}
-                    autoCapitalize="none"
-                  />
-                </View>
-
-                {/* Password Input */}
-                <View style={styles.inputContainer}>
-                  <Lock size={20} color={COLORS.textMuted} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Mật khẩu"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPass}
-                  />
-                  <TouchableOpacity onPress={() => setShowPass(!showPass)}>
-                    {showPass ? <EyeOff size={20} color={COLORS.textMuted} /> : <Eye size={20} color={COLORS.textMuted} />}
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity style={styles.forgotPass}>
-                  <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
-                </TouchableOpacity>
-
-                {/* Login Button */}
-                <TouchableOpacity
-                  style={[styles.loginBtn, isLoading && styles.btnDisabled]}
-                  onPress={handleLogin}
-                  disabled={isLoading}
-                  activeOpacity={0.85}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator color={COLORS.white} />
-                  ) : (
-                    <Text style={styles.loginBtnText}>Đăng nhập</Text>
-                  )}
-                </TouchableOpacity>
-
-                <View style={styles.footerRow}>
-                  <Text style={styles.footerText}>Chưa có tài khoản? </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                    <Text style={styles.registerText}>Đăng ký ngay</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Bio Login Placeholder */}
-                <TouchableOpacity style={styles.bioBtn}>
-                  <Fingerprint size={32} color={COLORS.accent} />
-                  <Text style={styles.bioText}>Sử dụng vân tay</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </LinearGradient>
-      </ImageBackground>
+            {!selectedRole ? renderRoleSelection() : renderLoginForm()}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
     </View>
   );
 };
@@ -200,12 +233,7 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primary,
-  },
-  bgImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
+    backgroundColor: '#FEF9F5',
   },
   gradient: {
     flex: 1,
@@ -216,104 +244,180 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-end',
-    paddingBottom: 40,
-    paddingTop: 80,
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  roleContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 60,
+    marginBottom: 40,
   },
-  logoBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.accent,
+  logoContainer: {
+    width: 100,
+    height: 100,
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    elevation: 10,
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  logoImg: {
+    width: 60,
+    height: 60,
   },
   brandName: {
-    fontFamily: FONTS.bold,
-    fontSize: 40,
-    color: COLORS.white,
-    textAlign: 'center',
-    lineHeight: 45,
-    letterSpacing: 4,
-  },
-  divider: {
-    width: 50,
-    height: 3,
-    backgroundColor: COLORS.accent,
-    marginVertical: 15,
-    borderRadius: 2,
+    fontFamily: 'GreatVibes-Regular', // Dùng font cách điệu nếu có, nếu không thì fallback
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#A15112', // Màu nâu đất
+    marginBottom: 8,
   },
   tagline: {
     fontFamily: FONTS.medium,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+    fontSize: 15,
+    color: '#8B7B71',
   },
+  cardsWrapper: {
+    width: '100%',
+    gap: 16,
+  },
+  roleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    padding: 16,
+    borderRadius: 20,
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  roleIconWrapper: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: '#E65100', // Cam đậm cho Admin
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  roleTextWrapper: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  roleTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 17,
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  roleDesc: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
+  roleArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFF0E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerBranding: {
+    position: 'absolute',
+    bottom: 0,
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: '#B0A299',
+  },
+
+  // LoginForm Styles
   formContainer: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 30,
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
     padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-    backdropFilter: 'blur(10px)', // Note: Only works on some platforms/libs, but good for design intent
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 24,
+    paddingVertical: 4,
+    paddingRight: 12,
+  },
+  backIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  backText: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 15,
+    color: COLORS.textSecondary,
   },
   welcomeText: {
     fontFamily: FONTS.bold,
     fontSize: 22,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     marginBottom: 25,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 56,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: '#E5E7EB',
   },
   input: {
     flex: 1,
     marginLeft: 12,
     fontFamily: FONTS.regular,
     fontSize: 16,
-    color: COLORS.white,
-
+    color: COLORS.textPrimary,
   },
   forgotPass: {
     alignSelf: 'flex-end',
     marginBottom: 25,
   },
-
   forgotPassText: {
     fontFamily: FONTS.medium,
     fontSize: 14,
-    color: COLORS.accentLight,
+    color: COLORS.primary,
   },
   loginBtn: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: COLORS.primary,
     height: 56,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: COLORS.accent,
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowRadius: 8,
+    elevation: 5,
   },
   btnDisabled: {
     opacity: 0.6,
@@ -322,31 +426,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontSize: 18,
     color: COLORS.white,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 25,
-  },
-  footerText: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  registerText: {
-    fontFamily: FONTS.bold,
-    fontSize: 14,
-    color: COLORS.accent,
-  },
-  bioBtn: {
-    marginTop: 30,
-    alignItems: 'center',
-    gap: 8,
-  },
-  bioText: {
-    fontFamily: FONTS.medium,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
   },
 });
 

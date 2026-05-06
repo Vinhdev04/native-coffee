@@ -28,7 +28,8 @@ export const encryptWithRSA = async (text: string): Promise<string> => {
     }
 
     const clientPublicKey = forge.pki.publicKeyFromPem(cleanKey);
-    const encrypted = clientPublicKey.encrypt(text, 'RSA-OAEP');
+    const bytes = forge.util.encodeUtf8(text);
+    const encrypted = clientPublicKey.encrypt(bytes, 'RSA-OAEP');
 
     return forge.util.encode64(encrypted).trim();
   } catch (error) {
