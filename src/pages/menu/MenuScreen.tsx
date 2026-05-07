@@ -8,100 +8,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
-import { Search, X, Plus, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
+import { Search, X, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
-import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import Toast from '@/components/common/Toast';
 import ProductModal from '@/components/menu/ProductModal';
-
-/* ── Fallback images ── */
-const DRINK_FALLBACKS = [
-  'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1515823064-d6e0c04616a4?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1558857563-b37102e99e00?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1622597467836-f3e5474e4b61?auto=format&fit=crop&w=200&q=80',
-];
-const getFallback = (id: number) => DRINK_FALLBACKS[id % DRINK_FALLBACKS.length];
-
-// ─── Highlight Text Component ─────────────────────────────────────────────────
-const HighlightText = ({
-  text, highlight, style, highlightStyle,
-}: { text: string; highlight: string; style?: any; highlightStyle?: any }) => {
-  if (!highlight.trim()) return <Text style={style}>{text}</Text>;
-  const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  const parts = text.split(regex);
-  return (
-    <Text style={style}>
-      {parts.map((part, i) =>
-        regex.test(part)
-          ? <Text key={i} style={[highlightStyle]}>{part}</Text>
-          : <Text key={i}>{part}</Text>
-      )}
-    </Text>
-  );
-};
-
-const ProductRow = ({ item, onPress, onAddCart, searchText }: { item: any; onPress: () => void; onAddCart: () => void; searchText: string }) => {
-  const isMatch = searchText.trim() && item.name.toLowerCase().includes(searchText.toLowerCase().trim());
-  return (
-    <TouchableOpacity 
-      style={[pr.card, isMatch && pr.cardHighlight]} 
-      activeOpacity={0.9} 
-      onPress={onPress}
-    >
-      <Image source={{ uri: item.imageUrl || item.image || getFallback(item.id) }} style={pr.image} resizeMode="cover" />
-      <View style={pr.info}>
-        <View style={{ flex: 1 }}>
-          <HighlightText
-            text={item.name}
-            highlight={searchText}
-            style={pr.name}
-            highlightStyle={pr.nameHighlight}
-          />
-          <Text style={pr.desc} numberOfLines={2}>
-            {item.description || item.categoryName || 'Hương vị tươi ngon mỗi ngày.'}
-          </Text>
-        </View>
-        <View style={pr.bottom}>
-          <Text style={pr.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
-          <TouchableOpacity style={pr.addBtn} onPress={onAddCart}>
-            <Text style={pr.addBtnText}>Thêm</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-const pr = StyleSheet.create({
-  card: {
-    flexDirection: 'row', padding: 12, marginHorizontal: 16, marginVertical: 8,
-    backgroundColor: COLORS.white, borderRadius: 22, shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
-    borderWidth: 1.5, borderColor: 'transparent',
-  },
-  cardHighlight: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
-  },
-  image: { width: 95, height: 95, borderRadius: 18, backgroundColor: '#F3F4F6' },
-  info: { flex: 1, marginLeft: 14, justifyContent: 'space-between', paddingVertical: 2 },
-  name: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary },
-  nameHighlight: {
-    backgroundColor: '#FDE68A', color: COLORS.primary,
-    fontFamily: FONTS.bold, borderRadius: 3,
-  },
-  desc: { fontFamily: FONTS.regular, fontSize: 12, color: '#9CA3AF', lineHeight: 16 },
-  bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  price: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
-  addBtn: {
-    paddingHorizontal: 18, paddingVertical: 7, borderRadius: 16, backgroundColor: COLORS.primary,
-  },
-  addBtnText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white },
-});
+import ProductCardHorizontal from '@/components/home/ProductCardHorizontal';
 
 const SectionHeader = ({ title }: { title: string }) => (
   <View style={sh.wrap}>
@@ -118,7 +31,7 @@ const sh = StyleSheet.create({
 const MenuScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { totalItems, addToCart } = useCart();
+  const { items, totalItems, addToCart } = useCart();
 
   const [categories, setCategories] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -250,12 +163,10 @@ const MenuScreen = () => {
       <Toast visible={toast.visible} type="success" title={toast.title} message={toast.message} onHide={() => setToast(t => ({ ...t, visible: false }))} />
 
       <View style={s.header}>
-        <View>
-          <Text style={s.headerTitle}>Thực đơn</Text>
-          <Text style={s.headerSub}>{allProducts.length} món</Text>
-        </View>
-        <TouchableOpacity style={s.cartBtn} onPress={() => navigation.navigate('Cart')}>
-          <ShoppingBag size={20} color="#fff" />
+        <View style={s.headerLeft} />
+        <Text style={s.headerTitle}>Thực đơn</Text>
+        <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
+          <ShoppingBag size={20} color={COLORS.primary} />
           {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText}>{totalItems}</Text></View>}
         </TouchableOpacity>
       </View>
@@ -298,7 +209,23 @@ const MenuScreen = () => {
           ref={sectionListRef}
           sections={sections}
           keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
-          renderItem={({ item }) => <ProductRow item={item} onPress={() => handleProductPress(item)} onAddCart={() => handleProductPress(item)} searchText={debouncedSearch} />}
+          renderItem={({ item }) => {
+            const cartQty = items
+              .filter(cartItem => Number(cartItem.id) === Number(item.id))
+              .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+
+            return (
+              <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+                <ProductCardHorizontal 
+                  product={item} 
+                  onPress={() => handleProductPress(item)} 
+                  onAddPress={() => handleProductPress(item)} 
+                  searchText={debouncedSearch} 
+                  cartQuantity={cartQty}
+                />
+              </View>
+            );
+          }}
           renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
           stickySectionHeadersEnabled
           showsVerticalScrollIndicator={false}
@@ -321,18 +248,23 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingBottom: 14,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
-    backgroundColor: '#1A1A2E',
+    paddingHorizontal: 20, paddingVertical: 15, backgroundColor: COLORS.white,
   },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 24, color: '#fff' },
-  headerSub: { fontFamily: FONTS.regular, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
-  cartBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-  badge: { position: 'absolute', top: -2, right: -2, backgroundColor: COLORS.primary, borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#1A1A2E' },
-  badgeText: { fontFamily: FONTS.bold, fontSize: 9, color: '#fff' },
+  headerLeft: { width: 44 },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary, flex: 1, textAlign: 'center' },
+  headerBtn: { 
+    width: 44, height: 44, justifyContent: 'center', alignItems: 'center', 
+    backgroundColor: '#F9FAFB', borderRadius: 14,
+    elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
+  },
+  badge: { 
+    position: 'absolute', top: -4, right: -4, backgroundColor: COLORS.primary, borderRadius: 10, 
+    minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.white 
+  },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 9, color: COLORS.white },
 
-  searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 14 },
-  searchInputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 14, height: 46 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, paddingHorizontal: 16, paddingBottom: 14 },
+  searchInputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F9FAFB', borderRadius: 14, paddingHorizontal: 14, height: 46, borderWidth: 1, borderColor: '#F3F4F6' },
   searchInput: { flex: 1, fontFamily: FONTS.medium, fontSize: 14, color: '#374151' },
 
   catBar: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },

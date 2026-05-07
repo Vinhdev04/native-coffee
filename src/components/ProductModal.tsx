@@ -12,20 +12,24 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
-import { X, Minus, Plus, Edit3 } from 'lucide-react-native';
+import { X, Minus, Plus } from 'lucide-react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
 
 const { height } = Dimensions.get('window');
 
-const SIZE_OPTIONS = [
-  { value: 'S', label: 'Nhỏ', volume: '350ml', priceModifier: -5000, note: 'Nhẹ bụng' },
-  { value: 'M', label: 'Vừa', volume: '500ml', priceModifier: 0, note: 'Phổ biến nhất' },
-  { value: 'L', label: 'Lớn', volume: '700ml', priceModifier: 5000, note: 'Uống đã hơn' },
+// Mock data based on the image
+const MOCK_TOPPINGS = [
+  { id: '1', name: 'Trân Châu Đen', price: 5000 },
+  { id: '2', name: 'Thạch Dừa', price: 4000 },
+  { id: '3', name: 'Kem Cheese', price: 7000 },
+  { id: '4', name: 'Red Bean', price: 6000 },
 ];
 
-const SUGAR_OPTIONS = ['30%', '50%', '70%', '100%'];
-const ICE_OPTIONS = ['Không đá', '50%', '70%', '100%'];
+const SIZE_OPTIONS = [
+  { id: 'M', name: 'M', price: 0 },
+  { id: 'L', name: 'L', price: 7000 },
+];
 
 interface ProductModalProps {
   product: any;
@@ -44,8 +48,7 @@ export const ProductModal = ({
 }: ProductModalProps) => {
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState('M');
-  const [sugar, setSugar] = useState('50%');
-  const [ice, setIce] = useState('50%');
+  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
   const [note, setNote] = useState('');
 
   useEffect(() => {
@@ -53,14 +56,12 @@ export const ProductModal = ({
       if (editItem) {
         setQuantity(editItem.quantity || 1);
         setSize(editItem.size || 'M');
-        setSugar(editItem.sugar || '50%');
-        setIce(editItem.ice || '50%');
+        setSelectedToppings(editItem.toppings?.map((t: any) => t.id) || []);
         setNote(editItem.note || '');
       } else {
         setQuantity(1);
         setSize('M');
-        setSugar('50%');
-        setIce('50%');
+        setSelectedToppings([]);
         setNote('');
       }
     }
@@ -68,9 +69,20 @@ export const ProductModal = ({
 
   if (!product) return null;
 
-  const selectedSize = SIZE_OPTIONS.find((item) => item.value === size) || SIZE_OPTIONS[1];
-  const unitPrice = (product.price || 0) + selectedSize.priceModifier;
+  const selectedSizeData = SIZE_OPTIONS.find((s) => s.id === size) || SIZE_OPTIONS[0];
+  const toppingsPrice = selectedToppings.reduce((acc, id) => {
+    const t = MOCK_TOPPINGS.find((top) => top.id === id);
+    return acc + (t ? t.price : 0);
+  }, 0);
+
+  const unitPrice = (product.price || 38000) + selectedSizeData.price + toppingsPrice;
   const totalPrice = unitPrice * quantity;
+
+  const toggleTopping = (id: string) => {
+    setSelectedToppings((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+    );
+  };
 
   const handleAction = () => {
     onAddToCart({
@@ -80,10 +92,14 @@ export const ProductModal = ({
       image: product.image,
       quantity,
       size,
-      sugar,
-      ice,
       note,
-      toppings: [],
+      selectedAttributes: [
+        { id: size, name: size, type: 'Size' },
+        ...selectedToppings.map(id => {
+          const t = MOCK_TOPPINGS.find(top => top.id === id);
+          return { id, name: t?.name, type: 'Topping' };
+        })
+      ],
     });
     onClose();
   };
@@ -102,139 +118,109 @@ export const ProductModal = ({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.modalContainer}
         >
-          {/* Close Button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <X size={20} color={COLORS.gray[500]} />
-          </TouchableOpacity>
+          {/* Handle */}
+          <View style={styles.handle} />
+
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>{product.name || 'Trà Sữa Matcha'}</Text>
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+              <X size={20} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          </View>
 
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-            {/* Image Section */}
-            <View style={styles.imageContainer}>
-              {product.image ? (
-                <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
-              ) : (
-                <View style={styles.imagePlaceholder} />
-              )}
+            {/* Product Basic Info */}
+            <View style={styles.productInfoRow}>
+              <Image 
+                source={{ uri: product.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
+                style={styles.productImage} 
+              />
+              <View style={styles.productDetails}>
+                <Text style={styles.productDesc} numberOfLines={3}>
+                  {product.description || 'Matcha Nhật Bản nguyên chất kết hợp sữa tươi, thơm béo, đậm đà hương trà xanh'}
+                </Text>
+                <Text style={styles.basePrice}>{formatCurrency(product.price || 38000)}</Text>
+              </View>
             </View>
 
-            <View style={styles.contentContainer}>
-              {/* Header Info */}
-              <View style={styles.headerInfo}>
-                <View style={styles.titleRow}>
-                  {editItem && <Edit3 size={16} color={COLORS.primary} style={styles.editIcon} />}
-                  <Text style={styles.productName}>{product.name}</Text>
+            <View style={styles.content}>
+              {/* SIZE Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>SIZE</Text>
+                <View style={styles.row}>
+                  {SIZE_OPTIONS.map((opt) => {
+                    const isSelected = size === opt.id;
+                    return (
+                      <TouchableOpacity
+                        key={opt.id}
+                        style={[styles.sizeBtn, isSelected && styles.activeBtn]}
+                        onPress={() => setSize(opt.id)}
+                      >
+                        <Text style={[styles.btnText, isSelected && styles.activeBtnText]}>
+                          {opt.name} {opt.price > 0 ? `(+${formatCurrency(opt.price)})` : ''}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
-                <Text style={styles.productDescription}>{product.description}</Text>
-                <Text style={styles.productPrice}>{formatCurrency(unitPrice)}</Text>
               </View>
 
-              {/* Options Section */}
-              <View style={styles.optionsSection}>
-                {/* Size */}
-                <View style={styles.optionGroup}>
-                  <Text style={styles.optionTitle}>KÍCH CỠ</Text>
-                  <View style={styles.row}>
-                    {SIZE_OPTIONS.map((opt) => {
-                      const isSelected = size === opt.value;
-                      return (
-                        <TouchableOpacity
-                          key={opt.value}
-                          style={[styles.sizeBtn, isSelected && styles.sizeBtnActive]}
-                          onPress={() => setSize(opt.value)}
-                        >
-                          <Text style={[styles.sizeLabel, isSelected && styles.sizeLabelActive]}>
-                            {opt.label}
-                          </Text>
-                          <Text style={[styles.sizeVolume, isSelected && styles.sizeVolumeActive]}>
-                            {opt.volume}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+              {/* TOPPING Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>TOPPING</Text>
+                <View style={styles.wrapRow}>
+                  {MOCK_TOPPINGS.map((top) => {
+                    const isSelected = selectedToppings.includes(top.id);
+                    return (
+                      <TouchableOpacity
+                        key={top.id}
+                        style={[styles.toppingBtn, isSelected && styles.activeBtn]}
+                        onPress={() => toggleTopping(top.id)}
+                      >
+                        <Text style={[styles.btnText, isSelected && styles.activeBtnText]}>
+                          {top.name} (+{formatCurrency(top.price)})
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
+              </View>
 
-                {/* Sugar */}
-                <View style={styles.optionGroup}>
-                  <Text style={styles.optionTitle}>ĐƯỜNG</Text>
-                  <View style={styles.wrapRow}>
-                    {SUGAR_OPTIONS.map((level) => {
-                      const isSelected = sugar === level;
-                      return (
-                        <TouchableOpacity
-                          key={level}
-                          style={[styles.pillBtn, isSelected && styles.pillBtnActive]}
-                          onPress={() => setSugar(level)}
-                        >
-                          <Text style={[styles.pillText, isSelected && styles.pillTextActive]}>
-                            {level}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Ice */}
-                <View style={styles.optionGroup}>
-                  <Text style={styles.optionTitle}>ĐÁ</Text>
-                  <View style={styles.wrapRow}>
-                    {ICE_OPTIONS.map((level) => {
-                      const isSelected = ice === level;
-                      return (
-                        <TouchableOpacity
-                          key={level}
-                          style={[styles.pillBtn, isSelected && styles.pillBtnActive]}
-                          onPress={() => setIce(level)}
-                        >
-                          <Text style={[styles.pillText, isSelected && styles.pillTextActive]}>
-                            {level}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Note */}
-                <View style={styles.optionGroup}>
-                  <Text style={styles.optionTitle}>GHI CHÚ</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={note}
-                    onChangeText={setNote}
-                    placeholder="Ít đá, ít ngọt..."
-                    placeholderTextColor={COLORS.gray[400]}
-                    multiline
-                    textAlignVertical="top"
-                  />
-                </View>
+              {/* NOTE Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>GHI CHÚ</Text>
+                <TextInput
+                  style={styles.noteInput}
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Ví dụ: Ít đường, nhiều đá..."
+                  placeholderTextColor={COLORS.textMuted}
+                />
               </View>
             </View>
           </ScrollView>
 
-          {/* Footer Action */}
+          {/* Footer */}
           <View style={styles.footer}>
-            <View style={styles.quantityContainer}>
-              <TouchableOpacity
-                style={styles.quantityBtn}
-                onPress={() => setQuantity(Math.max(1, quantity - 1))}
-              >
-                <Minus size={16} color={COLORS.gray[900]} />
-              </TouchableOpacity>
-              <Text style={styles.quantityText}>{quantity}</Text>
-              <TouchableOpacity
-                style={styles.quantityBtn}
-                onPress={() => setQuantity(quantity + 1)}
-              >
-                <Plus size={16} color={COLORS.gray[900]} />
-              </TouchableOpacity>
+            <View style={styles.footerRow}>
+              <View style={styles.qtyContainer}>
+                <TouchableOpacity style={styles.qtyBtn} onPress={() => setQuantity(Math.max(1, quantity - 1))}>
+                  <Minus size={18} color={COLORS.textPrimary} />
+                </TouchableOpacity>
+                <Text style={styles.qtyText}>{quantity}</Text>
+                <TouchableOpacity style={styles.qtyBtn} onPress={() => setQuantity(quantity + 1)}>
+                  <Plus size={18} color={COLORS.textPrimary} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.totalInfo}>
+                <Text style={styles.totalLabel}>Tổng</Text>
+                <Text style={styles.totalValue}>{formatCurrency(totalPrice)}</Text>
+              </View>
             </View>
-            
-            <TouchableOpacity style={styles.actionBtn} onPress={handleAction}>
-              <Text style={styles.actionBtnText}>
-                {editItem ? 'Cập nhật đơn hàng' : `Thêm ${formatCurrency(totalPrice)}`}
-              </Text>
+
+            <TouchableOpacity style={styles.addBtn} onPress={handleAction}>
+              <Text style={styles.addBtnText}>Thêm vào giỏ hàng</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -244,215 +230,84 @@ export const ProductModal = ({
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  overlayTouchable: { ...StyleSheet.absoluteFillObject },
+  modalContainer: { 
+    backgroundColor: COLORS.white, 
+    borderTopLeftRadius: 30, borderTopRightRadius: 30, 
+    maxHeight: height * 0.85 
   },
-  overlayTouchable: {
-    ...StyleSheet.absoluteFillObject,
+  handle: { 
+    width: 50, height: 5, backgroundColor: '#E5E7EB', 
+    borderRadius: 5, alignSelf: 'center', marginTop: 15 
   },
-  modalContainer: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: height * 0.9,
-    overflow: 'hidden',
+  header: { 
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
+    paddingHorizontal: 24, paddingTop: 20, paddingBottom: 15 
   },
-  closeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.gray[100],
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.textPrimary },
+  closeBtn: { 
+    width: 36, height: 36, borderRadius: 18, 
+    backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' 
   },
-  scrollView: {
-    flexGrow: 0,
+  scrollView: { flexGrow: 0 },
+  productInfoRow: { 
+    flexDirection: 'row', paddingHorizontal: 24, marginBottom: 20, gap: 15 
   },
-  imageContainer: {
-    width: '100%',
-    aspectRatio: 16 / 10,
-    backgroundColor: COLORS.gray[50],
+  productImage: { width: 110, height: 110, borderRadius: 20, backgroundColor: '#F9FAFB' },
+  productDetails: { flex: 1, justifyContent: 'space-between' },
+  productDesc: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textMuted, lineHeight: 18 },
+  basePrice: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.primary, marginTop: 5 },
+  
+  content: { paddingHorizontal: 24 },
+  section: { marginBottom: 25 },
+  sectionTitle: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.textMuted, marginBottom: 12, letterSpacing: 0.5 },
+  row: { flexDirection: 'row', gap: 12 },
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  
+  sizeBtn: { 
+    flex: 1, height: 48, borderRadius: 12, 
+    backgroundColor: '#F9FAFB', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#F3F4F6'
   },
-  image: {
-    width: '100%',
-    height: '100%',
+  toppingBtn: { 
+    paddingHorizontal: 15, height: 40, borderRadius: 10, 
+    backgroundColor: '#F9FAFB', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#F3F4F6'
   },
-  imagePlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: COLORS.gray[100],
+  activeBtn: { backgroundColor: '#FF8A00', borderColor: '#FF8A00' },
+  btnText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textMuted },
+  activeBtnText: { color: COLORS.white, fontFamily: FONTS.bold },
+  
+  noteInput: { 
+    height: 50, backgroundColor: '#F9FAFB', borderRadius: 12, 
+    paddingHorizontal: 15, fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textPrimary 
   },
-  contentContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
+  
+  footer: { 
+    padding: 24, borderTopWidth: 1, borderTopColor: '#F3F4F6', 
+    backgroundColor: COLORS.white, paddingBottom: Platform.OS === 'ios' ? 35 : 24 
   },
-  headerInfo: {
-    marginBottom: 24,
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  qtyContainer: { 
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', 
+    borderRadius: 12, padding: 5, borderWidth: 1, borderColor: '#F3F4F6' 
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
+  qtyBtn: { 
+    width: 36, height: 36, borderRadius: 10, backgroundColor: COLORS.white, 
+    justifyContent: 'center', alignItems: 'center', elevation: 2, shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 
   },
-  editIcon: {
-    marginRight: 8,
+  qtyText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary, paddingHorizontal: 15 },
+  totalInfo: { alignItems: 'flex-end' },
+  totalLabel: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textMuted },
+  totalValue: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.primary },
+  
+  addBtn: { 
+    height: 56, backgroundColor: '#FF8A00', borderRadius: 18, 
+    justifyContent: 'center', alignItems: 'center',
+    elevation: 4, shadowColor: '#FF8A00', shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3, shadowRadius: 8
   },
-  productName: {
-    fontSize: 20,
-    fontFamily: FONTS.bold,
-    color: COLORS.gray[900],
-    flex: 1,
-  },
-  productDescription: {
-    fontSize: 12,
-    color: COLORS.gray[400],
-    fontFamily: FONTS.regular,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  productPrice: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: COLORS.primary,
-    marginTop: 12,
-  },
-  optionsSection: {
-    gap: 32,
-  },
-  optionGroup: {},
-  optionTitle: {
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-    color: COLORS.gray[400],
-    marginBottom: 12,
-    letterSpacing: 1,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  wrapRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  sizeBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.gray[100],
-    alignItems: 'center',
-  },
-  sizeBtnActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
-  },
-  sizeLabel: {
-    fontSize: 14,
-    fontFamily: FONTS.bold,
-    color: COLORS.gray[500],
-  },
-  sizeLabelActive: {
-    color: COLORS.primary,
-  },
-  sizeVolume: {
-    fontSize: 10,
-    color: COLORS.gray[400],
-    marginTop: 2,
-  },
-  sizeVolumeActive: {
-    color: COLORS.primary,
-    opacity: 0.8,
-  },
-  pillBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.gray[100],
-  },
-  pillBtnActive: {
-    backgroundColor: COLORS.gray[900],
-    borderColor: COLORS.gray[900],
-  },
-  pillText: {
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-    color: COLORS.gray[500],
-  },
-  pillTextActive: {
-    color: COLORS.white,
-  },
-  textInput: {
-    backgroundColor: COLORS.gray[50],
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 12,
-    fontFamily: FONTS.regular,
-    color: COLORS.gray[900],
-    height: 80,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.gray[50],
-    gap: 16,
-  },
-  quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.gray[50],
-    borderRadius: 12,
-    padding: 4,
-  },
-  quantityBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 8,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  quantityText: {
-    width: 24,
-    textAlign: 'center',
-    fontSize: 14,
-    fontFamily: FONTS.bold,
-    color: COLORS.gray[900],
-  },
-  actionBtn: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  actionBtnText: {
-    fontSize: 14,
-    fontFamily: FONTS.bold,
-    color: COLORS.white,
-  },
+  addBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
 });

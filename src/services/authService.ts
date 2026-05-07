@@ -56,3 +56,11 @@ export const changePasswordApi = async (payload: { oldPassword?: string, newPass
   const response = await axiosClient.post('/account/change-password', payload);
   return response;
 };
+
+/**
+ * Cập nhật thông tin tài khoản
+ */
+export const updateProfileApi = async (id: number, payload: { name: string, email: string, username?: string }) => {
+  const response = await axiosClient.put(`/account/users/${id}`, payload);
+  return response;
+};

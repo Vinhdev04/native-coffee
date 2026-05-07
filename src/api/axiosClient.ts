@@ -23,9 +23,38 @@ const axiosClient = axios.create({
 axiosClient.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("@token");
+    const userStr = await AsyncStorage.getItem("@user");
+    
+    let screenCode = "APP"; // Fallback
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        if (userObj?.permissions && Array.isArray(userObj.permissions)) {
+          for (const p of userObj.permissions) {
+            if (p.permissions && Array.isArray(p.permissions) && p.permissions.length > 0) {
+               // Thường API trả về [{ roleCode: 'ADMIN', permissions: ['MENU_VIEW', ...] }]
+               const firstPerm = p.permissions[0];
+               if (typeof firstPerm === 'string') {
+                 screenCode = firstPerm;
+               } else if (firstPerm.screenCode || firstPerm.router_screen || firstPerm.code) {
+                 screenCode = firstPerm.screenCode || firstPerm.router_screen || firstPerm.code;
+               }
+               break;
+            } else if (typeof p === 'string') {
+               screenCode = p;
+               break;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore parse error
+      }
+    }
+
     const isPublic = config.url?.includes("/auth/login") || config.url?.includes("/auth/forgot_password") || config.url?.startsWith("/public/");
     if (token && !isPublic) {
       config.headers.Authorization = `Bearer ${token}`;
+      config.headers["x-screen-code"] = screenCode;
       console.log(`🔑 [Token Attached] to ${config.url}`);
     } else if (isPublic) {
       console.log(`🔓 [Public Request] ${config.url} - No token attached`);

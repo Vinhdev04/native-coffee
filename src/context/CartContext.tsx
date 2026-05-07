@@ -29,6 +29,7 @@ type CartAction =
   | { type: 'REMOVE_ITEM';    cartId: string }
   | { type: 'UPDATE_ITEM';    cartId: string; item: CartItem }
   | { type: 'UPDATE_QUANTITY'; cartId: string; quantity: number }
+  | { type: 'UPDATE_NOTE';    cartId: string; note: string }
   | { type: 'TOGGLE_CART' }
   | { type: 'OPEN_CART' }
   | { type: 'CLOSE_CART' }
@@ -81,6 +82,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         items: state.items.map((item) =>
           item.cartId === action.cartId ? { ...item, quantity: action.quantity } : item
+        ),
+      };
+
+    case 'UPDATE_NOTE':
+      return {
+        ...state,
+        items: state.items.map((item) =>
+          item.cartId === action.cartId ? { ...item, note: action.note } : item
         ),
       };
 
@@ -149,6 +158,10 @@ export function useCart() {
     dispatch({ type: 'UPDATE_QUANTITY', cartId, quantity });
   };
 
+  const updateNote = (cartId: string, note: string) => {
+    dispatch({ type: 'UPDATE_NOTE', cartId, note });
+  };
+
   const clearCart = () => {
     dispatch({ type: 'CLEAR_CART' });
   };
@@ -161,6 +174,7 @@ export function useCart() {
     addToCart,
     removeItem,
     updateQuantity,
+    updateNote,
     clearCart,
     dispatch
   };

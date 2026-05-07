@@ -1,130 +1,32 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  StatusBar, Image, SectionList, Dimensions,
-  ActivityIndicator, Platform, TextInput, ScrollView,
-  FlatList,
+  StatusBar, SectionList, Dimensions,
+  ActivityIndicator, Platform, TextInput, FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
-import { Search, Bell, ShoppingBag, Plus, X } from 'lucide-react-native';
+import { Search, Bell, ShoppingBag, X } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
-import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
 import Toast from '@/components/common/Toast';
+import ProductCardHorizontal from '@/components/home/ProductCardHorizontal';
+import ProductModal from '@/components/menu/ProductModal';
 
-const { width: SW } = Dimensions.get('window');
-
-const FALLBACKS = [
-  'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1515823064-d6e0c04616a4?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1558857563-b37102e99e00?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=200&q=80',
-];
-const fallback = (id: number) => FALLBACKS[id % FALLBACKS.length];
-
-// ─── Highlight Text Component ─────────────────────────────────────────────────
-const HighlightText = ({
-  text, highlight, style, highlightStyle,
-}: { text: string; highlight: string; style?: any; highlightStyle?: any }) => {
-  if (!highlight.trim()) return <Text style={style}>{text}</Text>;
-  const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  const parts = text.split(regex);
-  return (
-    <Text style={style}>
-      {parts.map((part, i) =>
-        regex.test(part)
-          ? <Text key={i} style={[highlightStyle]}>{part}</Text>
-          : <Text key={i}>{part}</Text>
-      )}
-    </Text>
-  );
-};
-
-// ─── Product Card ─────────────────────────────────────────────────────────────
-const ProductCard = ({
-  item, onPress, onAdd, searchText,
-}: { item: any; onPress: () => void; onAdd: () => void; searchText: string }) => {
-  const isMatch = searchText.trim() && item.name.toLowerCase().includes(searchText.toLowerCase().trim());
-  return (
-    <TouchableOpacity 
-      style={[pc.card, isMatch && pc.cardHighlight]} 
-      onPress={onPress} 
-      activeOpacity={0.88}
-    >
-      <Image
-        source={{ uri: item.imageUrl || item.image || fallback(item.id) }}
-        style={pc.image} resizeMode="cover"
-      />
-      <View style={pc.info}>
-        <HighlightText
-          text={item.name}
-          highlight={searchText}
-          style={pc.name}
-          highlightStyle={pc.nameHighlight}
-        />
-        <Text style={pc.cat} numberOfLines={2}>{item.description || item.categoryName || 'Thức uống'}</Text>
-        <Text style={pc.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
-      </View>
-      <TouchableOpacity style={pc.addBtn} onPress={onAdd}>
-        <Plus size={18} color="#fff" />
-      </TouchableOpacity>
-
-    </TouchableOpacity>
-  );
-};
-
-const pc = StyleSheet.create({
-  card: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 16, padding: 12,
-    marginBottom: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 5, elevation: 2,
-    borderWidth: 1.5, borderColor: 'transparent',
-  },
-  cardHighlight: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
-  },
-  image: { width: 80, height: 80, borderRadius: 12, backgroundColor: '#F3F4F6', flexShrink: 0 },
-  info: { flex: 1, marginLeft: 14, gap: 3 },
-  name: { fontFamily: FONTS.semiBold, fontSize: 15, color: '#111827' },
-  nameHighlight: {
-    backgroundColor: '#FDE68A', color: COLORS.primary,
-    fontFamily: FONTS.bold, borderRadius: 3,
-  },
-  cat: { fontFamily: FONTS.regular, fontSize: 12, color: '#9CA3AF', lineHeight: 17 },
-  price: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.primary, marginTop: 2 },
-  addBtn: {
-    width: 36, height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center',
-    marginLeft: 10,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3, shadowRadius: 5,
-    elevation: 4,
-  },
-});
-
-// ─── Section Header ───────────────────────────────────────────────────────────
 const SectionHeader = ({ title }: { title: string }) => (
   <View style={sh.wrap}>
     <Text style={sh.title}>{title}</Text>
   </View>
 );
 const sh = StyleSheet.create({
-  wrap: { backgroundColor: '#F7F7F8', paddingHorizontal: 14, paddingTop: 16, paddingBottom: 8 },
+  wrap: { backgroundColor: '#F7F7F8', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   title: { fontFamily: FONTS.bold, fontSize: 15, color: '#374151' },
 });
 
-// ─── HomeScreen ───────────────────────────────────────────────────────────────
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
-  const { totalItems, addToCart } = useCart();
+  const { items, totalItems, addToCart } = useCart();
 
   const [categories, setCategories] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -132,6 +34,8 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [toast, setToast] = useState({ visible: false, title: '', msg: '' });
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const sectionListRef = useRef<SectionList>(null);
   const catBarRef = useRef<FlatList>(null);
@@ -151,10 +55,8 @@ const HomeScreen = () => {
     } catch {} finally { setLoading(false); }
   };
 
-  // Build sections grouped by category
   const sections = useMemo(() => {
     if (searchText.trim()) {
-      // Khi search: 1 section duy nhất chứa tất cả kết quả phù hợp
       const q = searchText.toLowerCase();
       const matched = allProducts.filter(p => p.name.toLowerCase().includes(q));
       return matched.length > 0
@@ -172,7 +74,6 @@ const HomeScreen = () => {
 
   const allCats = useMemo(() => [{ id: 'all', name: 'Tất cả' }, ...categories], [categories]);
 
-  // Scroll list to category section when tapping pill
   const handleCatPress = useCallback((catId: number | 'all') => {
     setActiveCatId(catId);
     if (catId === 'all') {
@@ -189,7 +90,6 @@ const HomeScreen = () => {
     }
   }, [sections]);
 
-  // Auto scroll category bar to show active pill
   const scrollCatBarToActive = useCallback((catId: number | 'all') => {
     const idx = allCats.findIndex(c => c.id === catId);
     if (idx >= 0) {
@@ -197,7 +97,6 @@ const HomeScreen = () => {
     }
   }, [allCats]);
 
-  // Detect visible section when scrolling → update active category
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (isScrollingFromPress.current || searchText) return;
     if (viewableItems.length > 0) {
@@ -212,9 +111,14 @@ const HomeScreen = () => {
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
 
-  const handleAdd = (item: any) => {
+  const handleAddToCart = (item: any) => {
     addToCart(item);
     setToast({ visible: true, title: 'Đã thêm vào giỏ! 🎉', msg: item.name });
+  };
+
+  const handleProductPress = (product: any) => {
+    setSelectedProduct(product);
+    setIsModalVisible(true);
   };
 
   return (
@@ -226,42 +130,35 @@ const HomeScreen = () => {
         onHide={() => setToast(t => ({ ...t, visible: false }))}
       />
 
-      {/* ── Header (sticky, không scroll) ── */}
       <View style={s.topBar}>
-        {/* Title Row */}
-        <View style={s.titleRow}>
-          <View>
-            <Text style={s.brandName}>Bill Chips</Text>
-            <Text style={s.brandSub}>Hệ thống quản lý bán hàng</Text>
-          </View>
-          <View style={s.headerRight}>
-            <TouchableOpacity style={s.iconBtn}><Bell size={18} color="rgba(255,255,255,0.75)" /></TouchableOpacity>
-            <TouchableOpacity style={s.cartBtn} onPress={() => navigation.navigate('Cart')}>
-              <ShoppingBag size={18} color="#fff" />
-              {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText}>{totalItems > 9 ? '9+' : totalItems}</Text></View>}
-            </TouchableOpacity>
-          </View>
+        <View style={s.headerLeft} />
+        <Text style={s.brandName}>Bill Chips</Text>
+        <View style={s.headerRight}>
+          <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
+            <ShoppingBag size={20} color={COLORS.primary} />
+            {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText}>{totalItems > 9 ? '9+' : totalItems}</Text></View>}
+          </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Search */}
+      <View style={s.searchSection}>
         <View style={s.searchBar}>
-          <Search size={16} color={searchText ? COLORS.primary : '#9CA3AF'} />
+          <Search size={18} color="#9CA3AF" />
           <TextInput
             style={s.searchInput}
-            placeholder="Tìm món..."
+            placeholder="Tìm kiếm đồ uống..."
             placeholderTextColor="#9CA3AF"
             value={searchText}
             onChangeText={setSearchText}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText('')}>
-              <X size={15} color="#9CA3AF" />
+              <X size={16} color="#9CA3AF" />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* ── Category Bar (sticky dưới header) ── */}
       {!searchText && (
         <View style={s.catBar}>
           <FlatList
@@ -270,7 +167,7 @@ const HomeScreen = () => {
             keyExtractor={i => i.id.toString()}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 14, gap: 8 }}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
             onScrollToIndexFailed={() => {}}
             renderItem={({ item }) => {
               const isActive = item.id === activeCatId || (item.id === 'all' && activeCatId === 'all');
@@ -287,7 +184,6 @@ const HomeScreen = () => {
         </View>
       )}
 
-      {/* ── Product Sections ── */}
       {loading ? (
         <View style={s.loadingWrap}>
           <ActivityIndicator size="large" color={COLORS.primary} />
@@ -311,53 +207,61 @@ const HomeScreen = () => {
           viewabilityConfig={viewabilityConfig.current}
           onScrollToIndexFailed={() => {}}
           renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
-          renderItem={({ item }) => (
-            <View style={{ paddingHorizontal: 14 }}>
-              <ProductCard
-                item={item}
-                searchText={searchText}
-                onPress={() => navigation.navigate('ProductDetail', { product: item })}
-                onAdd={() => handleAdd(item)}
-              />
-            </View>
-          )}
+          renderItem={({ item }) => {
+            const cartQty = items
+              .filter(cartItem => Number(cartItem.id) === Number(item.id))
+              .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+              
+            return (
+              <View style={{ paddingHorizontal: 16 }}>
+                <ProductCardHorizontal
+                  product={item}
+                  searchText={searchText}
+                  cartQuantity={cartQty}
+                  onPress={() => handleProductPress(item)}
+                  onAddPress={() => handleProductPress(item)}
+                />
+              </View>
+            );
+          }}
           refreshing={loading}
           onRefresh={loadData}
           ListFooterComponent={<View style={{ height: 110 }} />}
         />
       )}
+
+      <ProductModal visible={isModalVisible} product={selectedProduct} onClose={() => setIsModalVisible(false)} onAddToCart={handleAddToCart} />
     </SafeAreaView>
   );
 };
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#1A1A2E' },
-
-  // Top bar (fixed)
+  safe: { flex: 1, backgroundColor: COLORS.white },
   topBar: {
-    backgroundColor: '#1A1A2E',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 4 : 0,
-    paddingBottom: 12,
-    gap: 10,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 15, backgroundColor: COLORS.white,
   },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brandName: { fontFamily: FONTS.bold, fontSize: 18, color: '#fff' },
-  brandSub: { fontFamily: FONTS.regular, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 1 },
-  headerRight: { flexDirection: 'row', gap: 8 },
-  iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-  cartBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center' },
-  badge: { position: 'absolute', top: -3, right: -3, backgroundColor: '#fff', borderRadius: 9, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.primary },
-  badgeText: { fontFamily: FONTS.bold, fontSize: 9, color: COLORS.primary },
+  headerLeft: { width: 44 },
+  brandName: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.textPrimary, flex: 1, textAlign: 'center' },
+  headerRight: { width: 44, alignItems: 'flex-end' },
+  headerBtn: { 
+    width: 44, height: 44, justifyContent: 'center', alignItems: 'center', 
+    backgroundColor: '#F9FAFB', borderRadius: 14,
+    elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
+  },
+  badge: { 
+    position: 'absolute', top: -4, right: -4, backgroundColor: COLORS.primary, borderRadius: 10, 
+    minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.white 
+  },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 9, color: COLORS.white },
 
-  // Search
+  searchSection: { paddingHorizontal: 16, paddingBottom: 16, backgroundColor: COLORS.white },
   searchBar: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 14, height: 46,
+    backgroundColor: '#F9FAFB', borderRadius: 14, paddingHorizontal: 14, height: 48,
+    borderWidth: 1, borderColor: '#F3F4F6'
   },
-  searchInput: { fontFamily: FONTS.regular, fontSize: 14, color: '#111827', flex: 1 },
-
-  // Category bar (sticky)
+  searchInput: { fontFamily: FONTS.medium, fontSize: 14, color: '#111827', flex: 1 },
   catBar: {
     backgroundColor: '#fff', paddingVertical: 10,
     borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
@@ -371,11 +275,7 @@ const s = StyleSheet.create({
   catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   catText: { fontFamily: FONTS.semiBold, fontSize: 13, color: '#6B7280' },
   catTextActive: { color: '#fff' },
-
-  // List
   listContent: { backgroundColor: '#F7F7F8', paddingBottom: 30 },
-
-  // States
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#F7F7F8' },
   loadingText: { fontFamily: FONTS.medium, fontSize: 14, color: '#9CA3AF' },
   emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8, backgroundColor: '#F7F7F8', paddingBottom: 80 },
