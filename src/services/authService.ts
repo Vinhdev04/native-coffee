@@ -6,7 +6,7 @@
  */
 
 import axiosClient from '@/api/axiosClient';
-import { LoginPayload, LoginResponse } from '@/pages/auth/types';
+import { LoginPayload, LoginResponse, ForgotPasswordPayload, ForgotPasswordResponse } from '@/pages/auth/types';
 
 /**
  * Đăng nhập hệ thống
@@ -15,15 +15,6 @@ import { LoginPayload, LoginResponse } from '@/pages/auth/types';
 export const loginApi = async (payload: LoginPayload): Promise<LoginResponse> => {
   const response = await axiosClient.post('/auth/login', payload);
   return response as unknown as LoginResponse;
-};
-
-/**
- * Đăng ký tài khoản mới
- * @param payload { username, password, fullName, ... }
- */
-export const registerApi = async (payload: any): Promise<any> => {
-  const response = await axiosClient.post('/account/users', payload);
-  return response;
 };
 
 /**
@@ -63,4 +54,12 @@ export const changePasswordApi = async (payload: { oldPassword?: string, newPass
 export const updateProfileApi = async (id: number, payload: { name: string, email: string, username?: string }) => {
   const response = await axiosClient.put(`/account/users/${id}`, payload);
   return response;
+};
+
+/**
+ * Quên mật khẩu — gửi yêu cầu đặt lại mật khẩu qua email
+ */
+export const forgotPasswordApi = async (payload: ForgotPasswordPayload): Promise<ForgotPasswordResponse> => {
+  const response = await axiosClient.post('/auth/forgot_password', payload);
+  return response as unknown as ForgotPasswordResponse;
 };

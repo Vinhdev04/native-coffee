@@ -12,7 +12,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { View, ActivityIndicator, StatusBar } from 'react-native';
 
 import LoginScreen          from '@/pages/auth/LoginScreen';
-import RegisterScreen       from '@/pages/auth/RegisterScreen';
+import ForgotPasswordScreen from '@/pages/auth/ForgotPasswordScreen';
 import ProductDetailScreen  from '@/pages/menu/ProductDetailScreen';
 import CartScreen           from '@/pages/cart/CartScreen';
 import OrderDetailScreen    from '@/pages/orders/OrderDetailScreen';
@@ -45,8 +45,8 @@ const NavigationContent = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
-            <Stack.Screen name="Login"    component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="Login"          component={LoginScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </>
         ) : (
           <>

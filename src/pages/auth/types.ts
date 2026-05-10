@@ -35,18 +35,13 @@ export interface LoginResponse {
   error_cont?: string;
 }
 
-export interface RegisterPayload {
-  userName:    string;
-  password:    string;
-  fullName:    string;
-  email?:      string;
-  phone?:      string;
-  inviterCode?: string;
+export interface ForgotPasswordPayload {
+  email: string;
 }
 
-export interface RegisterResponse {
+export interface ForgotPasswordResponse {
   res_code: number;
   error_code?: string;
   error_cont?: string;
-  rows?: any[];
+  message?: string;
 }
