@@ -5,10 +5,10 @@ Chips Bill là giải pháp phần mềm POS (Point of Sale) chuyên dụng, đ�
 ## ✨ Tính năng nổi bật
 
 - **⚡ Tối ưu hóa cho POS**: Giao diện siêu gọn (Compact UI), mật độ thông tin cao, phù hợp với màn hình nhỏ của thiết bị cầm tay.
-- **🛒 Giỏ hàng thông minh**: 
+- **🛒 Giỏ hàng thông minh**:
   - Thêm món nhanh (Direct-to-cart) không cần qua bước trung gian.
   - Chỉnh sửa thuộc tính (Size, Topping, Ghi chú) trực tiếp ngay trong giỏ hàng.
-- **📄 In hóa đơn chuyên nghiệp**: 
+- **📄 In hóa đơn chuyên nghiệp**:
   - Hỗ trợ in hóa đơn tạm tính cho khách xem trước.
   - In hóa đơn chính thức cho các đơn hàng đã thanh toán.
   - Giao diện hóa đơn đẹp, mô phỏng giấy in nhiệt thực tế.
@@ -17,12 +17,12 @@ Chips Bill là giải pháp phần mềm POS (Point of Sale) chuyên dụng, đ�
 
 ## 🎨 Màu sắc thương hiệu
 
-| Token          | Màu        | Mô tả              |
-|----------------|------------|-------------------|
-| `primary`      | `#FF7A00`  | Chips Orange       |
-| `accent`       | `#111827`  | Dark Navy          |
-| `background`   | `#F9FAFB`  | Light Gray         |
-| `surfaceWarm`  | `#FFF7F0`  | Warm Orange Tint   |
+| Token         | Màu       | Mô tả            |
+| ------------- | --------- | ---------------- |
+| `primary`     | `#FF7A00` | Chips Orange     |
+| `accent`      | `#111827` | Dark Navy        |
+| `background`  | `#F9FAFB` | Light Gray       |
+| `surfaceWarm` | `#FFF7F0` | Warm Orange Tint |
 
 ## 🛠 Cài đặt & Khởi động
 
@@ -43,6 +43,7 @@ npm run ios
 ## 📦 Build & Cài đặt (Android)
 
 ### Lệnh Build file APK
+
 ```bash
 # Di chuyển vào thư mục android
 cd android
@@ -50,9 +51,11 @@ cd android
 # Build file APK (phiên bản Release)
 ./gradlew assembleRelease
 ```
-*File APK sau khi build sẽ nằm tại: `android/app/build/outputs/apk/release/app-release.apk`*
+
+_File APK sau khi build sẽ nằm tại: `android/app/build/outputs/apk/release/app-release.apk`_
 
 ### Lệnh cài đặt APK vào máy POS (qua ADB)
+
 ```bash
 # Kiểm tra thiết bị đã kết nối
 adb devices
@@ -70,4 +73,5 @@ adb install -r android/app/build/outputs/apk/release/app-release.apk
 - `Review/`: Tài liệu luồng nghiệp vụ (System Flowcharts).
 
 ---
+
 © 2026 Chips Bill POS. Powered by Chips Team.

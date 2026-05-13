@@ -22,9 +22,9 @@ export const payCash = async (orderId: number | string, cashReceived: number) =>
  * Tạo URL thanh toán VNPay
  * POST /payments/vnpay/create-url/{orderId}
  */
-export const createVNPayUrl = async (orderId: number | string) => {
-  console.log(`🏦 [PaymentService] createVNPayUrl → orderId=${orderId}`);
-  const response = await axiosClient.post(`/payments/vnpay/create-url/${orderId}`);
+export const createVNPayUrl = async (orderId: number | string, bankCode: string = 'VNPAYQR') => {
+  console.log(`🏦 [PaymentService] createVNPayUrl → orderId=${orderId}, bankCode=${bankCode}`);
+  const response = await axiosClient.post(`/payments/vnpay/create-url/${orderId}`, { bankCode });
   console.log(`🏦 [PaymentService] createVNPayUrl response:`, response);
   return response;
 };

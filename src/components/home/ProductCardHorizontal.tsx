@@ -2,13 +2,13 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
-import { Plus, Printer } from 'lucide-react-native';
+import { Plus, Minus } from 'lucide-react-native';
 
 interface ProductCardHorizontalProps {
   product: any;
   onPress: () => void;
   onAddPress: () => void;
-  onPrintPress?: () => void;
+  onMinusPress?: () => void;
   searchText?: string;
   cartQuantity?: number;
 }
@@ -31,7 +31,7 @@ const HighlightText = ({
 };
 
 const ProductCardHorizontal = ({ 
-  product, onPress, onAddPress, onPrintPress, searchText, cartQuantity = 0 
+  product, onPress, onAddPress, onMinusPress, searchText, cartQuantity = 0 
 }: ProductCardHorizontalProps) => {
   const imageUrl = product.imageUrl || product.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop';
   
@@ -60,9 +60,14 @@ const ProductCardHorizontal = ({
         <Text style={s.price}>{formatCurrency(product.basePrice || product.price || 0)}</Text>
       </View>
       <View style={s.btnRow}>
-        <TouchableOpacity style={s.printBtn} onPress={onPrintPress} activeOpacity={0.7}>
-          <Printer size={16} color={COLORS.primary} />
-        </TouchableOpacity>
+        {cartQuantity > 0 ? (
+          <>
+            <TouchableOpacity style={s.minusBtn} onPress={onMinusPress} activeOpacity={0.7}>
+              <Minus size={18} color={COLORS.primary} strokeWidth={3} />
+            </TouchableOpacity>
+            <Text style={s.qtyText}>{cartQuantity}</Text>
+          </>
+        ) : null}
         <TouchableOpacity style={s.addBtn} onPress={onAddPress} activeOpacity={0.7}>
           <Plus size={20} color={COLORS.white} strokeWidth={3} />
         </TouchableOpacity>
@@ -154,22 +159,29 @@ const s = StyleSheet.create({
   btnRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
-  printBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  minusBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#FFF7ED',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#FFEDD5',
   },
+  qtyText: {
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    minWidth: 20,
+    textAlign: 'center',
+  },
   addBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',

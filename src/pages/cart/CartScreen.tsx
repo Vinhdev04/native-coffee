@@ -16,7 +16,8 @@ import { useAuth } from '@/context/AuthContext';
 import { orderCache } from '@/utils/orderCache';
 import ProductModal from '@/components/menu/ProductModal';
 import ReceiptModal from '@/components/common/ReceiptModal';
-import { Printer } from 'lucide-react-native';
+import { Printer, QrCode } from 'lucide-react-native';
+import QRCode from 'react-native-qrcode-svg';
 
 const VOUCHERS = [
   { id: '1', code: 'COFFEE5', value: 5000, desc: 'Giảm ngay 5.000đ cho đơn hàng' },
@@ -206,6 +207,7 @@ const CartScreen = () => {
                 <View style={s.itemsSection}>
                   {items.map((item, index) => renderItem(item, index === items.length - 1))}
                 </View>
+
 
                 {/* Voucher section */}
                 <TouchableOpacity style={s.voucherCard} onPress={() => setVoucherModalVisible(true)}>
@@ -429,6 +431,7 @@ const s = StyleSheet.create({
   voucherTextContainer: { flex: 1, marginLeft: 12 },
   voucherTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
   voucherSubtitle: { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted },
+  
 
   footer: { 
     position: 'absolute', bottom: 0, left: 0, right: 0,

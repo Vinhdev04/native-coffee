@@ -120,7 +120,7 @@ export const OrderBottomSheet = ({
                 <Text style={bs.orderTime}>{order.customerName || 'Khách vãng lai'}</Text>
               </View>
             </View>
-            {!canPay && onPrint && (
+            {onPrint && !CANCEL_STATUSES.includes(statusKey) && (
               <TouchableOpacity onPress={onPrint} style={bs.printActionBtn}>
                 <Printer size={18} color={COLORS.white} />
                 <Text style={bs.printActionText}>In Bill</Text>
@@ -171,25 +171,21 @@ export const OrderBottomSheet = ({
           </View>
         </ScrollView>
 
-        {/* QR Code Section for Paid Orders (Tạm thời ẩn) */}
-        {/*
-        {!canPay && (
-          <View style={bs.qrContainer}>
-            <View style={bs.qrWrapper}>
-              <QRCode
-                value={`https://bill-dev.chips.com.vn/order/${order.id}`}
-                size={120}
-                color={COLORS.textPrimary}
-                backgroundColor="transparent"
-              />
-            </View>
-            <View style={bs.qrInfo}>
-              <QrCode size={16} color={COLORS.textMuted} />
-              <Text style={bs.qrText}>Quét để xem chi tiết</Text>
-            </View>
+        {/* QR Code Section for Payment (Luôn hiện để thanh toán) */}
+        <View style={bs.qrContainer}>
+          <View style={bs.qrWrapper}>
+            <QRCode
+              value={`https://bill.chips.vn/pay/${order.id}`}
+              size={120}
+              color={COLORS.textPrimary}
+              backgroundColor="transparent"
+            />
           </View>
-        )}
-        */}
+          <View style={bs.qrInfo}>
+            <QrCode size={16} color={COLORS.textMuted} />
+            <Text style={bs.qrText}>{canPay ? 'Quét để thanh toán' : 'Quét để xem chi tiết'}</Text>
+          </View>
+        </View>
 
         {/* CTA */}
         {canPay && (

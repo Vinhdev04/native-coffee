@@ -123,14 +123,11 @@ const HomeScreen = () => {
     });
   };
 
-  const handlePrintProduct = (item: any) => {
-    setReceiptOrder({
-      id: 'DRAFT-' + Math.floor(Math.random() * 1000),
-      items: [{ ...item, quantity: 1, price: item.basePrice || item.price }],
-      totalPrice: item.basePrice || item.price,
-      customerName: 'Khách xem mẫu',
-    });
-    setIsReceiptVisible(true);
+  const handleMinusPress = (item: any) => {
+    const cartItem = items.find(i => Number(i.id) === Number(item.id));
+    if (cartItem) {
+      updateQuantity(cartItem.cartId, cartItem.quantity - 1);
+    }
   };
 
   const handleProductPress = (product: any) => {
@@ -246,7 +243,12 @@ const HomeScreen = () => {
                   cartQuantity={cartQty}
                   onPress={() => handleProductPress(item)}
                   onAddPress={() => handleAddToCart(item)}
-                  onPrintPress={() => handlePrintProduct(item)}
+                  onMinusPress={() => {
+                    const cartItem = items.find(i => Number(i.id) === Number(item.id));
+                    if (cartItem) {
+                      updateQuantity(cartItem.cartId, cartItem.quantity - 1);
+                    }
+                  }}
                 />
               </View>
             );
