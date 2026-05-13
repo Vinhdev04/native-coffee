@@ -2,12 +2,13 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
-import { Plus } from 'lucide-react-native';
+import { Plus, Printer } from 'lucide-react-native';
 
 interface ProductCardHorizontalProps {
   product: any;
   onPress: () => void;
   onAddPress: () => void;
+  onPrintPress?: () => void;
   searchText?: string;
   cartQuantity?: number;
 }
@@ -29,7 +30,9 @@ const HighlightText = ({
   );
 };
 
-const ProductCardHorizontal = ({ product, onPress, onAddPress, searchText, cartQuantity = 0 }: ProductCardHorizontalProps) => {
+const ProductCardHorizontal = ({ 
+  product, onPress, onAddPress, onPrintPress, searchText, cartQuantity = 0 
+}: ProductCardHorizontalProps) => {
   const imageUrl = product.imageUrl || product.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop';
   
   return (
@@ -56,9 +59,14 @@ const ProductCardHorizontal = ({ product, onPress, onAddPress, searchText, cartQ
         </View>
         <Text style={s.price}>{formatCurrency(product.basePrice || product.price || 0)}</Text>
       </View>
-      <TouchableOpacity style={s.addBtn} onPress={onAddPress} activeOpacity={0.7}>
-        <Plus size={20} color={COLORS.white} strokeWidth={3} />
-      </TouchableOpacity>
+      <View style={s.btnRow}>
+        <TouchableOpacity style={s.printBtn} onPress={onPrintPress} activeOpacity={0.7}>
+          <Printer size={16} color={COLORS.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity style={s.addBtn} onPress={onAddPress} activeOpacity={0.7}>
+          <Plus size={20} color={COLORS.white} strokeWidth={3} />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -67,9 +75,9 @@ const s = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: COLORS.white,
-    padding: 12,
-    borderRadius: 24,
-    marginBottom: 16,
+    padding: 8,
+    borderRadius: 16,
+    marginBottom: 8,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -86,9 +94,9 @@ const s = StyleSheet.create({
     position: 'relative',
   },
   image: {
-    width: 90,
-    height: 90,
-    borderRadius: 20,
+    width: 70,
+    height: 70,
+    borderRadius: 14,
     backgroundColor: '#F9FAFB',
   },
   qtyBadge: {
@@ -116,14 +124,14 @@ const s = StyleSheet.create({
   },
   info: {
     flex: 1,
-    marginLeft: 16,
-    height: 80,
+    marginLeft: 12,
+    height: 65,
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   name: {
     fontFamily: FONTS.bold,
-    fontSize: 16,
+    fontSize: 14,
     color: COLORS.textPrimary,
   },
   nameHighlight: {
@@ -140,13 +148,28 @@ const s = StyleSheet.create({
   },
   price: {
     fontFamily: FONTS.bold,
-    fontSize: 18,
+    fontSize: 16,
     color: COLORS.primary,
   },
+  btnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  printBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF7ED',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFEDD5',
+  },
   addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',

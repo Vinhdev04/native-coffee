@@ -134,11 +134,15 @@ const ScanQRScreen = () => {
         )}
       </View>
 
-      <Modal visible={!!selectedOrder} transparent animationType="slide" onRequestClose={handleCloseModal}>
-        {selectedOrder && (
-          <OrderBottomSheet order={selectedOrder} onClose={handleCloseModal} onPayment={handlePayment} />
-        )}
-      </Modal>
+      {selectedOrder && (
+        <View style={s.bottomInfo}>
+          <OrderBottomSheet 
+            order={selectedOrder} 
+            onClose={handleCloseModal} 
+            onPayment={handlePayment} 
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -186,6 +190,17 @@ const s = StyleSheet.create({
     fontFamily: FONTS.medium,
     color: '#fff',
     fontSize: 15,
+  },
+  bottomInfo: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '65%', // Chiếm 65% màn hình để vẫn thấy camera ở trên
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
   }
 });
 

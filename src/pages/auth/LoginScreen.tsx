@@ -90,7 +90,7 @@ const LoginScreen = () => {
       if ((response?.res_code === 0 || token) && finalUserData) {
         if (token) {
           await login(token, finalUserData);
-          Toast.show({ type: 'success', text1: '☕ Chào mừng đến Bill Chips!', position: 'bottom' });
+          Toast.show({ type: 'success', text1: '🍟 Chào mừng đến Chips Bill!', position: 'bottom' });
         } else {
           Toast.show({ type: 'error', text1: 'Không tìm thấy Token xác thực', position: 'bottom' });
         }
@@ -120,14 +120,12 @@ const LoginScreen = () => {
   const renderRoleSelection = () => (
     <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
       <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/images/logo.png')}
-            style={styles.logoImg}
-            resizeMode="contain"
-          />
-        </View>
-        <Text style={styles.brandName}>Bill Chips</Text>
+        <Image
+          source={require('@/public/logo.png')}
+          style={styles.mainLogo}
+          resizeMode="contain"
+        />
+        <Text style={styles.brandName}>Chips Bill</Text>
         <Text style={styles.tagline}>Chọn vai trò để bắt đầu làm việc</Text>
       </View>
 
@@ -171,7 +169,7 @@ const LoginScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.footerBranding}>Bill Chips v1.0  •  Made with love</Text>
+      <Text style={styles.footerBranding}>Chips Bill v1.0  •  Made with love</Text>
     </Animated.View>
   );
 
@@ -185,12 +183,12 @@ const LoginScreen = () => {
 
       <View style={styles.formCard}>
         <View style={styles.formIconRow}>
-          <View style={[styles.formIcon, { backgroundColor: selectedRole === 'ADMIN' ? '#E65100' : '#E06B22' }]}>
-            {selectedRole === 'ADMIN' ? (
-              <ShieldCheck size={22} color={COLORS.white} />
-            ) : (
-              <Users size={22} color={COLORS.white} />
-            )}
+          <View style={styles.formIcon}>
+            <Image
+              source={require('@/public/logo.png')}
+              style={{ width: 32, height: 32 }}
+              resizeMode="contain"
+            />
           </View>
           <Text style={styles.formRole}>
             {selectedRole === 'ADMIN' ? 'Quản lý' : 'Nhân viên'}
@@ -325,16 +323,24 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
+  mainLogo: {
+    width: width * 0.6,
+    height: 80,
+    marginBottom: 10,
+  },
   logoImg: {
-    width: 56,
-    height: 56,
+    width: 32,
+    height: 32,
   },
   brandName: {
     fontFamily: 'GreatVibes-Regular',
     fontSize: 38,
     fontWeight: '800',
-    color: '#A15112',
+    color: '#F7941D', // Vibrant Chips Orange
     marginBottom: 8,
+    textShadowColor: 'rgba(247, 148, 29, 0.2)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 10,
   },
   tagline: {
     fontFamily: FONTS.medium,

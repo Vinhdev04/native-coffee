@@ -6,7 +6,7 @@
  */
 
 export const APP_CONFIG = {
-  appName: process.env.EXPO_PUBLIC_APP_NAME || "Bill Chips",
+  appName: process.env.EXPO_PUBLIC_APP_NAME || "Chips Bill",
   appVersion: process.env.EXPO_PUBLIC_APP_VERSION || "1.0.0",
   version: process.env.EXPO_PUBLIC_APP_VERSION || "1.0.0",
   apiUrl:
@@ -19,13 +19,13 @@ export const APP_CONFIG = {
     : "",
 };
 
-console.log("--- BILL CHIPS CONFIG ---");
+console.log("--- CHIPS BILL CONFIG ---");
 console.log("API Base URL:", APP_CONFIG.apiUrl);
 console.log("Full Login URL:", `${APP_CONFIG.apiUrl}/auth/login`);
 console.log("Public Key Found:", !!APP_CONFIG.publicKey);
 
 export const APP_ASSETS = {
-  logo: require("@/assets/images/logo.png"),
+  logo: require("@/public/logo.png"),
   splashBg: require("@/assets/images/splash_bg.png"),
   coffeePattern: require("@/assets/images/coffee_pattern.png"),
 };

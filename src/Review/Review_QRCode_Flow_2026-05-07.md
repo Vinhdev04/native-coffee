@@ -13,7 +13,7 @@ Sự thay đổi định dạng QR Code dẫn đến 2 luồng xử lý khác bi
 - **Kết quả:** Khách hàng được đưa đến trang web hiển thị hóa đơn thanh toán trực tuyến của mình (không cần cài app).
 
 ### 2. Luồng dành cho Nhân viên (Internal App Flow)
-- **Thiết bị/App:** Ứng dụng Bill Chips (Sử dụng `ScanQRScreen`).
+- **Thiết bị/App:** Ứng dụng Chips Bill (Sử dụng `ScanQRScreen`).
 - **Dữ liệu quét được:** Chuỗi URL `https://bill-dev.chips.com.vn/order/76` (hoặc JSON cũ).
 - **Hành vi (Behavior):** 
   - Ứng dụng quét nội dung.

@@ -17,8 +17,9 @@ import { formatCurrency } from '@/utils';
 import { fetchOrders, fetchOrderById } from '@/services/orderService';
 import {
   Package, Clock, CheckCircle, XCircle, ChevronRight,
-  RefreshCw, Receipt, CreditCard, AlertTriangle, X, QrCode, ScanLine
+  RefreshCw, Receipt, CreditCard, AlertTriangle, X, QrCode, ScanLine, Printer, User
 } from 'lucide-react-native';
+import ReceiptModal from '@/components/common/ReceiptModal';
 import { orderCache } from '@/utils/orderCache';
 import QRCode from 'react-native-qrcode-svg';
 
@@ -71,7 +72,11 @@ const formatDateTime = (raw: string) => {
 };
 
 // ─── Bottom Sheet Component ───────────────────────────────────────────────────
-export const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: () => void; onPayment: () => void }) => {
+export const OrderBottomSheet = ({ 
+  order, onClose, onPayment, onPrint 
+}: { 
+  order: any; onClose: () => void; onPayment: () => void; onPrint?: () => void 
+}) => {
   if (!order) return null;
   const statusKey = order.orderStatus || order.status || 'PENDING';
   const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.PENDING_PAYMENT;
@@ -87,28 +92,44 @@ export const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; on
         {/* Handle */}
         <View style={bs.handle} />
 
-        {/* Header */}
-        <View style={bs.header}>
-          <View style={bs.headerLeft}>
-            <View style={bs.orderIcon}>
-              <Receipt size={18} color={COLORS.primary} />
-            </View>
-            <View>
+        {/* Header Redesigned */}
+        <View style={bs.headerContainer}>
+          <View style={bs.headerTop}>
+            <View style={bs.headerIdRow}>
+              <View style={bs.orderIcon}>
+                <Receipt size={18} color={COLORS.primary} />
+              </View>
               <Text style={bs.orderCode}>{order.orderCode || `#${order.id}`}</Text>
-              <Text style={bs.orderTime}>{formatDateTime(order.createTime)} · {order.customerName || 'Khách'}</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={[bs.statusBadge, { backgroundColor: cfg.bg }]}>
-              <Text style={[bs.statusText, { color: cfg.color }]}>{cfg.label}</Text>
+              <View style={[bs.statusBadge, { backgroundColor: cfg.bg }]}>
+                <Text style={[bs.statusText, { color: cfg.color }]}>{cfg.label}</Text>
+              </View>
             </View>
             <TouchableOpacity onPress={onClose} style={bs.closeBtn}>
               <X size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
           </View>
+
+          <View style={bs.headerInfoRow}>
+            <View style={bs.headerInfoText}>
+              <View style={bs.infoItem}>
+                <Clock size={14} color={COLORS.textMuted} />
+                <Text style={bs.orderTime}>{formatDateTime(order.createTime)}</Text>
+              </View>
+              <View style={[bs.infoItem, { marginTop: 4 }]}>
+                <User size={14} color={COLORS.textMuted} />
+                <Text style={bs.orderTime}>{order.customerName || 'Khách vãng lai'}</Text>
+              </View>
+            </View>
+            {!canPay && onPrint && (
+              <TouchableOpacity onPress={onPrint} style={bs.printActionBtn}>
+                <Printer size={18} color={COLORS.white} />
+                <Text style={bs.printActionText}>In Bill</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: SH * 0.45 }}>
+        <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: SH * 0.4 }}>
           {/* Items */}
           <Text style={bs.sectionTitle}>CHI TIẾT MÓN</Text>
           {items.length === 0 ? (
@@ -189,6 +210,8 @@ const OrderScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [sheetLoading, setSheetLoading] = useState(false);
+  const [isReceiptVisible, setIsReceiptVisible] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -275,6 +298,22 @@ const OrderScreen = () => {
     });
   };
 
+  const handlePrintOrder = (order: any) => {
+    setReceiptData({
+      id: order.orderCode || order.id,
+      items: (order.items || order.orderItems || []).map((item: any) => ({
+        name: item.productNameSnapshot || item.productName || item.name,
+        quantity: item.qty || item.quantity || 1,
+        price: parseFloat(item.lineTotal || item.unitPriceSnapshot || '0') / (item.qty || item.quantity || 1),
+        selectedAttributes: item.selectedOptionsSnapshot || item.selectedAttributes || []
+      })),
+      totalPrice: parseFloat(order.totalAmount || order.total || '0'),
+      customerName: order.customerName,
+      createdAt: formatDateTime(order.createTime)
+    });
+    setIsReceiptVisible(true);
+  };
+
   const renderOrder = ({ item }: { item: any }) => {
     const statusKey = item.orderStatus || item.status || 'PENDING';
     const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.PENDING_PAYMENT;
@@ -327,7 +366,7 @@ const OrderScreen = () => {
       {/* Header */}
       <View style={s.header}>
         <View>
-          <Text style={s.headerTitle}>Bill Chips</Text>
+          <Text style={s.headerTitle}>Chips Bill</Text>
           <Text style={s.headerSub}>Quản lý đơn hàng ({allOrders.length})</Text>
         </View>
 
@@ -415,9 +454,21 @@ const OrderScreen = () => {
             </View>
           </View>
         ) : (
-          <OrderBottomSheet order={selectedOrder} onClose={() => setSelectedOrder(null)} onPayment={handlePayment} />
+          <OrderBottomSheet 
+            order={selectedOrder} 
+            onClose={() => setSelectedOrder(null)} 
+            onPayment={handlePayment}
+            onPrint={() => handlePrintOrder(selectedOrder)}
+          />
         )}
       </Modal>
+
+      <ReceiptModal 
+        visible={isReceiptVisible}
+        onClose={() => setIsReceiptVisible(false)}
+        order={receiptData}
+        title="HÓA ĐƠN BÁN HÀNG"
+      />
     </SafeAreaView>
   );
 };
@@ -504,32 +555,48 @@ const bs = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
-    backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingTop: 10,
+    backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24, paddingTop: 8,
     shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 20,
   },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 16 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  orderIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: '#FFF3E6', justifyContent: 'center', alignItems: 'center' },
-  orderCode: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary },
-  orderTime: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-  statusBadge: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
-  statusText: { fontFamily: FONTS.semiBold, fontSize: 12 },
-  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', marginLeft: 6 },
+  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 12 },
+  
+  headerContainer: { paddingHorizontal: 20, marginBottom: 20 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerIdRow: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 },
+  orderIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFF3E6', justifyContent: 'center', alignItems: 'center' },
+  orderCode: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary },
+  statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  statusText: { fontFamily: FONTS.semiBold, fontSize: 11 },
+  closeBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
 
-  sectionTitle: { fontFamily: FONTS.semiBold, fontSize: 11, color: COLORS.textMuted, letterSpacing: 0.8, marginBottom: 12 },
+  headerInfoRow: { 
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', 
+    marginTop: 16, padding: 12, backgroundColor: '#F9FAFB', borderRadius: 16
+  },
+  headerInfoText: { flex: 1 },
+  infoItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  orderTime: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textMuted },
+  
+  printActionBtn: { 
+    flexDirection: 'row', alignItems: 'center', gap: 6, 
+    backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
+    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3
+  },
+  printActionText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white },
+
+  sectionTitle: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.textPrimary, letterSpacing: 0.5, marginBottom: 12, paddingHorizontal: 20 },
   emptyItems: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textMuted, textAlign: 'center', paddingVertical: 16 },
 
-  itemRow: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 12, gap: 12 },
+  itemRow: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 12, gap: 12, marginHorizontal: 20 },
   itemBorder: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   qtyBadge: { width: 26, height: 26, borderRadius: 8, backgroundColor: '#FFF3E6', justifyContent: 'center', alignItems: 'center' },
   qtyText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.primary },
   itemName: { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary },
-  itemAttr: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  itemAttr: { fontFamily: FONTS.regular, fontSize: 10, color: COLORS.textMuted, marginTop: 1 },
   itemPrice: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
 
-  summaryBox: { marginTop: 12, backgroundColor: '#FAFAFA', borderRadius: 14, padding: 14 },
+  summaryBox: { marginTop: 12, backgroundColor: '#FAFAFA', borderRadius: 14, padding: 14, marginHorizontal: 20 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   summaryLabel: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textMuted },
   summaryValue: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textPrimary },

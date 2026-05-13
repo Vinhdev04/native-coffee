@@ -166,6 +166,10 @@ export function useCart() {
     dispatch({ type: 'CLEAR_CART' });
   };
 
+  const updateItem = (cartId: string, updatedItem: CartItem) => {
+    dispatch({ type: 'UPDATE_ITEM', cartId, item: updatedItem });
+  };
+
   return {
     items: state.items,
     isOpen: state.isOpen,
@@ -175,6 +179,7 @@ export function useCart() {
     removeItem,
     updateQuantity,
     updateNote,
+    updateItem,
     clearCart,
     dispatch
   };

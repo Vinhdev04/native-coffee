@@ -60,7 +60,7 @@ axiosClient.interceptors.request.use(
       console.log(`🔓 [Public Request] ${config.url} - No token attached`);
     }
     console.log(
-      `☕ [API Request] ${config.method?.toUpperCase()} ${config.url}`,
+      `🍟 [Chips Bill] ${config.method?.toUpperCase()} ${config.url}`,
       config.data || "",
     );
     return config;

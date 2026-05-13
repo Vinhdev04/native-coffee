@@ -32,7 +32,7 @@ flowchart TD
     C --> D[Mở trình duyệt Web\n(Safari / Chrome)]
     D --> E[Hiển thị trang hóa đơn Online\ncho khách]
     
-    B -- "Nhân viên\n(Dùng tính năng Quét mã\ntrên App Bill Chips)" --> F[App Bill Chips đọc URL]
+    B -- "Nhân viên\n(Dùng tính năng Quét mã\ntrên App Chips Bill)" --> F[App Chips Bill đọc URL]
     F --> G[Hàm handleReadCode\ntách lấy orderId = 76]
     G --> H[Điều hướng đến màn hình\nOrderDetail nội bộ]
 ```

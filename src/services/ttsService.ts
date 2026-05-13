@@ -27,8 +27,8 @@ loadSpeech();
  */
 export const speakPaymentSuccess = (amount: number, customerName?: string) => {
   // Định dạng số tiền có dấu phân cách nghìn cho dễ đọc/phát âm (nếu engine hỗ trợ)
-  const amountStr = amount.toString();
-  const text = `Đã nhận thanh toán ${amountStr} đồng. Xin cảm ơn!`;
+  const amountStr = amount.toLocaleString('vi-VN');
+  const text = `Thanh toán thành công ${amountStr} đồng`;
 
   console.log(`🔊 [TTS] speakPaymentSuccess → text: "${text}"`);
 
@@ -38,16 +38,24 @@ export const speakPaymentSuccess = (amount: number, customerName?: string) => {
   }
 
   try {
-    // Dừng phát âm cũ (không await để tránh delay khởi tạo âm thanh mới)
-    Speech.stop();
+    // Dừng phát âm cũ (bọc try-catch riêng để tránh lỗi nếu không có gì đang phát)
+    try { Speech.stop(); } catch {}
 
     Speech.speak(text, {
       language: 'vi-VN',
-      rate: 1.0, // Tăng tốc độ để cảm giác phản hồi nhanh hơn
+      rate: 1.0,
       pitch: 1.0,
       onStart: () => console.log('🔊 [TTS] Speaking started'),
       onDone: () => console.log('🔊 [TTS] Speaking done'),
-      onError: (err: any) => console.error('❌ [TTS] Speaking error:', err),
+      onError: (err: any) => {
+        console.error('❌ [TTS] Speaking error (vi-VN):', err);
+        // Fallback to system default if vi-VN fails
+        Speech.speak(text, {
+          rate: 1.0,
+          onStart: () => console.log('🔊 [TTS] Speaking started (fallback)'),
+          onError: (e: any) => console.error('❌ [TTS] Speaking error (fallback):', e),
+        });
+      },
     });
   } catch (e) {
     console.error('❌ [TTS] Failed to speak:', e);
@@ -60,7 +68,7 @@ export const speakPaymentSuccess = (amount: number, customerName?: string) => {
 export const stopSpeaking = async () => {
   if (!Speech) return;
   try {
-    await Speech.stop();
+    try { await Speech.stop(); } catch {}
     console.log('🔇 [TTS] Speaking stopped');
   } catch (e) {
     console.error('❌ [TTS] Failed to stop:', e);

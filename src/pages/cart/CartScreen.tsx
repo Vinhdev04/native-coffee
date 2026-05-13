@@ -14,6 +14,9 @@ import { createOrder, fetchActiveShiftSession } from '@/services/orderService';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '@/context/AuthContext';
 import { orderCache } from '@/utils/orderCache';
+import ProductModal from '@/components/menu/ProductModal';
+import ReceiptModal from '@/components/common/ReceiptModal';
+import { Printer } from 'lucide-react-native';
 
 const VOUCHERS = [
   { id: '1', code: 'COFFEE5', value: 5000, desc: 'Giảm ngay 5.000đ cho đơn hàng' },
@@ -22,7 +25,7 @@ const VOUCHERS = [
 
 const CartScreen = () => {
   const navigation = useNavigation<any>();
-  const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart, updateNote } = useCart();
+  const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart, updateNote, updateItem } = useCart();
   const { user } = useAuth();
   
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -35,6 +38,13 @@ const CartScreen = () => {
 
   // Voucher Modal State
   const [voucherModalVisible, setVoucherModalVisible] = useState(false);
+
+  // Edit Modal State
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+
+  // Receipt Modal State
+  const [isReceiptVisible, setIsReceiptVisible] = useState(false);
 
   const discount = selectedVoucher ? selectedVoucher.value : 0;
   const grandTotal = Math.max(0, totalPrice - discount);
@@ -102,8 +112,28 @@ const CartScreen = () => {
     setNoteModalVisible(false);
   };
 
+  const handleEditItem = (item: any) => {
+    setEditingItem(item);
+    setEditModalVisible(true);
+  };
+
+  const onUpdateItem = (updatedItem: any) => {
+    if (editingItem) {
+      updateItem(editingItem.cartId, {
+        ...editingItem,
+        ...updatedItem,
+        cartId: `${updatedItem.id}-${updatedItem.selectedAttributes?.map((a: any) => a.id).join('-') || 'default'}`,
+      });
+    }
+  };
+
   const renderItem = (item: any, isLast: boolean) => (
-    <View key={item.cartId} style={[s.cartItem, isLast && { borderBottomWidth: 0 }]}>
+    <TouchableOpacity 
+      key={item.cartId} 
+      style={[s.cartItem, isLast && { borderBottomWidth: 0 }]}
+      onPress={() => handleEditItem(item)}
+      activeOpacity={0.7}
+    >
       <Image 
         source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
         style={s.image} 
@@ -111,46 +141,40 @@ const CartScreen = () => {
       <View style={s.itemInfo}>
         <View style={s.titleRow}>
           <Text style={s.itemName} numberOfLines={1}>{item.name}</Text>
-          <TouchableOpacity onPress={() => removeItem(item.cartId)} style={s.deleteBtn}>
-            <Trash2 size={16} color={COLORS.textMuted} />
-          </TouchableOpacity>
+          <Text style={s.itemPrice}>{formatCurrency(item.price)}</Text>
         </View>
         
-        <Text style={s.itemAttributes}>
-          Size {item.selectedAttributes?.find((a: any) => a.type?.toLowerCase() === 'size')?.name || 'M'}
-          {item.selectedAttributes?.filter((a: any) => a.type?.toLowerCase() === 'topping').map((a: any) => `, ${a.name}`).join('')}
+        <Text style={s.itemAttributes} numberOfLines={1}>
+          {item.selectedAttributes?.map((a: any) => a.name).join(', ') || 'Mặc định'}
         </Text>
         
-        <TouchableOpacity 
-          style={[s.noteBtn, item.note ? s.noteBtnActive : {}]} 
-          onPress={() => openNoteModal(item)}
-        >
-          <FileText size={12} color={item.note ? COLORS.primary : COLORS.textMuted} />
-          <Text style={[s.noteBtnText, item.note ? { color: COLORS.primary } : {}]} numberOfLines={1}>
-            {item.note || 'Thêm ghi chú...'}
-          </Text>
-        </TouchableOpacity>
+        <View style={s.itemActions}>
+          <TouchableOpacity 
+            style={[s.noteBtn, item.note ? s.noteBtnActive : {}]} 
+            onPress={() => openNoteModal(item)}
+          >
+            <FileText size={12} color={item.note ? COLORS.primary : COLORS.textMuted} />
+            <Text style={[s.noteBtnText, item.note ? { color: COLORS.primary } : {}]} numberOfLines={1}>
+              {item.note || 'Ghi chú'}
+            </Text>
+          </TouchableOpacity>
 
-        <View style={s.priceQtyRow}>
-          <View style={s.quantityControl}>
-            <TouchableOpacity 
-              style={s.qtyBtn} 
-              onPress={() => updateQuantity(item.cartId, Math.max(0, item.quantity - 1))}
-            >
-              <Minus size={12} color={COLORS.textPrimary} />
+          <View style={s.qtyControls}>
+            <TouchableOpacity style={s.qtyBtn} onPress={() => updateQuantity(item.cartId, Math.max(0, item.quantity - 1))}>
+              <Minus size={14} color={COLORS.textPrimary} />
             </TouchableOpacity>
             <Text style={s.qtyText}>{item.quantity}</Text>
-            <TouchableOpacity 
-              style={s.qtyBtn} 
-              onPress={() => updateQuantity(item.cartId, item.quantity + 1)}
-            >
-              <Plus size={12} color={COLORS.textPrimary} />
+            <TouchableOpacity style={s.qtyBtn} onPress={() => updateQuantity(item.cartId, item.quantity + 1)}>
+              <Plus size={14} color={COLORS.textPrimary} />
             </TouchableOpacity>
           </View>
-          <Text style={s.itemPrice}>{formatCurrency(item.price * item.quantity)}</Text>
+
+          <TouchableOpacity onPress={() => removeItem(item.cartId)} style={s.deleteBtn}>
+            <Trash2 size={16} color="#EF4444" />
+          </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -165,9 +189,12 @@ const CartScreen = () => {
           </TouchableOpacity>
           <Text style={s.headerTitle}>Giỏ Hàng</Text>
           <View style={s.headerRight}>
-            <View style={s.itemBadge}>
-              <Text style={s.itemBadgeText}>{totalItems} món</Text>
-            </View>
+            <TouchableOpacity 
+              style={s.headerBtn} 
+              onPress={() => setIsReceiptVisible(true)}
+            >
+              <Printer size={20} color={COLORS.primary} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -179,8 +206,6 @@ const CartScreen = () => {
                 <View style={s.itemsSection}>
                   {items.map((item, index) => renderItem(item, index === items.length - 1))}
                 </View>
-
-                <View style={s.sectionDivider} />
 
                 {/* Voucher section */}
                 <TouchableOpacity style={s.voucherCard} onPress={() => setVoucherModalVisible(true)}>
@@ -197,27 +222,6 @@ const CartScreen = () => {
                   </View>
                   <ChevronRight size={20} color={COLORS.textMuted} />
                 </TouchableOpacity>
-
-                <View style={s.sectionDivider} />
-
-                {/* Summary section */}
-                <View style={s.summaryCard}>
-                  <View style={s.summaryRow}>
-                    <Text style={s.summaryLabel}>Tạm tính ({totalItems} món)</Text>
-                    <Text style={s.summaryValueText}>{formatCurrency(totalPrice)}</Text>
-                  </View>
-                  {discount > 0 && (
-                    <View style={s.summaryRow}>
-                      <Text style={[s.summaryLabel, { color: COLORS.error }]}>Khuyến mãi</Text>
-                      <Text style={[s.summaryValueText, { color: COLORS.error }]}>-{formatCurrency(discount)}</Text>
-                    </View>
-                  )}
-                  <View style={s.divider} />
-                  <View style={s.summaryRow}>
-                    <Text style={s.grandTotalLabel}>Tổng cộng</Text>
-                    <Text style={s.grandTotalValue}>{formatCurrency(grandTotal)}</Text>
-                  </View>
-                </View>
               </View>
               
               <View style={{ height: 120 }} />
@@ -355,152 +359,119 @@ const CartScreen = () => {
             </View>
           </View>
         </Modal>
+
+        {/* Product Edit Modal */}
+        <ProductModal 
+          visible={editModalVisible}
+          product={editingItem}
+          initialData={editingItem}
+          onClose={() => setEditModalVisible(false)}
+          onAddToCart={onUpdateItem}
+        />
+
+        <ReceiptModal
+          visible={isReceiptVisible}
+          onClose={() => setIsReceiptVisible(false)}
+          order={{ items, totalPrice, customerName: user?.fullName || 'Khách vãng lai' }}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );
 };
 
 const s = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#FFF9F5' },
+  safeArea: { flex: 1, backgroundColor: '#F7F7F8' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 15,
-  },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.textPrimary, flex: 1, textAlign: 'center' },
-  headerBtn: { 
-    width: 44, height: 44, justifyContent: 'center', alignItems: 'center', 
-    backgroundColor: COLORS.white, borderRadius: 14,
-    elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
-  },
-  headerRight: { width: 44, alignItems: 'flex-end', justifyContent: 'center' },
-  itemBadge: { backgroundColor: '#FFF0E6', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
-  itemBadgeText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.primary },
-
-  scrollContent: { padding: 16, paddingBottom: 40 },
-  mainContainer: {
+    paddingHorizontal: 20, 
+    paddingVertical: Platform.OS === 'android' ? 10 : 15,
     backgroundColor: COLORS.white,
-    borderRadius: 32,
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
   },
-  itemsSection: { padding: 16 },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary, flex: 1, textAlign: 'center' },
+  headerBtn: { 
+    width: 38, height: 38, justifyContent: 'center', alignItems: 'center', 
+    backgroundColor: '#F9FAFB', borderRadius: 12,
+  },
+  headerRight: { minWidth: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
+  itemBadge: { backgroundColor: '#FFF0E6', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  itemBadgeText: { fontFamily: FONTS.bold, fontSize: 11, color: COLORS.primary },
+
+  listContent: { paddingBottom: 150 },
+  sectionDivider: { height: 8, backgroundColor: '#F9FAFB' },
+  
+  itemsSection: { backgroundColor: COLORS.white },
   cartItem: {
-    flexDirection: 'row',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    flexDirection: 'row', padding: 10, backgroundColor: COLORS.white,
+    borderBottomWidth: 1, borderBottomColor: '#F3F4F6', alignItems: 'center',
   },
-  image: { width: 90, height: 90, borderRadius: 20, backgroundColor: '#F9FAFB' },
-  itemInfo: { flex: 1, marginLeft: 15, justifyContent: 'space-between' },
-  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  itemName: { flex: 1, fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary },
-  deleteBtn: { padding: 6, backgroundColor: '#F9FAFB', borderRadius: 10 },
-  itemAttributes: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  image: { width: 60, height: 60, borderRadius: 12, backgroundColor: '#F9FAFB' },
+  itemInfo: { flex: 1, marginLeft: 12 },
+  itemName: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
+  itemPrice: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary },
+  itemAttributes: { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted },
+  itemActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  qtyControls: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 8, padding: 2 },
+  qtyBtn: { width: 28, height: 28, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 8 },
+  qtyText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary, paddingHorizontal: 10 },
   noteBtn: { 
-    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
-    backgroundColor: '#F9FAFB', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, marginTop: 8,
-    maxWidth: '90%', borderStyle: 'dashed', borderWidth: 1, borderColor: '#E5E7EB'
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F9FAFB', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
+    flex: 1, marginRight: 10, borderStyle: 'dashed', borderWidth: 1, borderColor: '#E5E7EB'
   },
   noteBtnActive: { backgroundColor: '#FFF0E6', borderColor: COLORS.primary, borderStyle: 'solid' },
-  noteBtnText: { fontFamily: FONTS.medium, fontSize: 11, color: COLORS.textMuted, marginLeft: 6 },
-  
-  priceQtyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  itemPrice: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary },
-  quantityControl: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB',
-    borderRadius: 12, padding: 3, borderWidth: 1, borderColor: '#F3F4F6',
-  },
-  qtyBtn: { 
-    width: 28, height: 28, justifyContent: 'center', alignItems: 'center', 
-    backgroundColor: COLORS.white, borderRadius: 8,
-    elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 1,
-  },
-  qtyText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary, paddingHorizontal: 10 },
-
-  sectionDivider: { height: 8, backgroundColor: '#F9FAFB' },
+  noteBtnText: { marginLeft: 4, fontFamily: FONTS.medium, fontSize: 11, color: COLORS.textMuted },
 
   voucherCard: {
-    flexDirection: 'row', alignItems: 'center', padding: 16,
-    backgroundColor: COLORS.white,
+    flexDirection: 'row', alignItems: 'center', padding: 12,
+    backgroundColor: COLORS.white, marginTop: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#F3F4F6'
   },
-  voucherIconContainer: { 
-    width: 44, height: 44, borderRadius: 12, backgroundColor: '#FFF0E6', 
-    justifyContent: 'center', alignItems: 'center' 
-  },
-  voucherTextContainer: { flex: 1, marginLeft: 15 },
-  voucherTitle: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.textPrimary },
-  voucherSubtitle: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-
-  summaryCard: { padding: 20, backgroundColor: COLORS.white },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  summaryLabel: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textMuted },
-  summaryValueText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.textPrimary },
-  divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 12 },
-  grandTotalLabel: { fontFamily: FONTS.bold, fontSize: 17, color: COLORS.textPrimary },
-  grandTotalValue: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.primary },
+  voucherIconContainer: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center' },
+  voucherTextContainer: { flex: 1, marginLeft: 12 },
+  voucherTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
+  voucherSubtitle: { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted },
 
   footer: { 
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: 24, backgroundColor: COLORS.white, 
-    borderTopLeftRadius: 32, borderTopRightRadius: 32,
-    elevation: 25, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.08, shadowRadius: 15,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    padding: 20, backgroundColor: COLORS.white, 
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.1, shadowRadius: 10,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
-  footerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  footerTotalLabel: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textMuted },
-  footerTotalValue: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.primary },
-  footerItemCount: { backgroundColor: '#F9FAFB', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: '#F3F4F6' },
-  footerItemCountText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.textPrimary },
-  
-  checkoutBtn: { 
-    backgroundColor: COLORS.primary, height: 58, borderRadius: 20, justifyContent: 'center', alignItems: 'center',
-    elevation: 8, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 10,
-  },
+  footerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  footerTotalLabel: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.textMuted },
+  footerTotalValue: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.primary },
+  footerItemCount: { backgroundColor: '#F9FAFB', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+  footerItemCountText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.textPrimary },
+  checkoutBtn: { backgroundColor: COLORS.primary, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   checkoutText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
 
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, paddingBottom: 60 },
-  emptyIconCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center', marginBottom: 25 },
-  emptyTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.textPrimary, textAlign: 'center' },
-  emptySubtitle: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textMuted, textAlign: 'center', marginTop: 12, lineHeight: 20 },
-  shopBtn: { marginTop: 35, backgroundColor: COLORS.primary, paddingHorizontal: 35, paddingVertical: 14, borderRadius: 16, elevation: 4, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  emptyIconCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  emptyTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary },
+  emptySubtitle: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textMuted, textAlign: 'center', marginTop: 10 },
+  shopBtn: { marginTop: 30, backgroundColor: COLORS.primary, paddingHorizontal: 30, paddingVertical: 12, borderRadius: 14 },
   shopBtnText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.white },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  noteModalContent: { 
-    backgroundColor: COLORS.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, 
-    padding: 24, paddingBottom: Platform.OS === 'ios' ? 45 : 30 
-  },
-  voucherModalContent: { 
-    backgroundColor: COLORS.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, 
-    padding: 24, maxHeight: '80%', paddingBottom: Platform.OS === 'ios' ? 45 : 30 
-  },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.textPrimary },
-  modalProductName: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.textMuted, marginBottom: 15 },
+  noteModalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  modalTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary },
   noteInput: { 
-    backgroundColor: '#F9FAFB', borderRadius: 20, padding: 15, height: 120, 
+    backgroundColor: '#F9FAFB', borderRadius: 16, padding: 12, height: 100, 
     fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textPrimary, textAlignVertical: 'top',
     borderWidth: 1, borderColor: '#F3F4F6'
   },
-  saveNoteBtn: { backgroundColor: COLORS.primary, height: 54, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 24 },
+  saveNoteBtn: { backgroundColor: COLORS.primary, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
   saveNoteText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
-  
-  voucherList: { marginBottom: 20 },
+
+  voucherModalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '70%' },
   voucherOption: { 
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
-    padding: 16, backgroundColor: '#F9FAFB', borderRadius: 20, marginBottom: 12,
-    borderWidth: 1, borderColor: '#F3F4F6'
+    flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: '#F9FAFB', borderRadius: 16, marginBottom: 10, borderWidth: 1, borderColor: '#F3F4F6'
   },
   voucherOptionActive: { backgroundColor: '#FFF0E6', borderColor: COLORS.primary },
-  voucherOptionInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  voucherBadge: { backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  voucherBadgeText: { fontFamily: FONTS.bold, fontSize: 11, color: COLORS.white },
+  voucherOptionInfo: { flex: 1 },
   voucherOptionTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
-  voucherOptionValue: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.primary, marginTop: 2 },
+  voucherOptionValue: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.primary },
   removeVoucherBtn: { paddingVertical: 10, alignItems: 'center' },
   removeVoucherText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.error },
 });

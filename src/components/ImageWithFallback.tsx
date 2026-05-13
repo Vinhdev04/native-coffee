@@ -17,7 +17,7 @@ export function ImageWithFallback({ src, style, ...props }: ImageWithFallbackPro
   const [hasError, setHasError] = useState(false);
 
   const source = hasError || !src
-    ? require('@/assets/images/logo.png') // Sử dụng logo làm placeholder
+    ? require('@/public/logo.png') // Sử dụng logo làm placeholder
     : { uri: src };
 
   return (

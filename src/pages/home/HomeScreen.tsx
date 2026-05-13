@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
   StatusBar, SectionList, Dimensions,
-  ActivityIndicator, Platform, TextInput, FlatList,
+  ActivityIndicator, Platform, TextInput, FlatList, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -13,6 +13,7 @@ import { useCart } from '@/context/CartContext';
 import Toast from '@/components/common/Toast';
 import ProductCardHorizontal from '@/components/home/ProductCardHorizontal';
 import ProductModal from '@/components/menu/ProductModal';
+import ReceiptModal from '@/components/common/ReceiptModal';
 
 const SectionHeader = ({ title }: { title: string }) => (
   <View style={sh.wrap}>
@@ -20,8 +21,8 @@ const SectionHeader = ({ title }: { title: string }) => (
   </View>
 );
 const sh = StyleSheet.create({
-  wrap: { backgroundColor: '#F7F7F8', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  title: { fontFamily: FONTS.bold, fontSize: 15, color: '#374151' },
+  wrap: { backgroundColor: '#F7F7F8', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
+  title: { fontFamily: FONTS.bold, fontSize: 13, color: '#374151' },
 });
 
 const HomeScreen = () => {
@@ -36,6 +37,8 @@ const HomeScreen = () => {
   const [toast, setToast] = useState({ visible: false, title: '', msg: '' });
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isReceiptVisible, setIsReceiptVisible] = useState(false);
+  const [receiptOrder, setReceiptOrder] = useState<any>(null);
 
   const sectionListRef = useRef<SectionList>(null);
   const catBarRef = useRef<FlatList>(null);
@@ -113,7 +116,21 @@ const HomeScreen = () => {
 
   const handleAddToCart = (item: any) => {
     addToCart(item);
-    setToast({ visible: true, title: 'Đã thêm vào giỏ! 🎉', msg: item.name });
+    setToast({
+      visible: true,
+      title: 'Đã thêm vào giỏ! 🎉',
+      msg: `${item.name}. Chạm để xem giỏ hàng.`
+    });
+  };
+
+  const handlePrintProduct = (item: any) => {
+    setReceiptOrder({
+      id: 'DRAFT-' + Math.floor(Math.random() * 1000),
+      items: [{ ...item, quantity: 1, price: item.basePrice || item.price }],
+      totalPrice: item.basePrice || item.price,
+      customerName: 'Khách xem mẫu',
+    });
+    setIsReceiptVisible(true);
   };
 
   const handleProductPress = (product: any) => {
@@ -128,11 +145,21 @@ const HomeScreen = () => {
         visible={toast.visible} type="success"
         title={toast.title} message={toast.msg}
         onHide={() => setToast(t => ({ ...t, visible: false }))}
+        onPress={() => {
+          setToast(t => ({ ...t, visible: false }));
+          navigation.navigate('Cart');
+        }}
       />
 
       <View style={s.topBar}>
-        <View style={s.headerLeft} />
-        <Text style={s.brandName}>Bill Chips</Text>
+        <View style={s.headerLeft}>
+          <Image
+            source={require('@/public/logo.png')}
+            style={s.headerLogo}
+            resizeMode="contain"
+          />
+        </View>
+        <Text style={s.brandName}>Chips Bill</Text>
         <View style={s.headerRight}>
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
             <ShoppingBag size={20} color={COLORS.primary} />
@@ -213,13 +240,14 @@ const HomeScreen = () => {
               .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
               
             return (
-              <View style={{ paddingHorizontal: 16 }}>
+              <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
                 <ProductCardHorizontal
                   product={item}
                   searchText={searchText}
                   cartQuantity={cartQty}
                   onPress={() => handleProductPress(item)}
-                  onAddPress={() => handleProductPress(item)}
+                  onAddPress={() => handleAddToCart(item)}
+                  onPrintPress={() => handlePrintProduct(item)}
                 />
               </View>
             );
@@ -231,6 +259,13 @@ const HomeScreen = () => {
       )}
 
       <ProductModal visible={isModalVisible} product={selectedProduct} onClose={() => setIsModalVisible(false)} onAddToCart={handleAddToCart} />
+      
+      <ReceiptModal 
+        visible={isReceiptVisible} 
+        onClose={() => setIsReceiptVisible(false)} 
+        order={receiptOrder}
+        title="PHIẾU XEM TRƯỚC MÓN"
+      />
     </SafeAreaView>
   );
 };
@@ -239,10 +274,19 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.white },
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 15, backgroundColor: COLORS.white,
+    paddingHorizontal: 20, 
+    paddingVertical: Platform.OS === 'android' ? 10 : 15, 
+    backgroundColor: COLORS.white,
   },
-  headerLeft: { width: 44 },
-  brandName: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.textPrimary, flex: 1, textAlign: 'center' },
+  headerLeft: { width: 50, height: 30 },
+  headerLogo: { width: '100%', height: '100%' },
+  brandName: { 
+    fontFamily: FONTS.bold, 
+    fontSize: 22, 
+    color: '#F7941D', 
+    flex: 1, 
+    textAlign: 'center' 
+  },
   headerRight: { width: 44, alignItems: 'flex-end' },
   headerBtn: { 
     width: 44, height: 44, justifyContent: 'center', alignItems: 'center', 

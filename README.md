@@ -1,4 +1,4 @@
-# Native Coffee - React Native App
+# Chips Bill - React Native App
 
 Dự án React Native cho ứng dụng quản lý quán cà phê.
 

@@ -16,9 +16,10 @@ interface ProductModalProps {
   product: any;
   onClose: () => void;
   onAddToCart: (item: any) => void;
+  initialData?: any;
 }
 
-const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalProps) => {
+const ProductModal = ({ visible, product, onClose, onAddToCart, initialData }: ProductModalProps) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedAttributes, setSelectedAttributes] = useState<any[]>([]);
   const [note, setNote] = useState('');
@@ -27,12 +28,18 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
 
   useEffect(() => {
     if (visible && product?.id) {
-      setQuantity(1);
-      setSelectedAttributes([]);
-      setNote('');
+      if (initialData) {
+        setQuantity(initialData.quantity || 1);
+        setSelectedAttributes(initialData.selectedAttributes || []);
+        setNote(initialData.note || '');
+      } else {
+        setQuantity(1);
+        setSelectedAttributes([]);
+        setNote('');
+      }
       loadProductDetails();
     }
-  }, [visible, product?.id]);
+  }, [visible, product?.id, initialData]);
 
   const loadProductDetails = async () => {
     try {
@@ -208,7 +215,7 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
             </View>
 
             <TouchableOpacity style={s.confirmBtn} onPress={handleConfirm}>
-              <Text style={s.confirmBtnText}>Thêm vào giỏ hàng</Text>
+              <Text style={s.confirmBtnText}>{initialData ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ hàng'}</Text>
             </TouchableOpacity>
           </View>
         </View>

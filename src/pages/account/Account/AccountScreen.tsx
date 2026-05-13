@@ -64,8 +64,9 @@ const AccountScreen = () => {
             <View style={s.profileInfo}>
               <View style={s.avatarContainer}>
                 <Image 
-                  source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' }} 
+                  source={require('@/public/logo.png')} 
                   style={s.avatar} 
+                  resizeMode="contain"
                 />
               </View>
               <View style={s.nameContainer}>
@@ -179,10 +180,13 @@ const s = StyleSheet.create({
     marginTop: 24,
   },
   avatarContainer: {
-    width: 72, height: 72, borderRadius: 36,
-    borderWidth: 3, borderColor: '#FFF',
+    width: 72, height: 72, borderRadius: 16,
+    borderWidth: 2, borderColor: '#FFF',
     overflow: 'hidden',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 8,
   },
   avatar: { width: '100%', height: '100%' },
   nameContainer: { marginLeft: 16 },

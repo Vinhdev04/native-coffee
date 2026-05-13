@@ -4,7 +4,7 @@
 Tính năng nhằm tối ưu hóa trải nghiệm người dùng bằng cách cung cấp phản hồi hình ảnh/âm thanh (Toast Notifications) ngay sau khi thao tác. Quan trọng hơn, việc chuyển đổi đơn hàng vật lý sang QR Code giúp thu ngân/quản lý tiết kiệm thời gian đối soát, tra cứu và tổng hợp doanh thu nhanh chóng.
 
 ## 2. Đánh giá Thư viện & Công nghệ
-- **UI Notifications**: Tận dụng `react-native-toast-message` là giải pháp an toàn, hiệu năng cao, và không can thiệp sâu vào Native code. Có thể cấu hình custom view để đẹp và mang tính thương hiệu (Native Coffee / Bill Chips).
+- **UI Notifications**: Tận dụng `react-native-toast-message` là giải pháp an toàn, hiệu năng cao, và không can thiệp sâu vào Native code. Có thể cấu hình custom view để đẹp và mang tính thương hiệu (Native Coffee / Chips Bill).
 - **Phát sinh mã QR (QR Generation)**: Cần thêm `react-native-qrcode-svg`. Render bằng SVG trên Mobile rất sắc nét, dung lượng nhỏ, không bị vỡ hạt như dùng canvas bitmap.
 - **Quét mã QR (QR Scanner)**: Thư viện `react-native-camera-kit` đã có trong `package.json`, đủ khả năng quét nhanh. Cần chú ý quyền truy cập (Permissions) cho iOS và Android.
 

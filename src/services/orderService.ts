@@ -5,7 +5,7 @@
  * @layer services
  */
 
-import axiosClient from '@/api/axiosClient';
+import axiosClient from "@/api/axiosClient";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ export interface CreateOrderItem {
 
 export interface CreateOrderPayload {
   branchId: number;
-  shiftSessionId: number;
+  // shiftSessionId: number;
   customerName?: string;
   customerPhone?: string;
   note?: string;
@@ -32,11 +32,13 @@ export interface CreateOrderPayload {
  * GET /shift-sessions?branchId={branchId}&status=OPEN
  */
 export const fetchActiveShiftSession = async (branchId = 1) => {
-  console.log(`🕐 [OrderService] fetchActiveShiftSession → branchId=${branchId}`);
-  const response = await axiosClient.get('/shift-sessions', {
-    params: { branchId, status: 'OPEN', limit: 1 },
+  console.log(
+    `🕐 [OrderService] fetchActiveShiftSession → branchId=${branchId}`,
+  );
+  const response = await axiosClient.get("/shift-sessions", {
+    params: { branchId, status: "OPEN", limit: 1 },
   });
-  console.log('🕐 [OrderService] shiftSessions response:', response);
+  console.log("🕐 [OrderService] shiftSessions response:", response);
   return response;
 };
 
@@ -47,12 +49,17 @@ export const fetchActiveShiftSession = async (branchId = 1) => {
  * POST /orders  (idempotency-key tự sinh để tránh duplicate)
  */
 export const createOrder = async (payload: CreateOrderPayload) => {
-  const idempotencyKey = `order-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  console.log(`📦 [OrderService] createOrder payload:`, JSON.stringify(payload, null, 2));
+  const idempotencyKey = `order-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+  console.log(
+    `📦 [OrderService] createOrder payload:`,
+    JSON.stringify(payload, null, 2),
+  );
   console.log(`🔑 [OrderService] idempotency-key: ${idempotencyKey}`);
 
-  const response = await axiosClient.post('/orders', payload, {
-    headers: { 'idempotency-key': idempotencyKey },
+  const response = await axiosClient.post("/orders", payload, {
+    headers: { "idempotency-key": idempotencyKey },
   });
   console.log(`📦 [OrderService] createOrder response:`, response);
   return response;
@@ -71,8 +78,11 @@ export const fetchOrders = async (params?: {
 }) => {
   const finalParams = { branchId: 1, limit: 50, ...params };
   console.log(`📋 [OrderService] fetchOrders params:`, finalParams);
-  const response = await axiosClient.get('/orders', { params: finalParams });
-  console.log(`📋 [OrderService] fetchOrders → total:`, (response as any)?.data?.total ?? 'N/A');
+  const response = await axiosClient.get("/orders", { params: finalParams });
+  console.log(
+    `📋 [OrderService] fetchOrders → total:`,
+    (response as any)?.data?.total ?? "N/A",
+  );
   return response;
 };
 
@@ -93,10 +103,14 @@ export const fetchOrderById = async (id: number | string) => {
  */
 export const updateOrderStatus = async (
   id: number | string,
-  orderStatus: 'PENDING_PAYMENT' | 'PAID' | 'COMPLETED' | 'CANCELLED',
+  orderStatus: "PENDING_PAYMENT" | "PAID" | "COMPLETED" | "CANCELLED",
 ) => {
-  console.log(`🔄 [OrderService] updateOrderStatus → id=${id}, orderStatus=${orderStatus}`);
-  const response = await axiosClient.put(`/orders/${id}/status`, { orderStatus });
+  console.log(
+    `🔄 [OrderService] updateOrderStatus → id=${id}, orderStatus=${orderStatus}`,
+  );
+  const response = await axiosClient.put(`/orders/${id}/status`, {
+    orderStatus,
+  });
   console.log(`🔄 [OrderService] updateOrderStatus response:`, response);
   return response;
 };
@@ -105,5 +119,5 @@ export const updateOrderStatus = async (
  * Hủy đơn hàng (set status CANCELLED)
  */
 export const cancelOrder = async (id: number | string) => {
-  return updateOrderStatus(id, 'CANCELLED');
+  return updateOrderStatus(id, "CANCELLED");
 };

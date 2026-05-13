@@ -2,7 +2,7 @@
 setlocal
 
 echo ========================================
-echo   Native Coffee - Git Sync Workflow
+echo   Chips Bill - Git Sync Workflow
 echo ========================================
 
 echo [1/3] Saving changes to feat/auth-signin-signup...

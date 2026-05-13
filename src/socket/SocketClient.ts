@@ -33,7 +33,7 @@ class SocketClient {
     });
 
     this.socket.on('connect', () => {
-      console.log('☕ [Socket Connected]:', this.url);
+      console.log('🍟 [Socket Connected]:', this.url);
     });
 
     this.socket.on('disconnect', (reason) => {
