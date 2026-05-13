@@ -125,7 +125,6 @@ const LoginScreen = () => {
           style={styles.mainLogo}
           resizeMode="contain"
         />
-        <Text style={styles.brandName}>Chips Bill</Text>
         <Text style={styles.tagline}>Chọn vai trò để bắt đầu làm việc</Text>
       </View>
 
@@ -307,6 +306,7 @@ const styles = StyleSheet.create({
   // Role Selection
   header: {
     alignItems: 'center',
+    marginTop: 50,
     marginBottom: 40,
   },
   logoContainer: {

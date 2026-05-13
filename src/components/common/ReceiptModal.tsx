@@ -86,8 +86,10 @@ const ReceiptModal = ({ visible, onClose, order, title = 'HÓA ĐƠN TẠM TÍNH
               <View style={s.infoSection}>
                 <Text style={s.receiptTitle}>{title}</Text>
                 <View style={s.infoRow}>
-                  <Text style={s.infoLabel}>Số HĐ:</Text>
-                  <Text style={s.infoValue}>{order.id ? `#${order.id}` : 'DRAFT'}</Text>
+                  <Text style={s.infoLabel}>Mã đơn:</Text>
+                  <Text style={s.infoValue}>
+                    {order.id && !String(order.id).includes('DRAFT') ? order.id : 'DRAFT'}
+                  </Text>
                 </View>
                 <View style={s.infoRow}>
                   <Text style={s.infoLabel}>Ngày:</Text>
