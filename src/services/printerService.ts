@@ -35,17 +35,64 @@ class PrinterService {
   }
 
   /**
-   * Tạo dòng "label        value" căn phải, đúng MAX_W đơn vị
-   * Ví dụ: row('Tạm tính:', '135.000đ') → 'Tạm tính:       135.000đ'
+   * Tạo dòng "label   value" căn phải sát lề
+   * Lưu ý: ký tự "đ" (U+0111) in 2 đơn vị trên máy in nhiệt → trừ thêm 1
    */
   private row(label: string, value: string, maxW = 32): string {
-    const spaces = Math.max(1, maxW - this.pw(label) - this.pw(value));
+    const vLen = value.length + (value.endsWith("đ") ? 1 : 0);
+    const spaces = Math.max(1, maxW - label.length - vLen);
     return label + " ".repeat(spaces) + value;
   }
 
   /** Format số tiền VND */
   private vnd(amount: number): string {
     return `${Math.round(amount).toLocaleString("vi-VN")}đ`;
+  }
+
+  /**
+   * Format 1 dòng item: [Tên món (16)] [SL (3)] [Giá (13)] = 32 ký tự
+   * VNPAY POS render Unicode 1-width → dùng .length không dùng pw().
+   */
+  private formatItemRow(name: string, qty: number, price: string): string {
+    const NAME_W = 16;
+    const QTY_W = 3;
+    const PRICE_W = 13; // 16+3+13 = 32
+
+    // Cắt tên nếu quá dài
+    let n = name;
+    if (n.length > NAME_W) {
+      n = n.slice(0, NAME_W - 2) + "..";
+    }
+    const namePad = " ".repeat(Math.max(0, NAME_W - n.length));
+    const qtyStr = String(qty);
+    const qtyPad = " ".repeat(Math.max(0, QTY_W - qtyStr.length));
+    // "đ" in 2 đơn vị trên máy in → trừ thêm 1 khi tính padding
+    const priceVisual = price.length + (price.endsWith("đ") ? 1 : 0);
+    const pricePad = " ".repeat(Math.max(0, PRICE_W - priceVisual));
+
+    return `${n}${namePad}${qtyPad}${qtyStr}${pricePad}${price}`;
+  }
+
+  /**
+   * Format dòng thuộc tính: "   + {Tên}" + SL + Giá
+   * VNPAY POS render Unicode 1-width → dùng .length.
+   */
+  private formatAttrRow(attrName: string, qty: number, price: string): string {
+    const PREFIX = "   + ";
+    const NAME_W = 11; // 16 - 5 (prefix)
+    const QTY_W = 3;
+    const PRICE_W = 13;
+
+    let n = attrName;
+    if (n.length > NAME_W) {
+      n = n.slice(0, NAME_W - 2) + "..";
+    }
+    const namePad = " ".repeat(Math.max(0, NAME_W - n.length));
+    const qtyStr = String(qty);
+    const qtyPad = " ".repeat(Math.max(0, QTY_W - qtyStr.length));
+    const pricePad = " ".repeat(Math.max(0, PRICE_W - price.length));
+
+    return `${PREFIX}${n}${namePad}${qtyPad}${qtyStr}${pricePad}${price}`;
   }
 
   async print(data: PrintData): Promise<boolean> {
@@ -111,10 +158,11 @@ class PrinterService {
       SunmiPrinter.printerText(SEP);
 
       // ══ BẢNG MÓN ══════════════════════════════════════════════
-      // Header bảng món: căn cột đúng theo độ rộng Unicode
-      // pw("Tên món")=9 · pw("SL")=2 · pw("Thành tiền")=12 → tổng = 32
+      SunmiPrinter.setAlignment(0);
       SunmiPrinter.setFontWeight(true);
-      SunmiPrinter.printerText("Tên món      SL   Thành tiền\n");
+      // Header căn đúng cột [16, 3, 13] = 32 ký tự
+      // "Tên món"(7) + 9sp = 16 | " SL"(3) | "   Thành tiền"(13)
+      SunmiPrinter.printerText("Tên món          SL      T.Tiền\n");
       SunmiPrinter.setFontWeight(false);
       SunmiPrinter.printerText(SEP);
 
@@ -126,21 +174,10 @@ class PrinterService {
         );
         const lineTotal = this.vnd(unitPrice * qty);
 
-        // Dòng 1: Tên món (in đầy đủ, tự wrap nếu dài)
-        SunmiPrinter.printerText(`${name}\n`);
-
-        // Dòng 2: Số lượng × giá → căn phải
-        // Ví dụ: "  x3                    135.000đ"
-        SunmiPrinter.printerText(this.row(`  x${qty}`, lineTotal) + "\n");
-
-        // In thuộc tính (size, topping...) nếu có
-        if (item.selectedAttributes && item.selectedAttributes.length > 0) {
-          const optStr = item.selectedAttributes
-            .map((a: any) => a.name || a.attributeName)
-            .filter(Boolean)
-            .join(", ");
-          if (optStr) SunmiPrinter.printerText(`  (${optStr})\n`);
-        }
+        // 1 dòng duy nhất: tên cắt bớt nếu dài, SL và giá luôn cùng hàng
+        SunmiPrinter.printerText(
+          this.formatItemRow(name, qty, lineTotal) + "\n",
+        );
       });
 
       // ══ TỔNG CỘNG ══════════════════════════════════════════════
