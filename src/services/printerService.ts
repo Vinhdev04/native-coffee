@@ -67,14 +67,9 @@ class PrinterService {
       */
 
       // Order Info
-      const now = new Date();
-      const currentDateTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} - ${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
-      
-      const displayId = data.id && !String(data.id).includes('DRAFT') ? data.id : 'DRAFT';
-
       SunmiPrinter.setAlignment(0); // Left
-      SunmiPrinter.printerText(`Mã đơn: ${displayId}\n`);
-      SunmiPrinter.printerText(`Ngày in: ${currentDateTime}\n`);
+      SunmiPrinter.printerText(`Mã đơn: ${data.id || "N/A"}\n`);
+      SunmiPrinter.printerText(`Ngày: ${data.createdAt || ""}\n`);
       SunmiPrinter.printerText(
         `Khách: ${data.customerName || "Khách vãng lai"}\n`,
       );
@@ -84,7 +79,7 @@ class PrinterService {
       SunmiPrinter.setFontWeight(true);
       SunmiPrinter.printColumnsText(
         ["Tên món", "SL", "T.Tiền"],
-        [18, 4, 10],
+        [14, 4, 14],
         [0, 1, 2],
       );
       SunmiPrinter.setFontWeight(false);
@@ -97,7 +92,7 @@ class PrinterService {
 
         SunmiPrinter.printColumnsText(
           [name, String(qty), lineTotal],
-          [18, 4, 10],
+          [14, 4, 14],
           [0, 1, 2],
         );
 
