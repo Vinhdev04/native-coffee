@@ -1,12 +1,13 @@
 import React from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity, 
-  ScrollView, Dimensions, Platform, Image
+  ScrollView, Dimensions, Platform, Image, ActivityIndicator
 } from 'react-native';
 import { X, Printer, Share2, CheckCircle2 } from 'lucide-react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
 import QRCode from 'react-native-qrcode-svg';
+import { printerService } from '@/services/printerService';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -24,10 +25,18 @@ interface ReceiptModalProps {
 }
 
 const ReceiptModal = ({ visible, onClose, order, title = 'HÓA ĐƠN TẠM TÍNH' }: ReceiptModalProps) => {
+  const [isPrinting, setIsPrinting] = React.useState(false);
+  
   if (!order) return null;
 
   const today = new Date();
   const dateStr = order.createdAt || `${today.getHours()}:${today.getMinutes()} - ${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    await printerService.print(order);
+    setIsPrinting(false);
+  };
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -42,8 +51,16 @@ const ReceiptModal = ({ visible, onClose, order, title = 'HÓA ĐƠN TẠM TÍNH
               <TouchableOpacity style={s.actionBtn}>
                 <Share2 size={20} color={COLORS.primary} />
               </TouchableOpacity>
-              <TouchableOpacity style={[s.actionBtn, s.printBtn]}>
-                <Printer size={20} color={COLORS.white} />
+              <TouchableOpacity 
+                style={[s.actionBtn, s.printBtn, isPrinting && { opacity: 0.6 }]} 
+                onPress={handlePrint}
+                disabled={isPrinting}
+              >
+                {isPrinting ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <Printer size={20} color={COLORS.white} />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -60,7 +77,7 @@ const ReceiptModal = ({ visible, onClose, order, title = 'HÓA ĐƠN TẠM TÍNH
                 />
                 <Text style={s.brandName}>CHIPS BILL</Text>
                 <Text style={s.brandAddress}>L3-19 - Tầng 19 - Block Lucky, số 207C Nguyễn Xí, P. Bình Thạnh, TP. Hồ Chí Minh</Text>
-                <Text style={s.brandPhone}>Hotline: 1900 1234</Text>
+                <Text style={s.brandPhone}>Hotline: 0966966247</Text>
               </View>
 
               <View style={s.divider} />
@@ -129,6 +146,7 @@ const ReceiptModal = ({ visible, onClose, order, title = 'HÓA ĐƠN TẠM TÍNH
 
               {/* QR & Footer */}
               <View style={s.footerSection}>
+                {/* 
                 <View style={s.qrBox}>
                   <QRCode
                     value={`https://bill.chips.vn/pay/${order.id || 'draft'}`}
@@ -137,6 +155,7 @@ const ReceiptModal = ({ visible, onClose, order, title = 'HÓA ĐƠN TẠM TÍNH
                     backgroundColor="transparent"
                   />
                 </View>
+                */}
                 <Text style={s.footerThank}>Cảm ơn Quý khách. Hẹn gặp lại!</Text>
                 <Text style={s.footerPowered}>Powered by Chips Bill POS</Text>
               </View>

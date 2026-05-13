@@ -85,7 +85,7 @@ const MainNavigator = () => {
 const s = StyleSheet.create({
   tabBar: {
     backgroundColor: COLORS.white,
-    height: Platform.OS === 'ios' ? 88 : 62,
+    height: Platform.OS === 'ios' ? 92 : 75,
     borderTopWidth: 1,
     borderTopColor: '#F3F4F6',
     elevation: 0,
@@ -93,7 +93,7 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    paddingBottom: Platform.OS === 'ios' ? 25 : 6,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 15,
     paddingTop: 0,
   },
   tabItem: {

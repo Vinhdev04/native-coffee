@@ -171,7 +171,8 @@ export const OrderBottomSheet = ({
           </View>
         </ScrollView>
 
-        {/* QR Code Section for Paid Orders */}
+        {/* QR Code Section for Paid Orders (Tạm thời ẩn) */}
+        {/*
         {!canPay && (
           <View style={bs.qrContainer}>
             <View style={bs.qrWrapper}>
@@ -188,6 +189,7 @@ export const OrderBottomSheet = ({
             </View>
           </View>
         )}
+        */}
 
         {/* CTA */}
         {canPay && (

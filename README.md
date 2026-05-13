@@ -1,65 +1,73 @@
-# Chips Bill - React Native App
+# 🍟 Chips Bill POS
 
-Dự án React Native cho ứng dụng quản lý quán cà phê.
+Chips Bill là giải pháp phần mềm POS (Point of Sale) chuyên dụng, được tối ưu hóa đặc biệt cho các thiết bị máy **VNPAY POS** và môi trường bán hàng tốc độ cao.
 
-## Cấu trúc thư mục
+## ✨ Tính năng nổi bật
 
-```
-native-coffee/
-├── src/
-│   ├── api/              # Axios client & interceptors
-│   ├── assets/           # Fonts, Images
-│   ├── components/       # Shared components
-│   ├── constants/        # Colors, Config, Typography, Constants
-│   ├── context/          # AuthContext, CartContext
-│   ├── data/             # Mock data
-│   ├── hooks/            # Custom hooks (useDebounce, ...)
-│   ├── i18n/             # i18next config + locales (vi, en)
-│   ├── navigation/       # RootNavigator, MainNavigator
-│   ├── pages/            # Screens: home, menu, orders, account, auth
-│   ├── services/         # productService, orderService
-│   ├── socket/           # SocketClient singleton
-│   ├── styles/           # theme.ts (COLORS, FONTS, SPACING)
-│   └── utils/            # index.ts, dateUtils, encryption, permissionUtils
-├── App.tsx
-├── index.js
-├── package.json
-├── tsconfig.json
-├── babel.config.js
-├── metro.config.js
-├── react-native.config.js
-└── .env
-```
+- **⚡ Tối ưu hóa cho POS**: Giao diện siêu gọn (Compact UI), mật độ thông tin cao, phù hợp với màn hình nhỏ của thiết bị cầm tay.
+- **🛒 Giỏ hàng thông minh**: 
+  - Thêm món nhanh (Direct-to-cart) không cần qua bước trung gian.
+  - Chỉnh sửa thuộc tính (Size, Topping, Ghi chú) trực tiếp ngay trong giỏ hàng.
+- **📄 In hóa đơn chuyên nghiệp**: 
+  - Hỗ trợ in hóa đơn tạm tính cho khách xem trước.
+  - In hóa đơn chính thức cho các đơn hàng đã thanh toán.
+  - Giao diện hóa đơn đẹp, mô phỏng giấy in nhiệt thực tế.
+- **🔊 Thông báo giọng nói (TTS)**: Phát âm thanh thông báo tiếng Việt khi hoàn tất đơn hàng hoặc gặp lỗi, giúp nhân viên nắm bắt trạng thái mà không cần nhìn màn hình.
+- **🔍 Quét QR & Tìm kiếm**: Tích hợp quét mã QR đơn hàng nhanh chóng, hỗ trợ tra cứu và thanh toán ngay lập tức.
 
-## Màu sắc thương hiệu
+## 🎨 Màu sắc thương hiệu
 
 | Token          | Màu        | Mô tả              |
 |----------------|------------|-------------------|
-| `primary`      | `#3D1C02`  | Espresso đậm       |
-| `accent`       | `#C8793A`  | Caramel ấm         |
-| `background`   | `#FFF8F0`  | Kem ấm             |
-| `gold`         | `#D4A843`  | Vàng cà phê        |
+| `primary`      | `#FF7A00`  | Chips Orange       |
+| `accent`       | `#111827`  | Dark Navy          |
+| `background`   | `#F9FAFB`  | Light Gray         |
+| `surfaceWarm`  | `#FFF7F0`  | Warm Orange Tint   |
 
-## Khởi động
+## 🛠 Cài đặt & Khởi động
 
 ```bash
+# Cài đặt dependencies
 npm install
-npx react-native link   # Link fonts
-npm run android         # Chạy Android
-npm run ios             # Chạy iOS
+
+# Link font chữ (nếu cần)
+npx react-native link
+
+# Chạy ứng dụng trên Android
+npm run android
+
+# Chạy ứng dụng trên iOS
+npm run ios
 ```
 
-## Alias
+## 📦 Build & Cài đặt (Android)
 
-Dùng `~` thay thế `./src/`:
+### Lệnh Build file APK
+```bash
+# Di chuyển vào thư mục android
+cd android
 
-```ts
-import { Colors } from '~/constants/Colors';
-import axiosClient from '~/api/axiosClient';
+# Build file APK (phiên bản Release)
+./gradlew assembleRelease
+```
+*File APK sau khi build sẽ nằm tại: `android/app/build/outputs/apk/release/app-release.apk`*
+
+### Lệnh cài đặt APK vào máy POS (qua ADB)
+```bash
+# Kiểm tra thiết bị đã kết nối
+adb devices
+
+# Cài đặt file APK
+adb install -r android/app/build/outputs/apk/release/app-release.apk
 ```
 
-## Kế thừa từ mobile-cofffee
+## 📂 Cấu trúc thư mục
 
-- Cấu trúc folder và file tiện ích giữ nguyên
-- SocketClient, AuthContext, CartContext kế thừa logic
-- Thay thế brand màu sắc và UI theo Coffee theme
+- `src/pages`: Các màn hình chính (Home, Menu, Cart, Orders, Account).
+- `src/components`: Các thành phần giao diện dùng chung (ReceiptModal, ProductModal, v.v.).
+- `src/services`: Xử lý logic API và phần cứng (TTS, Orders, Products).
+- `src/context`: Quản lý trạng thái ứng dụng (Auth, Cart).
+- `Review/`: Tài liệu luồng nghiệp vụ (System Flowcharts).
+
+---
+© 2026 Chips Bill POS. Powered by Chips Team.

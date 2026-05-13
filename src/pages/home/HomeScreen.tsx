@@ -159,7 +159,6 @@ const HomeScreen = () => {
             resizeMode="contain"
           />
         </View>
-        <Text style={s.brandName}>Chips Bill</Text>
         <View style={s.headerRight}>
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
             <ShoppingBag size={20} color={COLORS.primary} />
@@ -278,7 +277,7 @@ const s = StyleSheet.create({
     paddingVertical: Platform.OS === 'android' ? 10 : 15, 
     backgroundColor: COLORS.white,
   },
-  headerLeft: { width: 50, height: 30 },
+  headerLeft: { width: 80, height: 40 },
   headerLogo: { width: '100%', height: '100%' },
   brandName: { 
     fontFamily: FONTS.bold, 
