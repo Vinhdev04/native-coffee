@@ -9,7 +9,7 @@
     "start": "react-native start",
     "test": "jest",
     "postinstall": "patch-package",
-    "generate-icons": "npx icon-set-creator create -A -I ./src/public/favicon.png -b '#ffffff'",
+    "generate-icons": "npx icon-set-creator create -A -I ./src/public/favicon-32x32.png -b '#ffffff'",
     "expo:start": "expo start",
     "expo:android": "expo run:android",
     "expo:ios": "expo run:ios"

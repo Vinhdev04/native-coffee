@@ -57,7 +57,7 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
         <View style={s.header}>
           <View style={s.logoBox}>
             <Image
-              source={require("@/assets/images/logo.png")}
+              source={require("@/assets/images/chips.png")}
               style={s.logoImage}
               resizeMode="contain"
             />
