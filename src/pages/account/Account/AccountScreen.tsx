@@ -7,18 +7,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { 
   User, Lock, Printer, Globe, Headset, 
-  LogOut, ChevronRight, ArrowLeft 
+  LogOut, ChevronRight, ArrowLeft, Check 
 } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { COLORS, FONTS } from '@/styles/theme';
 import Toast from '@/components/common/Toast';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 const AccountScreen = () => {
   const navigation = useNavigation();
   const { user, logout } = useAuth();
+  const { t, i18n } = useTranslation();
   const [toast, setToast] = useState({ visible: false, title: '', message: '' });
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [langModalVisible, setLangModalVisible] = useState(false);
 
   const displayName = user?.fullName || user?.username || 'Trần Thị Nhân Viên';
   const displayRole = user?.role || 'Nhân viên bán hàng';
@@ -32,6 +35,11 @@ const AccountScreen = () => {
       <ChevronRight size={18} color="#D1D5DB" />
     </TouchableOpacity>
   );
+
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+    setLangModalVisible(false);
+  };
 
   return (
     <View style={s.container}>
@@ -102,7 +110,7 @@ const AccountScreen = () => {
           <MenuItem icon={User} label="Thông Tin Tài Khoản" onPress={() => navigation.navigate('UpdateProfile' as never)} />
           <MenuItem icon={Lock} label="Đổi Mật Khẩu" onPress={() => navigation.navigate('ChangePassword' as never)} />
           <MenuItem icon={Printer} label="Cài Đặt Máy In" onPress={() => {}} />
-          <MenuItem icon={Globe} label="Ngôn Ngữ" onPress={() => {}} />
+          <MenuItem icon={Globe} label={t('language') || "Ngôn Ngữ"} onPress={() => setLangModalVisible(true)} />
           <MenuItem icon={Headset} label="Hỗ Trợ" onPress={() => {}} />
         </View>
 
@@ -114,6 +122,40 @@ const AccountScreen = () => {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* ── Language Modal ── */}
+      <Modal
+        visible={langModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLangModalVisible(false)}
+      >
+        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => setLangModalVisible(false)}>
+          <View style={[s.modalContent, { padding: 0, overflow: 'hidden' }]}>
+            <View style={{ padding: 20, backgroundColor: '#FFF7ED', width: '100%', alignItems: 'center' }}>
+              <Globe size={28} color="#F97316" style={{ marginBottom: 10 }} />
+              <Text style={s.modalTitle}>{t('change_language') || "Đổi ngôn ngữ"}</Text>
+            </View>
+            <View style={{ width: '100%', padding: 16 }}>
+              <TouchableOpacity 
+                style={[s.langOption, i18n.language === 'vn' && s.langOptionActive]} 
+                onPress={() => changeLanguage('vn')}
+              >
+                <Text style={[s.langText, i18n.language === 'vn' && s.langTextActive]}>Tiếng Việt</Text>
+                {i18n.language === 'vn' && <Check size={20} color="#F97316" />}
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[s.langOption, i18n.language === 'en' && s.langOptionActive]} 
+                onPress={() => changeLanguage('en')}
+              >
+                <Text style={[s.langText, i18n.language === 'en' && s.langTextActive]}>English</Text>
+                {i18n.language === 'en' && <Check size={20} color="#F97316" />}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* ── Custom Logout Modal ── */}
       <Modal
@@ -313,6 +355,31 @@ const s = StyleSheet.create({
     elevation: 4,
   },
   btnConfirmText: { fontFamily: FONTS.bold, fontSize: 15, color: '#FFF' },
+  langOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#F3F4F6'
+  },
+  langOptionActive: {
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FED7AA'
+  },
+  langText: {
+    fontFamily: FONTS.medium,
+    fontSize: 16,
+    color: '#4B5563'
+  },
+  langTextActive: {
+    fontFamily: FONTS.bold,
+    color: '#F97316'
+  }
 });
 
 export default AccountScreen;

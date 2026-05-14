@@ -1,0 +1,13 @@
+{
+  "greeting": "Hello",
+  "language": "Language",
+  "vietnamese": "Vietnamese",
+  "english": "English",
+  "orders": "Orders",
+  "settings": "Settings",
+  "home": "Home",
+  "all": "All",
+  "pending": "Pending",
+  "done": "Done",
+  "change_language": "Change Language"
+}

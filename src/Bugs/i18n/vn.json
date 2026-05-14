@@ -1,0 +1,13 @@
+{
+  "greeting": "Xin chào",
+  "language": "Ngôn ngữ",
+  "vietnamese": "Tiếng Việt",
+  "english": "Tiếng Anh",
+  "orders": "Đơn hàng",
+  "settings": "Cài đặt",
+  "home": "Trang chủ",
+  "all": "Tất cả",
+  "pending": "Đang chờ",
+  "done": "Hoàn thành",
+  "change_language": "Đổi ngôn ngữ"
+}
