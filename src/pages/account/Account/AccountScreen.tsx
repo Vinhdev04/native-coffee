@@ -65,7 +65,7 @@ const AccountScreen = () => {
               <TouchableOpacity style={s.backBtn}>
                 <ArrowLeft size={24} color="#FFF" />
               </TouchableOpacity>
-              <Text style={s.headerTitle}>Hồ Sơ</Text>
+              <Text style={s.headerTitle}>{t('profile') || 'Hồ Sơ'}</Text>
               <View style={{ width: 40 }} />
             </View>
 
@@ -92,32 +92,32 @@ const AccountScreen = () => {
         <View style={s.statsContainer}>
           <View style={s.statCard}>
             <Text style={s.statValue}>128</Text>
-            <Text style={s.statLabel}>Đơn hôm nay</Text>
+            <Text style={s.statLabel}>{t('today_orders') || 'Đơn hôm nay'}</Text>
           </View>
           <View style={s.statCard}>
             <Text style={s.statValue}>4.9</Text>
-            <Text style={s.statLabel}>Đánh giá</Text>
+            <Text style={s.statLabel}>{t('rating') || 'Đánh giá'}</Text>
           </View>
           <View style={s.statCard}>
             <Text style={s.statValue}>92%</Text>
-            <Text style={s.statLabel}>Hoàn thành</Text>
+            <Text style={s.statLabel}>{t('completed') || 'Hoàn thành'}</Text>
           </View>
         </View>
 
         {/* ── Settings List ── */}
         <View style={s.menuSection}>
-          <Text style={s.sectionTitle}>CÀI ĐẶT</Text>
-          <MenuItem icon={User} label="Thông Tin Tài Khoản" onPress={() => navigation.navigate('UpdateProfile' as never)} />
-          <MenuItem icon={Lock} label="Đổi Mật Khẩu" onPress={() => navigation.navigate('ChangePassword' as never)} />
-          <MenuItem icon={Printer} label="Cài Đặt Máy In" onPress={() => {}} />
+          <Text style={s.sectionTitle}>{t('settings_uppercase') || 'CÀI ĐẶT'}</Text>
+          <MenuItem icon={User} label={t('account_info') || "Thông Tin Tài Khoản"} onPress={() => navigation.navigate('UpdateProfile' as never)} />
+          <MenuItem icon={Lock} label={t('change_password') || "Đổi Mật Khẩu"} onPress={() => navigation.navigate('ChangePassword' as never)} />
+          <MenuItem icon={Printer} label={t('printer_settings') || "Cài Đặt Máy In"} onPress={() => {}} />
           <MenuItem icon={Globe} label={t('language') || "Ngôn Ngữ"} onPress={() => setLangModalVisible(true)} />
-          <MenuItem icon={Headset} label="Hỗ Trợ" onPress={() => {}} />
+          <MenuItem icon={Headset} label={t('support') || "Hỗ Trợ"} onPress={() => {}} />
         </View>
 
         {/* ── Logout Button ── */}
         <TouchableOpacity style={s.logoutBtn} onPress={() => setLogoutModalVisible(true)}>
           <LogOut size={22} color="#EF4444" />
-          <Text style={s.logoutText}>Đăng Xuất</Text>
+          <Text style={s.logoutText}>{t('logout') || 'Đăng Xuất'}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 100 }} />
@@ -169,18 +169,18 @@ const AccountScreen = () => {
             <View style={s.modalIconWrap}>
               <LogOut size={28} color="#EF4444" />
             </View>
-            <Text style={s.modalTitle}>Đăng xuất?</Text>
-            <Text style={s.modalSub}>Bạn sẽ quay lại màn hình chọn vai trò</Text>
+            <Text style={s.modalTitle}>{t('logout_confirm_title') || 'Đăng xuất?'}</Text>
+            <Text style={s.modalSub}>{t('logout_confirm_desc') || 'Bạn sẽ quay lại màn hình chọn vai trò'}</Text>
             
             <View style={s.modalActions}>
               <TouchableOpacity style={s.btnCancel} onPress={() => setLogoutModalVisible(false)}>
-                <Text style={s.btnCancelText}>Ở lại</Text>
+                <Text style={s.btnCancelText}>{t('stay') || 'Ở lại'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.btnConfirm} onPress={() => {
                 setLogoutModalVisible(false);
                 logout();
               }}>
-                <Text style={s.btnConfirmText}>Đăng xuất</Text>
+                <Text style={s.btnConfirmText}>{t('logout') || 'Đăng xuất'}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -45,48 +45,46 @@ import {
 import ReceiptModal from "@/components/common/ReceiptModal";
 import { orderCache } from "@/utils/orderCache";
 import QRCode from "react-native-qrcode-svg";
+import { useTranslation } from 'react-i18next';
 
 const { height: SH } = Dimensions.get("window");
 
 // ─── Status Config ───────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; color: string; bg: string; Icon: any }
-> = {
-  DRAFT: { label: "Nháp", color: "#6B7280", bg: "#F3F4F6", Icon: Clock },
-  PENDING: { label: "Đang chờ", color: "#D97706", bg: "#FEF3C7", Icon: Clock },
+const getStatusConfig = (t: any): Record<string, { label: string; color: string; bg: string; Icon: any }> => ({
+  DRAFT: { label: t('status_draft') || "Nháp", color: "#6B7280", bg: "#F3F4F6", Icon: Clock },
+  PENDING: { label: t('pending') || "Đang chờ", color: "#D97706", bg: "#FEF3C7", Icon: Clock },
   PENDING_PAYMENT: {
-    label: "Chờ thanh toán",
+    label: t('status_pending_payment') || "Chờ thanh toán",
     color: "#D97706",
     bg: "#FEF3C7",
     Icon: Clock,
   },
   PAID: {
-    label: "Đã thanh toán",
+    label: t('status_paid') || "Đã thanh toán",
     color: "#059669",
     bg: "#D1FAE5",
     Icon: CheckCircle,
   },
   READY: {
-    label: "Sẵn sàng",
+    label: t('status_ready') || "Sẵn sàng",
     color: "#2563EB",
     bg: "#DBEAFE",
     Icon: CheckCircle,
   },
   DONE: {
-    label: "Hoàn thành",
+    label: t('done') || "Hoàn thành",
     color: "#059669",
     bg: "#D1FAE5",
     Icon: CheckCircle,
   },
   CANCELLED: {
-    label: "Đã hủy",
+    label: t('status_cancelled') || "Đã hủy",
     color: "#DC2626",
     bg: "#FEE2E2",
     Icon: XCircle,
   },
-  CANCEL: { label: "Đã hủy", color: "#DC2626", bg: "#FEE2E2", Icon: XCircle },
-};
+  CANCEL: { label: t('status_cancelled') || "Đã hủy", color: "#DC2626", bg: "#FEE2E2", Icon: XCircle },
+});
 
 const PENDING_STATUSES = ["PENDING", "PENDING_PAYMENT", "READY", "DRAFT"];
 const DONE_STATUSES = ["PAID", "DONE"];
@@ -143,7 +141,9 @@ export const OrderBottomSheet = ({
   onPayment: () => void;
   onPrint?: () => void;
 }) => {
+  const { t } = useTranslation();
   if (!order) return null;
+  const STATUS_CONFIG = getStatusConfig(t);
   const statusKey = order.orderStatus || order.status || "PENDING";
   const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.PENDING_PAYMENT;
   const items: any[] = order.items || order.orderItems || [];
@@ -324,6 +324,9 @@ const OrderScreen = () => {
   const [sheetLoading, setSheetLoading] = useState(false);
   const [isReceiptVisible, setIsReceiptVisible] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
+  const { t } = useTranslation();
+  
+  const STATUS_CONFIG = getStatusConfig(t);
 
   const loadOrders = useCallback(async () => {
     try {

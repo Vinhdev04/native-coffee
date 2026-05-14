@@ -41,6 +41,7 @@ const TabIcon = ({ focused, icon: Icon, label, badgeCount }: { focused: boolean,
 
 const MainNavigator = () => {
   const { totalItems } = useCart();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
@@ -54,28 +55,28 @@ const MainNavigator = () => {
         name="HomeTab"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Home} label="Trang chủ" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Home} label={t('home') || "Trang chủ"} />,
         }}
       />
       <Tab.Screen
         name="MenuTab"
         component={MenuScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label="Đặt hàng" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label={t('order_menu') || "Đặt hàng"} />,
         }}
       />
       <Tab.Screen
         name="OrdersTab"
         component={OrderScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Package} label="Đơn hàng" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Package} label={t('orders') || "Đơn hàng"} />,
         }}
       />
       <Tab.Screen
         name="AccountTab"
         component={AccountScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={User} label="Hồ sơ" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={User} label={t('profile') || "Hồ sơ"} />,
         }}
       />
     </Tab.Navigator>
