@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
+import { useTranslation } from 'react-i18next';
 import { Search, Bell, ShoppingBag, X } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
@@ -27,6 +28,7 @@ const sh = StyleSheet.create({
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
+  const { t } = useTranslation();
   const { items, totalItems, addToCart, updateQuantity } = useCart();
 
   const [categories, setCategories] = useState<any[]>([]);
@@ -63,7 +65,7 @@ const HomeScreen = () => {
       const q = searchText.toLowerCase();
       const matched = allProducts.filter(p => p.name.toLowerCase().includes(q));
       return matched.length > 0
-        ? [{ catId: 'search', title: `Kết quả cho "${searchText}"`, data: matched }]
+        ? [{ catId: 'search', title: `${t('search_results_for')} "${searchText}"`, data: matched }]
         : [];
     }
     return categories
@@ -75,7 +77,7 @@ const HomeScreen = () => {
       .filter(s => s.data.length > 0);
   }, [categories, allProducts, searchText]);
 
-  const allCats = useMemo(() => [{ id: 'all', name: 'Tất cả' }, ...categories], [categories]);
+  const allCats = useMemo(() => [{ id: 'all', name: t('all') }, ...categories], [categories, t]);
 
   const handleCatPress = useCallback((catId: number | 'all') => {
     setActiveCatId(catId);
@@ -118,8 +120,8 @@ const HomeScreen = () => {
     addToCart(item);
     setToast({
       visible: true,
-      title: 'Đã thêm vào giỏ! 🎉',
-      msg: `${item.name}. Chạm để xem giỏ hàng.`
+      title: t('added_to_cart'),
+      msg: `${item.name}. ${t('tap_to_view_cart')}`
     });
   };
 
@@ -169,7 +171,7 @@ const HomeScreen = () => {
           <Search size={18} color="#9CA3AF" />
           <TextInput
             style={s.searchInput}
-            placeholder="Tìm kiếm đồ uống..."
+            placeholder={t('search_placeholder')}
             placeholderTextColor="#9CA3AF"
             value={searchText}
             onChangeText={setSearchText}
@@ -210,13 +212,13 @@ const HomeScreen = () => {
       {loading ? (
         <View style={s.loadingWrap}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={s.loadingText}>Đang tải thực đơn...</Text>
+          <Text style={s.loadingText}>{t('loading')}</Text>
         </View>
       ) : sections.length === 0 && searchText ? (
         <View style={s.emptyWrap}>
           <Text style={s.emptyIcon}>🔍</Text>
-          <Text style={s.emptyTitle}>Không tìm thấy "{searchText}"</Text>
-          <Text style={s.emptyText}>Thử tìm kiếm với từ khóa khác</Text>
+          <Text style={s.emptyTitle}>{t('no_products_found_for')} "{searchText}"</Text>
+          <Text style={s.emptyText}>{t('try_another_search')}</Text>
         </View>
       ) : (
         <SectionList
@@ -265,7 +267,7 @@ const HomeScreen = () => {
         visible={isReceiptVisible} 
         onClose={() => setIsReceiptVisible(false)} 
         order={receiptOrder}
-        title="PHIẾU XEM TRƯỚC MÓN"
+        title={t('preview_receipt_title')}
       />
     </SafeAreaView>
   );

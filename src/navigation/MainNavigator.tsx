@@ -51,32 +51,31 @@ const MainNavigator = () => {
         tabBarStyle: s.tabBar,
       }}
     >
-      <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Home} label={t('home') || "Trang chủ"} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Home} label={t('home')} />,
         }}
       />
       <Tab.Screen
         name="MenuTab"
         component={MenuScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label={t('order_menu') || "Đặt hàng"} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label={t('order_menu')} />,
         }}
       />
       <Tab.Screen
         name="OrdersTab"
         component={OrderScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Package} label={t('orders') || "Đơn hàng"} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Package} label={t('orders')} />,
         }}
       />
       <Tab.Screen
         name="AccountTab"
         component={AccountScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={User} label={t('profile') || "Hồ sơ"} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={User} label={t('profile')} />,
         }}
       />
     </Tab.Navigator>

@@ -23,8 +23,8 @@ const AccountScreen = () => {
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [langModalVisible, setLangModalVisible] = useState(false);
 
-  const displayName = user?.fullName || user?.username || 'Trần Thị Nhân Viên';
-  const displayRole = user?.role || 'Nhân viên bán hàng';
+  const displayName = user?.fullName || user?.username || t('anonymous_customer');
+  const displayRole = user?.role || t('staff_role');
 
   const MenuItem = ({ icon: Icon, label, onPress }: any) => (
     <TouchableOpacity style={s.menuItem} onPress={onPress} activeOpacity={0.7}>
@@ -65,7 +65,7 @@ const AccountScreen = () => {
               <TouchableOpacity style={s.backBtn}>
                 <ArrowLeft size={24} color="#FFF" />
               </TouchableOpacity>
-              <Text style={s.headerTitle}>{t('profile') || 'Hồ Sơ'}</Text>
+              <Text style={s.headerTitle}>{t('profile')}</Text>
               <View style={{ width: 40 }} />
             </View>
 
@@ -81,7 +81,7 @@ const AccountScreen = () => {
                 <Text style={s.profileName}>{displayName}</Text>
                 <Text style={s.profileRole}>{displayRole}</Text>
                 <View style={s.badge}>
-                  <Text style={s.badgeText}>Staff</Text>
+                  <Text style={s.badgeText}>{t('staff_badge')}</Text>
                 </View>
               </View>
             </View>
@@ -92,32 +92,32 @@ const AccountScreen = () => {
         <View style={s.statsContainer}>
           <View style={s.statCard}>
             <Text style={s.statValue}>128</Text>
-            <Text style={s.statLabel}>{t('today_orders') || 'Đơn hôm nay'}</Text>
+            <Text style={s.statLabel}>{t('today_orders')}</Text>
           </View>
           <View style={s.statCard}>
             <Text style={s.statValue}>4.9</Text>
-            <Text style={s.statLabel}>{t('rating') || 'Đánh giá'}</Text>
+            <Text style={s.statLabel}>{t('rating')}</Text>
           </View>
           <View style={s.statCard}>
             <Text style={s.statValue}>92%</Text>
-            <Text style={s.statLabel}>{t('completed') || 'Hoàn thành'}</Text>
+            <Text style={s.statLabel}>{t('completed')}</Text>
           </View>
         </View>
 
         {/* ── Settings List ── */}
         <View style={s.menuSection}>
-          <Text style={s.sectionTitle}>{t('settings_uppercase') || 'CÀI ĐẶT'}</Text>
-          <MenuItem icon={User} label={t('account_info') || "Thông Tin Tài Khoản"} onPress={() => navigation.navigate('UpdateProfile' as never)} />
-          <MenuItem icon={Lock} label={t('change_password') || "Đổi Mật Khẩu"} onPress={() => navigation.navigate('ChangePassword' as never)} />
-          <MenuItem icon={Printer} label={t('printer_settings') || "Cài Đặt Máy In"} onPress={() => {}} />
-          <MenuItem icon={Globe} label={t('language') || "Ngôn Ngữ"} onPress={() => setLangModalVisible(true)} />
-          <MenuItem icon={Headset} label={t('support') || "Hỗ Trợ"} onPress={() => {}} />
+          <Text style={s.sectionTitle}>{t('settings_uppercase')}</Text>
+          <MenuItem icon={User} label={t('account_info')} onPress={() => navigation.navigate('UpdateProfile' as never)} />
+          <MenuItem icon={Lock} label={t('change_password')} onPress={() => navigation.navigate('ChangePassword' as never)} />
+          <MenuItem icon={Printer} label={t('printer_settings')} onPress={() => {}} />
+          <MenuItem icon={Globe} label={t('language')} onPress={() => setLangModalVisible(true)} />
+          <MenuItem icon={Headset} label={t('support')} onPress={() => {}} />
         </View>
 
         {/* ── Logout Button ── */}
         <TouchableOpacity style={s.logoutBtn} onPress={() => setLogoutModalVisible(true)}>
           <LogOut size={22} color="#EF4444" />
-          <Text style={s.logoutText}>{t('logout') || 'Đăng Xuất'}</Text>
+          <Text style={s.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 100 }} />
@@ -134,14 +134,14 @@ const AccountScreen = () => {
           <View style={[s.modalContent, { padding: 0, overflow: 'hidden' }]}>
             <View style={{ padding: 20, backgroundColor: '#FFF7ED', width: '100%', alignItems: 'center' }}>
               <Globe size={28} color="#F97316" style={{ marginBottom: 10 }} />
-              <Text style={s.modalTitle}>{t('change_language') || "Đổi ngôn ngữ"}</Text>
+              <Text style={s.modalTitle}>{t('change_language')}</Text>
             </View>
             <View style={{ width: '100%', padding: 16 }}>
               <TouchableOpacity 
                 style={[s.langOption, i18n.language === 'vn' && s.langOptionActive]} 
                 onPress={() => changeLanguage('vn')}
               >
-                <Text style={[s.langText, i18n.language === 'vn' && s.langTextActive]}>Tiếng Việt</Text>
+                <Text style={[s.langText, i18n.language === 'vn' && s.langTextActive]}>{t('vietnamese')}</Text>
                 {i18n.language === 'vn' && <Check size={20} color="#F97316" />}
               </TouchableOpacity>
               
@@ -149,7 +149,7 @@ const AccountScreen = () => {
                 style={[s.langOption, i18n.language === 'en' && s.langOptionActive]} 
                 onPress={() => changeLanguage('en')}
               >
-                <Text style={[s.langText, i18n.language === 'en' && s.langTextActive]}>English</Text>
+                <Text style={[s.langText, i18n.language === 'en' && s.langTextActive]}>{t('english')}</Text>
                 {i18n.language === 'en' && <Check size={20} color="#F97316" />}
               </TouchableOpacity>
             </View>
@@ -169,18 +169,18 @@ const AccountScreen = () => {
             <View style={s.modalIconWrap}>
               <LogOut size={28} color="#EF4444" />
             </View>
-            <Text style={s.modalTitle}>{t('logout_confirm_title') || 'Đăng xuất?'}</Text>
-            <Text style={s.modalSub}>{t('logout_confirm_desc') || 'Bạn sẽ quay lại màn hình chọn vai trò'}</Text>
+            <Text style={s.modalTitle}>{t('logout_confirm_title')}</Text>
+            <Text style={s.modalSub}>{t('logout_confirm_desc')}</Text>
             
             <View style={s.modalActions}>
               <TouchableOpacity style={s.btnCancel} onPress={() => setLogoutModalVisible(false)}>
-                <Text style={s.btnCancelText}>{t('stay') || 'Ở lại'}</Text>
+                <Text style={s.btnCancelText}>{t('stay')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.btnConfirm} onPress={() => {
                 setLogoutModalVisible(false);
                 logout();
               }}>
-                <Text style={s.btnConfirmText}>{t('logout') || 'Đăng xuất'}</Text>
+                <Text style={s.btnConfirmText}>{t('logout')}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -2,6 +2,7 @@
  * @file BillReceiptComponent.tsx
  * @desc Component hóa đơn (bill) có thể chụp ảnh bằng react-native-view-shot
  *       hoặc in trực tiếp lên máy Sunmi POS.
+ *       FIX: Tên món dài sẽ xuống dòng; SL và Thành tiền luôn căn đỉnh dòng đầu.
  * @layer components
  */
 
@@ -14,7 +15,6 @@ export interface BillItem {
   name: string;
   quantity: number;
   unitPrice: number;
-  /** Tên thuộc tính / topping đi kèm, ví dụ: "Sữa tươi", "Đá viên" */
   attributes?: { name: string; price: number }[];
 }
 
@@ -26,36 +26,75 @@ export interface BillData {
   items: BillItem[];
   subTotal: number;
   discount?: number;
-  vatAmount?: number; // VAT (ví dụ: 10% của subTotal)
+  vatAmount?: number;
   vatRate?: number;
   vatType?: string;
   totalAmount: number;
-  paymentMethod?: string; // 'CASH' | 'VNPAY'
+  paymentMethod?: string;
   cashReceived?: number;
   cashChange?: number;
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
-// const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}đ`;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}`;
 const hasBillVat = (data: BillData) =>
   Boolean(data.vatType && data.vatType !== "none") ||
   Number(data.vatAmount ?? 0) > 0;
 const vatLabel = (data: BillData) =>
-  data.vatRate && data.vatRate > 0
-    ? `  VAT (${data.vatRate}%)`
-    : "  VAT";
+  data.vatRate && data.vatRate > 0 ? `VAT (${data.vatRate}%)` : "VAT";
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+const Divider = ({ thick = false }: { thick?: boolean }) => (
+  <View style={thick ? s.dividerThick : s.divider} />
+);
+
+const InfoRow = ({
+  label,
+  value,
+  valueStyle,
+}: {
+  label: string;
+  value: string;
+  valueStyle?: any;
+}) => (
+  <View style={s.infoRow}>
+    <Text style={s.infoLabel}>{label}</Text>
+    <Text style={[s.infoValue, valueStyle]} numberOfLines={1} ellipsizeMode="tail">
+      {value}
+    </Text>
+  </View>
+);
+
+// ─── Item Row — KEY FIX ───────────────────────────────────────────────────────
+// Tên món có thể xuống nhiều dòng; SL và Giá luôn ở trên đỉnh (alignSelf: flex-start)
+const ItemRow = ({
+  name,
+  qty,
+  price,
+  isAttr = false,
+}: {
+  name: string;
+  qty: number;
+  price: string;
+  isAttr?: boolean;
+}) => (
+  <View style={s.itemRow}>
+    {/* Cột tên — flex:1 cho phép wrap nhiều dòng */}
+    <View style={s.itemNameWrap}>
+      <Text style={isAttr ? s.itemAttrName : s.itemName}>{name}</Text>
+    </View>
+    {/* SL — width cố định, alignSelf:flex-start → luôn dòng 1 */}
+    <Text style={[s.itemQty, isAttr && s.itemAttrMuted]} numberOfLines={1}>
+      {qty}
+    </Text>
+    {/* Giá — width cố định, alignSelf:flex-start → luôn dòng 1 */}
+    <Text style={[s.itemPrice, isAttr && s.itemAttrMuted]} numberOfLines={1}>
+      {price}
+    </Text>
+  </View>
+);
 
 // ─── Component ────────────────────────────────────────────────────────────────
-/**
- * BillReceiptComponent — dùng forwardRef để ViewShot wrap từ bên ngoài.
- *
- * @example
- * const ref = useRef<View>(null);
- * <ViewShot ref={ref} options={{ format: 'jpg', quality: 0.9 }}>
- *   <BillReceiptComponent data={billData} />
- * </ViewShot>
- */
 const BillReceiptComponent = forwardRef<View, { data: BillData }>(
   ({ data }, _ref) => {
     const payMethodLabel =
@@ -73,127 +112,124 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
             />
           </View>
           <Text style={s.shopName}>CHIPS BILL</Text>
+          <Text style={s.shopTagline}>chips.vn  •  0966 966 247</Text>
         </View>
 
-        <View style={s.dividerDouble} />
+        <Divider thick />
         <Text style={s.billTitle}>HÓA ĐƠN BÁN HÀNG</Text>
-        <View style={s.dividerDouble} />
+        <Divider thick />
 
         {/* ── THÔNG TIN ĐƠN ── */}
         <View style={s.section}>
-          <Row label="Mã đơn" value={`#${data.orderId}`} />
-          {!!data.createdAt && <Row label="Ngày" value={data.createdAt} />}
-          <Row label="Khách" value={data.customerName || "Khách vãng lai"} />
-          <Row label="Hình thức" value={payMethodLabel} />
+          <InfoRow label="Mã đơn" value={`#${data.orderId}`} />
+          {!!data.createdAt && (
+            <InfoRow label="Ngày" value={data.createdAt} />
+          )}
+          <InfoRow label="Khách" value={data.customerName || "Khách vãng lai"} />
+          <InfoRow label="Hình thức" value={payMethodLabel} />
         </View>
 
-        <View style={s.divider} />
+        <Divider />
 
         {/* ── BẢNG MÓN ── */}
-        <View style={[s.tableRow, s.tableHeader]}>
-          <Text style={[s.colName, s.tableHeaderText]}>Tên món</Text>
-          <Text style={[s.colQty, s.tableHeaderText]}>SL</Text>
-          <Text style={[s.colPrice, s.tableHeaderText]}>Thành tiền</Text>
+        {/* Header */}
+        <View style={s.tableHeader}>
+          <Text style={[s.tableHeaderText, { flex: 1 }]}>Tên món</Text>
+          <Text style={[s.tableHeaderText, s.thQty]}>SL</Text>
+          <Text style={[s.tableHeaderText, s.thPrice]}>Thành tiền</Text>
         </View>
-        <View style={s.divider} />
 
-        {data.items.map((item, idx) => (
-          <View key={idx}>
-            <View style={s.tableRow}>
-              <Text style={s.colName} numberOfLines={1} ellipsizeMode="tail">
-                {item.name}
-              </Text>
-              <Text style={s.colQty}>{item.quantity}</Text>
-              <Text style={s.colPrice}>
-                {vnd(item.unitPrice * item.quantity)}
-              </Text>
+        <Divider />
+
+        {/* Rows */}
+        {data.items.map((item, idx) => {
+          const lineTotal = item.unitPrice * item.quantity;
+          return (
+            <View key={idx}>
+              <ItemRow
+                name={item.name}
+                qty={item.quantity}
+                price={vnd(lineTotal)}
+              />
+              {item.attributes?.map((attr, ai) =>
+                attr.price > 0 ? (
+                  <ItemRow
+                    key={ai}
+                    name={`+ ${attr.name}`}
+                    qty={item.quantity}
+                    price={vnd(attr.price * item.quantity)}
+                    isAttr
+                  />
+                ) : null,
+              )}
+              {idx < data.items.length - 1 && (
+                <View style={s.itemSeparator} />
+              )}
             </View>
-            {/* Thuộc tính / topping */}
-            {item.attributes?.map((attr, ai) => (
-              <View key={ai} style={s.tableRow}>
-                <Text style={s.colAttrName} numberOfLines={1} ellipsizeMode="tail">{`+ ${attr.name}`}</Text>
-                <Text style={s.colQty}>{item.quantity}</Text>
-                <Text style={s.colAttrPrice}>
-                  {attr.price > 0 ? vnd(attr.price * item.quantity) : "—"}
-                </Text>
-              </View>
-            ))}
-          </View>
-        ))}
+          );
+        })}
 
-        <View style={s.divider} />
+        <Divider />
 
-        {/* TỔNG KẾT */}
+        {/* ── TỔNG KẾT ── */}
         <View style={s.section}>
-          <View style={s.dividerDouble} />
-          <Row label="Tổng tiền" value={vnd(data.subTotal)} />
-          <Row
-            label="Khuyến mãi"
-            value={vnd(data.discount ?? 0)}
-            valueStyle={{ color: "#EF4444" }}
-          />
+          <InfoRow label="Tổng tiền" value={`${vnd(data.subTotal)}đ`} />
+          {(data.discount ?? 0) > 0 && (
+            <InfoRow
+              label="Khuyến mãi"
+              value={`-${vnd(data.discount ?? 0)}đ`}
+              valueStyle={{ color: "#EF4444" }}
+            />
+          )}
         </View>
 
-        <View style={s.dividerDouble} />
+        <Divider thick />
 
-        <View style={[s.totalRow]}>
+        {/* TỔNG CỘNG */}
+        <View style={s.totalRow}>
           <Text style={s.totalLabel}>TỔNG CỘNG</Text>
-          <Text style={s.totalValue}>{vnd(data.totalAmount)}</Text>
+          <Text style={s.totalValue}>{vnd(data.totalAmount)}đ</Text>
         </View>
 
-        {/* VAT INFO */}
+        <Divider thick />
+
+        {/* VAT */}
         {hasBillVat(data) ? (
-          <View style={{ marginTop: 4 }}>
-            <Text
-              style={{
-                fontFamily: FONTS.regular,
-                fontSize: 11,
-                color: "#6B7280",
-                marginBottom: 2,
-              }}
-            >
-              {data.vatType === 'inclusive' ? 'Đã bao gồm' : 'Chưa bao gồm'}
+          <View style={s.vatBox}>
+            <Text style={s.vatNote}>
+              {data.vatType === "inclusive" ? "(Đã bao gồm)" : "(Chưa bao gồm)"}
             </Text>
-            <Row
+            <InfoRow
               label={vatLabel(data)}
-              value={vnd(data.vatAmount || 0)}
+              value={`${vnd(data.vatAmount || 0)}đ`}
               valueStyle={{ color: "#6B7280" }}
             />
           </View>
         ) : (
-          <View style={{ marginTop: 4 }}>
-            <Text
-              style={{
-                fontFamily: FONTS.regular,
-                fontSize: 11,
-                color: "#6B7280",
-                marginBottom: 2,
-              }}
-            >
-              Không tính VAT
-            </Text>
-          </View>
+          <Text style={s.vatNote}>Không tính VAT</Text>
         )}
 
-        {/* Tiền mặt — tiền khách đưa & tiền thừa */}
+        {/* Tiền mặt */}
         {data.paymentMethod === "CASH" && data.cashReceived != null && (
           <View style={s.section}>
-            <View style={s.dividerDouble} />
-            <Row label="Tiền khách đưa" value={vnd(data.cashReceived)} />
-            <Row
+            <Divider />
+            <InfoRow
+              label="Tiền khách đưa"
+              value={`${vnd(data.cashReceived)}đ`}
+            />
+            <InfoRow
               label="Tiền thừa"
-              value={vnd(data.cashChange ?? 0)}
+              value={`${vnd(data.cashChange ?? 0)}đ`}
               valueStyle={{ color: "#10B981", fontFamily: FONTS.bold }}
             />
           </View>
         )}
 
-        <View style={s.divider} />
+        <Divider />
 
         {/* ── FOOTER ── */}
         <View style={s.footer}>
-          <Text style={s.footerThanks}>Cảm ơn Quý khách! Hẹn gặp lại </Text>
-          <Text style={s.footerHotline}>chips.vn - 0966 966 247</Text>
+          <Text style={s.footerThanks}>Cảm ơn Quý khách! Hẹn gặp lại 🙏</Text>
           <Text style={s.footerPowered}>Phần mềm: Chips Bill POS</Text>
         </View>
       </View>
@@ -204,170 +240,199 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
 BillReceiptComponent.displayName = "BillReceiptComponent";
 export default BillReceiptComponent;
 
-// ─── Sub-component Row ────────────────────────────────────────────────────────
-const Row = ({
-  label,
-  value,
-  valueStyle,
-}: {
-  label: string;
-  value: string;
-  valueStyle?: any;
-}) => (
-  <View style={s.row}>
-    <Text style={s.rowLabel}>{label}</Text>
-    <Text style={[s.rowValue, valueStyle]}>{value}</Text>
-  </View>
-);
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
+const COL_QTY_W  = 26;
+const COL_PRICE_W = 82;
+
 const s = StyleSheet.create({
   wrapper: {
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingTop: 24,
     paddingBottom: 32,
-    width: 320, // tương đương 58mm POS
+    width: 320,
   },
 
-  // Header
-  header: { alignItems: "center", marginBottom: 12 },
+  // ── Header
+  header: { alignItems: "center", marginBottom: 10 },
   logoBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: "#FFF7F0",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  logoImage: { width: 56, height: 56 },
+  logoImage: { width: 52, height: 52 },
   shopName: {
     fontFamily: FONTS.bold,
     fontSize: 20,
     color: "#111827",
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
-  shopPhone: {
-    fontFamily: FONTS.medium,
-    fontSize: 11,
+  shopTagline: {
+    fontFamily: FONTS.regular,
+    fontSize: 10,
     color: "#FF7A00",
-    marginTop: 4,
+    marginTop: 3,
   },
-
   billTitle: {
     fontFamily: FONTS.bold,
-    fontSize: 15,
+    fontSize: 13,
     color: "#111827",
     textAlign: "center",
-    marginVertical: 8,
+    marginVertical: 7,
     letterSpacing: 1,
   },
 
-  // Dividers
+  // ── Dividers
   divider: {
     height: 1,
-    backgroundColor: "#E5E7EB",
-    marginVertical: 8,
+    backgroundColor: "#D1D5DB",
+    marginVertical: 7,
   },
-  dividerDouble: {
+  dividerThick: {
     height: 2,
     backgroundColor: "#111827",
-    marginVertical: 6,
+    marginVertical: 5,
   },
 
-  // Section
-  section: { marginVertical: 4 },
+  // ── Section
+  section: { marginVertical: 2 },
 
-  // Row key-value
-  row: {
+  // ── Info rows
+  infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 3,
+    paddingVertical: 2,
   },
-  rowLabel: { fontFamily: FONTS.regular, fontSize: 12, color: "#6B7280" },
-  rowValue: { fontFamily: FONTS.medium, fontSize: 12, color: "#111827" },
-
-  // Table
-  tableRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginVertical: 3,
-    width: "100%",
-  },
-  tableHeader: { marginBottom: 2 },
-  tableHeaderText: { fontFamily: FONTS.bold, fontSize: 11, color: "#374151" },
-  colName: {
+  infoLabel: {
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    color: "#6B7280",
     flex: 1,
-    flexShrink: 1,
-    paddingRight: 8,
+  },
+  infoValue: {
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+    color: "#111827",
+    maxWidth: "60%",
+    textAlign: "right",
+  },
+
+  // ── Table header
+  tableHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  tableHeaderText: {
+    fontFamily: FONTS.bold,
+    fontSize: 11,
+    color: "#374151",
+  },
+  thQty: {
+    width: COL_QTY_W,
+    textAlign: "center",
+  },
+  thPrice: {
+    width: COL_PRICE_W,
+    textAlign: "right",
+  },
+
+  // ── Item rows — KEY FIX
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",   // ← Căn tất cả cột theo đỉnh
+    paddingVertical: 3,
+  },
+  // Bọc tên để flex-start không conflict
+  itemNameWrap: {
+    flex: 1,
+    paddingRight: 6,
+  },
+  itemName: {
     fontFamily: FONTS.medium,
     fontSize: 12,
     color: "#111827",
+    lineHeight: 17,
+    // KHÔNG có numberOfLines — cho phép wrap tự nhiên
   },
-  colQty: {
-    width: 28,
+  // SL: width cố định, alignSelf flex-start → luôn ở dòng 1
+  itemQty: {
+    width: COL_QTY_W,
     flexShrink: 0,
+    alignSelf: "flex-start",
     textAlign: "center",
     fontFamily: FONTS.medium,
     fontSize: 12,
     color: "#111827",
+    lineHeight: 17,
   },
-  colPrice: {
-    width: 78,
+  // Giá: width cố định, alignSelf flex-start → luôn ở dòng 1
+  itemPrice: {
+    width: COL_PRICE_W,
     flexShrink: 0,
+    alignSelf: "flex-start",
     textAlign: "right",
     fontFamily: FONTS.medium,
     fontSize: 12,
     color: "#111827",
-  },
-  // Attribute rows
-  colAttrName: {
-    flex: 1,
-    flexShrink: 1,
-    paddingRight: 8,
-    fontFamily: FONTS.regular,
-    fontSize: 11,
-    color: "#9CA3AF",
-  },
-  colAttrPrice: {
-    width: 78,
-    flexShrink: 0,
-    textAlign: "right",
-    fontFamily: FONTS.regular,
-    fontSize: 11,
-    color: "#9CA3AF",
+    lineHeight: 17,
   },
 
-  // Total
+  // Attribute (topping)
+  itemAttrName: {
+    fontFamily: FONTS.regular,
+    fontSize: 10,
+    color: "#9CA3AF",
+    lineHeight: 15,
+  },
+  itemAttrMuted: {
+    fontSize: 10,
+    color: "#9CA3AF",
+    lineHeight: 15,
+  },
+
+  // Separator between items
+  itemSeparator: {
+    height: 1,
+    backgroundColor: "#F3F4F6",
+    marginVertical: 1,
+  },
+
+  // ── Total
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 10,
+    paddingVertical: 8,
   },
-  totalLabel: { fontFamily: FONTS.bold, fontSize: 15, color: "#111827" },
-  totalValue: { fontFamily: FONTS.bold, fontSize: 18, color: "#FF7A00" },
+  totalLabel: { fontFamily: FONTS.bold, fontSize: 14, color: "#111827" },
+  totalValue: { fontFamily: FONTS.bold, fontSize: 20, color: "#FF7A00" },
 
-  // Footer
-  footer: { alignItems: "center", marginTop: 16 },
-  footerThanks: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: "#111827",
-    textAlign: "center",
-  },
-  footerHotline: {
-    fontFamily: FONTS.medium,
-    fontSize: 12,
-    color: "#FF7A00",
-    marginTop: 6,
-  },
-  footerPowered: {
+  // ── VAT
+  vatBox: { marginTop: 2 },
+  vatNote: {
     fontFamily: FONTS.regular,
     fontSize: 10,
     color: "#9CA3AF",
-    marginTop: 4,
+    marginBottom: 2,
+  },
+
+  // ── Footer
+  footer: { alignItems: "center", marginTop: 14, gap: 4 },
+  footerThanks: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 12,
+    color: "#111827",
+    textAlign: "center",
+  },
+  footerPowered: {
+    fontFamily: FONTS.regular,
+    fontSize: 9,
+    color: "#9CA3AF",
   },
 });

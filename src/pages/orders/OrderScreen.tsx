@@ -90,14 +90,15 @@ const PENDING_STATUSES = ["PENDING", "PENDING_PAYMENT", "READY", "DRAFT"];
 const DONE_STATUSES = ["PAID", "DONE"];
 const CANCEL_STATUSES = ["CANCELLED", "CANCEL"];
 
-const TABS = [
-  { key: "all", label: "Tất cả" },
-  { key: "pending", label: "Đang chờ" },
-  { key: "done", label: "Hoàn thành" },
-];
+  const { t } = useTranslation();
+  const TABS = [
+    { key: "all", label: t('all') },
+    { key: "pending", label: t('pending') },
+    { key: "done", label: t('done') },
+  ];
 
-const formatDate = (raw: string) => {
-  if (!raw) return "Vừa xong";
+const formatDate = (raw: string, t: any) => {
+  if (!raw) return t('just_now') || "Vừa xong";
   try {
     if (raw.length >= 12) {
       const h = raw.slice(8, 10),
@@ -195,7 +196,7 @@ export const OrderBottomSheet = ({
               <View style={[bs.infoItem, { marginTop: 4 }]}>
                 <User size={14} color={COLORS.textMuted} />
                 <Text style={bs.orderTime}>
-                  {order.customerName || "Khách vãng lai"}
+                  {order.customerName || t('anonymous_customer')}
                 </Text>
               </View>
             </View>
@@ -213,9 +214,9 @@ export const OrderBottomSheet = ({
           style={{ maxHeight: SH * 0.4 }}
         >
           {/* Items */}
-          <Text style={bs.sectionTitle}>CHI TIẾT MÓN</Text>
+          <Text style={bs.sectionTitle}>{t('item_details')}</Text>
           {items.length === 0 ? (
-            <Text style={bs.emptyItems}>Không có sản phẩm</Text>
+            <Text style={bs.emptyItems}>{t('no_products')}</Text>
           ) : (
             items.map((item: any, idx: number) => {
               const name =
@@ -254,14 +255,14 @@ export const OrderBottomSheet = ({
           {/* Summary */}
           <View style={bs.summaryBox}>
             <View style={bs.summaryRow}>
-              <Text style={bs.summaryLabel}>Tổng món</Text>
-              <Text style={bs.summaryValue}>{items.length} món</Text>
+              <Text style={bs.summaryLabel}>{t('total_items')}</Text>
+              <Text style={bs.summaryValue}>{t('item_count', { count: items.length })}</Text>
             </View>
             {!!paymentMethod && (
               <View style={bs.summaryRow}>
-                <Text style={bs.summaryLabel}>Thanh toán</Text>
+                <Text style={bs.summaryLabel}>{t('payment_method')}</Text>
                 <Text style={bs.summaryValue}>
-                  {paymentMethod === "CASH" ? "Tiền mặt" : paymentMethod}
+                  {paymentMethod === "CASH" ? t('cash') : paymentMethod}
                 </Text>
               </View>
             )}
@@ -276,7 +277,7 @@ export const OrderBottomSheet = ({
                 },
               ]}
             >
-              <Text style={bs.totalLabel}>Tổng cộng</Text>
+              <Text style={bs.totalLabel}>{t('total')}</Text>
               <Text style={bs.totalValue}>{formatCurrency(total)}</Text>
             </View>
           </View>
@@ -295,7 +296,7 @@ export const OrderBottomSheet = ({
           <View style={bs.qrInfo}>
             <QrCode size={16} color={COLORS.textMuted} />
             <Text style={bs.qrText}>
-              {canPay ? "Quét để thanh toán" : "Quét để xem chi tiết"}
+              {canPay ? t('scan_to_pay') : t('scan_to_view_details')}
             </Text>
           </View>
         </View>
@@ -304,7 +305,7 @@ export const OrderBottomSheet = ({
         {canPay && (
           <TouchableOpacity style={bs.payBtn} onPress={onPayment}>
             <CreditCard size={18} color="#fff" />
-            <Text style={bs.payBtnText}>Thanh toán ngay</Text>
+            <Text style={bs.payBtnText}>{t('pay_now')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -462,8 +463,8 @@ const OrderScreen = () => {
       discount: parseFloat(
         order.totalDiscount || order.discountAmount || "0",
       ),
-      customerName: order.customerName || "Khách vãng lai",
-      createdAt: formatDate(order.createTime),
+      customerName: order.customerName || t('anonymous_customer'),
+      createdAt: formatDate(order.createTime, t),
     });
     setIsReceiptVisible(true);
   };
@@ -490,10 +491,10 @@ const OrderScreen = () => {
     const itemCount = rawCount !== null ? rawCount : items.length;
     const itemCountLabel =
       itemCount > 0
-        ? `${itemCount} món`
+        ? t('item_count', { count: itemCount })
         : items.length === 0
-        ? "— món"
-        : "0 món";
+        ? "—"
+        : t('item_count', { count: 0 });
 
     return (
       <TouchableOpacity
@@ -508,7 +509,7 @@ const OrderScreen = () => {
             </View>
             <View>
               <Text style={s.orderId}>{item.orderCode || `#${item.id}`}</Text>
-              <Text style={s.orderTime}>{formatDate(item.createTime)}</Text>
+              <Text style={s.orderTime}>{formatDate(item.createTime, t)}</Text>
             </View>
           </View>
           <View style={[s.statusBadge, { backgroundColor: cfg.bg }]}>
@@ -546,7 +547,7 @@ const OrderScreen = () => {
       <View style={s.header}>
         <View>
           <Text style={s.headerTitle}>Chips Bill</Text>
-          <Text style={s.headerSub}>Quản lý đơn hàng ({allOrders.length})</Text>
+          <Text style={s.headerSub}>{t('order_management', { count: allOrders.length })}</Text>
         </View>
 
         <View style={{ flexDirection: "row", gap: 10 }}>
@@ -568,7 +569,7 @@ const OrderScreen = () => {
         <View style={s.summaryCardOrange}>
           <View style={s.summaryCardTopRow}>
             <Clock size={14} color="rgba(255,255,255,0.8)" />
-            <Text style={s.summaryCardLabel}>Hôm nay</Text>
+            <Text style={s.summaryCardLabel}>{t('today')}</Text>
           </View>
           <Text style={s.summaryCardAmount}>{formatCurrency(todayTotal)}</Text>
           <Text style={s.summaryCardSub}>{todayOrders.length} đơn</Text>
@@ -576,7 +577,7 @@ const OrderScreen = () => {
         <View style={s.summaryCardRight}>
           <View style={s.completionRow}>
             <CheckCircle size={14} color={COLORS.success} />
-            <Text style={s.completionLabel}>Hoàn thành</Text>
+            <Text style={s.completionLabel}>{t('completed')}</Text>
           </View>
           <Text style={s.completionPct}>{completionPct}%</Text>
           <Text style={s.completionSub}>
@@ -605,7 +606,7 @@ const OrderScreen = () => {
       {loading && !refreshing ? (
         <View style={s.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={s.loadingText}>Đang tải đơn hàng...</Text>
+          <Text style={s.loadingText}>{t('loading_orders')}</Text>
         </View>
       ) : (
         <FlatList
@@ -625,13 +626,13 @@ const OrderScreen = () => {
           ListEmptyComponent={
             <View style={s.empty}>
               <Package size={60} color="#E5E7EB" />
-              <Text style={s.emptyTitle}>Không có đơn nào</Text>
+              <Text style={s.emptyTitle}>{t('no_orders')}</Text>
               <Text style={s.emptyText}>
                 {activeTab === "pending"
-                  ? "Không có đơn đang chờ."
+                  ? t('no_pending_orders')
                   : activeTab === "done"
-                  ? "Chưa có đơn hoàn thành."
-                  : "Chưa có đơn hàng nào."}
+                  ? t('no_completed_orders')
+                  : t('no_orders_yet')}
               </Text>
             </View>
           }

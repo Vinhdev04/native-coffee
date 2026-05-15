@@ -8,6 +8,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
+import { useTranslation } from 'react-i18next';
 import { Search, X, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
@@ -32,6 +33,7 @@ const sh = StyleSheet.create({
 const MenuScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { t } = useTranslation();
   const { items, totalItems, addToCart } = useCart();
 
   const [categories, setCategories] = useState<any[]>([]);
@@ -76,7 +78,7 @@ const MenuScreen = () => {
     }
   };
 
-  const allCats = React.useMemo(() => [{ id: 'all', name: 'Tất cả', imageUrl: null }, ...categories], [categories]);
+  const allCats = React.useMemo(() => [{ id: 'all', name: t('all'), imageUrl: null }, ...categories], [categories, t]);
 
   // Auto scroll category bar to show active pill
   const scrollCatBarToActive = React.useCallback((catId: number | 'all') => {
@@ -143,8 +145,8 @@ const MenuScreen = () => {
     addToCart(item);
     setToast({
       visible: true,
-      title: 'Đã thêm vào giỏ! 🎉',
-      message: `${item.name}. Chạm để xem giỏ hàng.`
+      title: t('added_to_cart'),
+      message: `${item.name}. ${t('tap_to_view_cart')}`
     });
   };
 
@@ -168,7 +170,7 @@ const MenuScreen = () => {
       <SafeAreaView style={s.container}>
         <View style={s.loadingWrap}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={s.loadingText}>Đang tải thực đơn...</Text>
+          <Text style={s.loadingText}>{t('loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -188,7 +190,7 @@ const MenuScreen = () => {
 
       <View style={s.header}>
         <View style={s.headerLeft} />
-        <Text style={s.headerTitle}>Thực đơn</Text>
+        <Text style={s.headerTitle}>{t('menu_title')}</Text>
         <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
           <ShoppingBag size={20} color={COLORS.primary} />
           {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText}>{totalItems}</Text></View>}
@@ -202,7 +204,7 @@ const MenuScreen = () => {
             style={s.searchInput}
             value={searchText}
             onChangeText={setSearchText}
-            placeholder="Tìm kiếm đồ uống..."
+            placeholder={t('search_placeholder')}
             placeholderTextColor="#9CA3AF"
           />
           {searchText.length > 0 && (
@@ -214,7 +216,7 @@ const MenuScreen = () => {
       <View style={s.catBar}>
         <FlatList
           ref={categoryListRef}
-          data={[{ id: 'all', name: 'Tất cả', imageUrl: null }, ...categories]}
+          data={[{ id: 'all', name: t('all'), imageUrl: null }, ...categories]}
           renderItem={renderCategory}
           keyExtractor={(item) => item.id.toString()}
           horizontal
@@ -226,7 +228,7 @@ const MenuScreen = () => {
       {sections.length === 0 ? (
         <View style={s.emptyWrap}>
           <CoffeeIcon size={52} color="#E5E7EB" />
-          <Text style={s.emptyTitle}>Không tìm thấy sản phẩm</Text>
+          <Text style={s.emptyTitle}>{t('no_products_found')}</Text>
         </View>
       ) : (
         <SectionList

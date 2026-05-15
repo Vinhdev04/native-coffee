@@ -104,12 +104,14 @@ const thermalItemRows = (name: string, qty: number, price: string): string[] => 
   const QTY_W = 4;
   const PRICE_W = 10;
   const NAME_W = MAX_W - QTY_W - PRICE_W; // 18 chars for Name
-  const qtyStr = String(qty);
+  const qtyStr = `${qty}`; 
   const nameLines = wrapText(name, NAME_W);
 
   return nameLines.map((line, index) => {
+    // Chỉ hiển thị SL và Giá ở dòng đầu tiên của tên món
     const qtyCol = index === 0 ? padLeft(qtyStr, QTY_W) : " ".repeat(QTY_W);
     const priceCol = index === 0 ? padLeft(price, PRICE_W) : " ".repeat(PRICE_W);
+    
     return `${padRight(line, NAME_W)}${qtyCol}${priceCol}`;
   });
 };
@@ -177,12 +179,13 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     // Fetch latest order data from backend for accurate VAT and details
     let latestOrder: any = null;
     try {
-      const orderId = Number(data.orderId);
-      if (isNaN(orderId)) {
+      // FIX: Đảm bảo orderId là chuỗi số (numeric string) để tránh lỗi Validation 400
+      const orderId = String(data.orderId);
+      if (!orderId || orderId === "undefined" || orderId === "null") {
         Toast.show({
           type: "error",
           text1: "Mã đơn hàng không hợp lệ",
-          text2: `Mã đơn: ${data.orderId}`,
+          text2: `Mã đơn: ${orderId}`,
         });
         return false;
       }

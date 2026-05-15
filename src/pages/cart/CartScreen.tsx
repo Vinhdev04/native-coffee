@@ -14,6 +14,7 @@ import { createOrder, fetchActiveShiftSession } from '@/services/orderService';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '@/context/AuthContext';
 import { orderCache } from '@/utils/orderCache';
+import { useTranslation } from 'react-i18next';
 import ProductModal from '@/components/menu/ProductModal';
 import ReceiptModal from '@/components/common/ReceiptModal';
 import { Printer, QrCode } from 'lucide-react-native';
@@ -26,6 +27,7 @@ const VOUCHERS = [
 
 const CartScreen = () => {
   const navigation = useNavigation<any>();
+  const { t } = useTranslation();
   const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart, updateNote, updateItem } = useCart();
   const { user } = useAuth();
   
@@ -82,7 +84,7 @@ const CartScreen = () => {
         console.error('fetchActiveShiftSession error:', shiftErr);
       }
 
-      const customerName = user?.fullName || (user as any)?.full_name || user?.username || 'Khách vãng lai';
+      const customerName = user?.fullName || (user as any)?.full_name || user?.username || t('anonymous_customer');
       const payload: any = {
         branchId: 1,
         ...(shiftSessionId ? { shiftSessionId } : {}),
@@ -101,7 +103,7 @@ const CartScreen = () => {
 
       if (newOrderId) {
         orderCache.setCount(newOrderId, items.length);
-        Toast.show({ type: 'success', text1: '🎉 Đặt hàng thành công!', text2: `Đơn #${newOrderId} đang được xử lý.` });
+        Toast.show({ type: 'success', text1: t('order_success_title'), text2: t('order_success_desc', { id: newOrderId }) });
         clearCart();
         navigation.navigate('OrderDetail', { orderId: newOrderId });
       }
@@ -172,7 +174,7 @@ const CartScreen = () => {
           >
             <FileText size={12} color={item.note ? COLORS.primary : COLORS.textMuted} />
             <Text style={[s.noteBtnText, item.note ? { color: COLORS.primary } : {}]} numberOfLines={1}>
-              {item.note || 'Ghi chú'}
+              {item.note || t('add_note')}
             </Text>
           </TouchableOpacity>
 
@@ -204,7 +206,7 @@ const CartScreen = () => {
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.goBack()}>
             <ChevronLeft size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>Giỏ Hàng</Text>
+          <Text style={s.headerTitle}>{t('cart_title')}</Text>
           <View style={s.headerRight}>
             <TouchableOpacity 
               style={s.headerBtn} 
@@ -232,10 +234,10 @@ const CartScreen = () => {
                   </View>
                   <View style={s.voucherTextContainer}>
                     <Text style={s.voucherTitle}>
-                      {selectedVoucher ? `Mã: ${selectedVoucher.code}` : 'Voucher giảm giá'}
+                      {selectedVoucher ? `Mã: ${selectedVoucher.code}` : t('voucher_title')}
                     </Text>
                     <Text style={s.voucherSubtitle}>
-                      {selectedVoucher ? `Tiết kiệm ${formatCurrency(selectedVoucher.value)}` : 'Chọn mã giảm giá'}
+                      {selectedVoucher ? `Tiết kiệm ${formatCurrency(selectedVoucher.value)}` : t('select_voucher')}
                     </Text>
                   </View>
                   <ChevronRight size={20} color={COLORS.textMuted} />
@@ -245,26 +247,26 @@ const CartScreen = () => {
                 <View style={s.vatCard}>
                   <View style={s.vatHeader}>
                     <FileText size={18} color={COLORS.primary} />
-                    <Text style={s.vatTitle}>Thuế GTGT (VAT)</Text>
+                    <Text style={s.vatTitle}>{t('vat_title')}</Text>
                   </View>
                   <View style={s.vatOptions}>
                     <TouchableOpacity
                       style={[s.vatOptionBtn, vatType === 'inclusive' && s.vatOptionActive]}
                       onPress={() => setVatType('inclusive')}
                     >
-                      <Text style={[s.vatOptionText, vatType === 'inclusive' && s.vatOptionTextActive]}>Đã bao gồm</Text>
+                      <Text style={[s.vatOptionText, vatType === 'inclusive' && s.vatOptionTextActive]}>{t('vat_inclusive')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[s.vatOptionBtn, vatType === 'exclusive' && s.vatOptionActive]}
                       onPress={() => setVatType('exclusive')}
                     >
-                      <Text style={[s.vatOptionText, vatType === 'exclusive' && s.vatOptionTextActive]}>Cộng thêm</Text>
+                      <Text style={[s.vatOptionText, vatType === 'exclusive' && s.vatOptionTextActive]}>{t('vat_exclusive')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[s.vatOptionBtn, vatType === 'none' && s.vatOptionActive]}
                       onPress={() => setVatType('none')}
                     >
-                      <Text style={[s.vatOptionText, vatType === 'none' && s.vatOptionTextActive]}>Không tính</Text>
+                      <Text style={[s.vatOptionText, vatType === 'none' && s.vatOptionTextActive]}>{t('vat_none')}</Text>
                     </TouchableOpacity>
                   </View>
                   {vatType === 'exclusive' && (
@@ -298,11 +300,11 @@ const CartScreen = () => {
             <View style={s.footer}>
               <View style={s.footerTop}>
                 <View>
-                  <Text style={s.footerTotalLabel}>Số tiền cần trả</Text>
+                  <Text style={s.footerTotalLabel}>{t('payment_total')}</Text>
                   <Text style={s.footerTotalValue}>{formatCurrency(grandTotal)}</Text>
                 </View>
                 <View style={s.footerItemCount}>
-                   <Text style={s.footerItemCountText}>{totalItems} món</Text>
+                   <Text style={s.footerItemCountText}>{t('item_count', { count: totalItems })}</Text>
                 </View>
               </View>
               <TouchableOpacity 
@@ -313,7 +315,7 @@ const CartScreen = () => {
                 {isCheckingOut ? (
                   <ActivityIndicator color={COLORS.white} />
                 ) : (
-                  <Text style={s.checkoutText}>Đặt hàng ngay</Text>
+                  <Text style={s.checkoutText}>{t('checkout_now')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -323,13 +325,13 @@ const CartScreen = () => {
             <View style={s.emptyIconCircle}>
               <ShoppingBag size={50} color={COLORS.primary} />
             </View>
-            <Text style={s.emptyTitle}>Giỏ hàng của bạn đang trống</Text>
-            <Text style={s.emptySubtitle}>Hãy quay lại thực đơn để chọn những thức uống tuyệt vời nhé!</Text>
+            <Text style={s.emptyTitle}>{t('empty_cart_title')}</Text>
+            <Text style={s.emptySubtitle}>{t('empty_cart_subtitle')}</Text>
             <TouchableOpacity 
               style={s.shopBtn} 
               onPress={() => navigation.navigate('Main')}
             >
-              <Text style={s.shopBtnText}>Tiếp tục mua sắm</Text>
+              <Text style={s.shopBtnText}>{t('continue_shopping')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -344,7 +346,7 @@ const CartScreen = () => {
           <View style={s.modalOverlay}>
             <View style={s.noteModalContent}>
               <View style={s.modalHeader}>
-                <Text style={s.modalTitle}>Thêm ghi chú</Text>
+                <Text style={s.modalTitle}>{t('add_note')}</Text>
                 <TouchableOpacity onPress={() => setNoteModalVisible(false)}>
                   <X size={24} color={COLORS.textPrimary} />
                 </TouchableOpacity>
@@ -354,7 +356,7 @@ const CartScreen = () => {
               
               <TextInput
                 style={s.noteInput}
-                placeholder="Ví dụ: Ít đường, nhiều đá, không béo..."
+                placeholder={t('note_placeholder')}
                 multiline
                 numberOfLines={4}
                 value={tempNote}
@@ -364,7 +366,7 @@ const CartScreen = () => {
               />
               
               <TouchableOpacity style={s.saveNoteBtn} onPress={saveNote}>
-                <Text style={s.saveNoteText}>Xác nhận</Text>
+                <Text style={s.saveNoteText}>{t('confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
