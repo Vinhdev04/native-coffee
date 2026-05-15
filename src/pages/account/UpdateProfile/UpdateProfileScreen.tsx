@@ -6,7 +6,7 @@ import { ArrowLeft, User, Mail, Save, Smile } from 'lucide-react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { useAuth } from '@/context/AuthContext';
 import { updateProfileApi } from '@/services/authService';
-import Toast from '@/components/common/Toast';
+import Toast from 'react-native-toast-message';
 
 const UpdateProfileScreen = () => {
   const navigation = useNavigation();

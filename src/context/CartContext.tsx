@@ -14,6 +14,9 @@ export interface CartItem {
   price:     number;
   image:     string;
   quantity:  number;
+  size?:      string;
+  sweetness?: string;
+  toppings?:  string[];
   selectedAttributes?: any[];
   totalPrice?: number;
   note?:     string;

@@ -252,6 +252,17 @@ const s = StyleSheet.create({
     fontSize: 15,
     color: '#111827',
   },
+  inputError: {
+    borderColor: '#EF4444',
+    borderWidth: 1,
+  },
+  errorText: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 6,
+    marginLeft: 16,
+  },
   eyeBtn: { padding: 16 },
   
   saveBtn: {

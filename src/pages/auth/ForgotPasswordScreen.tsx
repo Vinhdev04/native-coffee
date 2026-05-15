@@ -56,7 +56,7 @@ const ForgotPasswordScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" transparent backgroundColor="transparent" />
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <LinearGradient colors={['#FEF9F5', '#FFF0E5']} style={styles.gradient}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

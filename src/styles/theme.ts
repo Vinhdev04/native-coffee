@@ -74,6 +74,8 @@ export const COLORS = {
   teal: '#D8F1F3',
   tealLight: '#EBF8FA',
   tealIcon: '#0B7F8C',
+  info: '#0EA5E9',
+  milk: { light: '#F3F4F6', dark: '#FFFFFF' },
 };
 
 export const FONTS = {

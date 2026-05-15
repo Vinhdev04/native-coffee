@@ -18,7 +18,7 @@ export interface CreateOrderItem {
 
 export interface CreateOrderPayload {
   branchId: number;
-  // shiftSessionId: number;
+  shiftSessionId?: number;
   customerName?: string;
   customerPhone?: string;
   note?: string;
@@ -52,13 +52,22 @@ export const createOrder = async (payload: CreateOrderPayload) => {
   const idempotencyKey = `order-${Date.now()}-${Math.random()
     .toString(36)
     .slice(2)}`;
+  const requestPayload = {
+    branchId: payload.branchId,
+    ...(payload.shiftSessionId ? { shiftSessionId: payload.shiftSessionId } : {}),
+    ...(payload.customerName ? { customerName: payload.customerName } : {}),
+    ...(payload.customerPhone ? { customerPhone: payload.customerPhone } : {}),
+    ...(payload.note ? { note: payload.note } : {}),
+    items: payload.items,
+  };
+
   console.log(
     `📦 [OrderService] createOrder payload:`,
-    JSON.stringify(payload, null, 2),
+    JSON.stringify(requestPayload, null, 2),
   );
   console.log(`🔑 [OrderService] idempotency-key: ${idempotencyKey}`);
 
-  const response = await axiosClient.post("/orders", payload, {
+  const response = await axiosClient.post("/orders", requestPayload, {
     headers: { "idempotency-key": idempotencyKey },
   });
   console.log(`📦 [OrderService] createOrder response:`, response);

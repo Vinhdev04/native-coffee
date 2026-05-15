@@ -23,6 +23,45 @@ interface ReceiptModalProps {
   title?: string;
 }
 
+const numberFrom = (...values: any[]) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return 0;
+};
+
+const inferVatType = (
+  rawVatType: any,
+  vatAmount: number,
+  subTotal: number,
+  discount: number,
+  totalAmount: number,
+) => {
+  if (rawVatType === "exclusive" || rawVatType === "inclusive") return rawVatType;
+  if (vatAmount <= 0) return "none";
+
+  const exclusiveTotal = subTotal - discount + vatAmount;
+  return Math.abs(totalAmount - exclusiveTotal) <= 1 ? "exclusive" : "inclusive";
+};
+
+const inferVatRate = (
+  rawVatRate: number,
+  vatAmount: number,
+  subTotal: number,
+  discount: number,
+  vatType: string,
+) => {
+  if (rawVatRate > 0 || vatAmount <= 0) return rawVatRate;
+  const taxableAmount = Math.max(0, subTotal - discount);
+  if (taxableAmount <= 0) return 0;
+
+  const base =
+    vatType === "inclusive" ? Math.max(1, taxableAmount - vatAmount) : taxableAmount;
+  return Number(((vatAmount / base) * 100).toFixed(2));
+};
+
 const ReceiptModal = ({
   visible,
   onClose,
@@ -30,25 +69,40 @@ const ReceiptModal = ({
 }: ReceiptModalProps) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  const viewShotRef = useRef<ViewShot>(null);
+  const viewShotRef = useRef<any>(null);
 
   // Map order sang định dạng BillData của BillReceiptComponent
   // Đã tính toán VAT đồng bộ
   const billData: BillData | null = useMemo(() => {
     if (!order) return null;
-    const total = parseFloat(order.totalPrice || "0");
-    const discount = parseFloat(order.discount || "0");
-    const sub = total + discount;
-    const vat = 0;
+    const discount = numberFrom(order.discount, order.discountAmount, order.totalDiscount);
+    const vatAmount = numberFrom(order.vatAmount, order.taxAmount);
+    const rawVatRate = numberFrom(order.vatRate, order.taxRate);
+    const rawVatType = order.vatType || order.taxType;
+    const sub = numberFrom(
+      order.subTotal,
+      order.subtotalAmount,
+      order.totalPrice,
+    );
+    const total = numberFrom(
+      order.grandTotal,
+      order.totalAmount,
+      order.total,
+      sub - discount + (rawVatType === "exclusive" ? vatAmount : 0),
+    );
+    const vatType = inferVatType(rawVatType, vatAmount, sub, discount, total);
+    const vatRate = inferVatRate(rawVatRate, vatAmount, sub, discount, vatType);
 
     return {
       id: order.id,
-      orderId: order.id,
+      orderId: order.id || order.orderId,
       customerName: order.customerName || "Khách vãng lai",
       createdAt: order.createdAt,
       items: order.items || [],
       subTotal: sub,
-      vatAmount: vat,
+      vatAmount: vatAmount,
+      vatRate: vatRate,
+      vatType: vatType,
       discount: discount,
       totalAmount: total,
       paymentMethod: order.paymentMethod || "CASH",

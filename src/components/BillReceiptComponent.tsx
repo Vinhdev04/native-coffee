@@ -19,6 +19,7 @@ export interface BillItem {
 }
 
 export interface BillData {
+  id?: string | number;
   orderId: string | number;
   customerName?: string;
   createdAt?: string;
@@ -26,6 +27,8 @@ export interface BillData {
   subTotal: number;
   discount?: number;
   vatAmount?: number; // VAT (ví dụ: 10% của subTotal)
+  vatRate?: number;
+  vatType?: string;
   totalAmount: number;
   paymentMethod?: string; // 'CASH' | 'VNPAY'
   cashReceived?: number;
@@ -35,6 +38,13 @@ export interface BillData {
 // ─── Helper ───────────────────────────────────────────────────────────────────
 // const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}đ`;
 const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}`;
+const hasBillVat = (data: BillData) =>
+  Boolean(data.vatType && data.vatType !== "none") ||
+  Number(data.vatAmount ?? 0) > 0;
+const vatLabel = (data: BillData) =>
+  data.vatRate && data.vatRate > 0
+    ? `  VAT (${data.vatRate}%)`
+    : "  VAT";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 /**
@@ -57,7 +67,7 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
         <View style={s.header}>
           <View style={s.logoBox}>
             <Image
-              source={require("@/assets/images/chips.png")}
+              source={require("@/assets/images/chips-invoice-logo.png")}
               style={s.logoImage}
               resizeMode="contain"
             />
@@ -90,7 +100,7 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
         {data.items.map((item, idx) => (
           <View key={idx}>
             <View style={s.tableRow}>
-              <Text style={s.colName} numberOfLines={2}>
+              <Text style={s.colName} numberOfLines={1} ellipsizeMode="tail">
                 {item.name}
               </Text>
               <Text style={s.colQty}>{item.quantity}</Text>
@@ -101,7 +111,7 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
             {/* Thuộc tính / topping */}
             {item.attributes?.map((attr, ai) => (
               <View key={ai} style={s.tableRow}>
-                <Text style={s.colAttrName}>{`+ ${attr.name}`}</Text>
+                <Text style={s.colAttrName} numberOfLines={1} ellipsizeMode="tail">{`+ ${attr.name}`}</Text>
                 <Text style={s.colQty}>{item.quantity}</Text>
                 <Text style={s.colAttrPrice}>
                   {attr.price > 0 ? vnd(attr.price * item.quantity) : "—"}
@@ -132,28 +142,38 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
         </View>
 
         {/* VAT INFO */}
-        <View style={{ marginTop: 4 }}>
-          <Text
-            style={{
-              fontFamily: FONTS.italic,
-              fontSize: 11,
-              color: "#6B7280",
-              marginBottom: 2,
-            }}
-          >
-            Đã bao gồm
-          </Text>
-          <Row
-            label="  VAT (8%)"
-            value={vnd(0)}
-            valueStyle={{ color: "#6B7280" }}
-          />
-          <Row
-            label="  VAT (10%)"
-            value={vnd(Math.round((data.totalAmount * 10) / 110))}
-            valueStyle={{ color: "#6B7280" }}
-          />
-        </View>
+        {hasBillVat(data) ? (
+          <View style={{ marginTop: 4 }}>
+            <Text
+              style={{
+                fontFamily: FONTS.regular,
+                fontSize: 11,
+                color: "#6B7280",
+                marginBottom: 2,
+              }}
+            >
+              {data.vatType === 'inclusive' ? 'Đã bao gồm' : 'Chưa bao gồm'}
+            </Text>
+            <Row
+              label={vatLabel(data)}
+              value={vnd(data.vatAmount || 0)}
+              valueStyle={{ color: "#6B7280" }}
+            />
+          </View>
+        ) : (
+          <View style={{ marginTop: 4 }}>
+            <Text
+              style={{
+                fontFamily: FONTS.regular,
+                fontSize: 11,
+                color: "#6B7280",
+                marginBottom: 2,
+              }}
+            >
+              Không tính VAT
+            </Text>
+          </View>
+        )}
 
         {/* Tiền mặt — tiền khách đưa & tiền thừa */}
         {data.paymentMethod === "CASH" && data.cashReceived != null && (
@@ -274,24 +294,29 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     marginVertical: 3,
+    width: "100%",
   },
   tableHeader: { marginBottom: 2 },
   tableHeaderText: { fontFamily: FONTS.bold, fontSize: 11, color: "#374151" },
   colName: {
-    flex: 2,
+    flex: 1,
+    flexShrink: 1,
+    paddingRight: 8,
     fontFamily: FONTS.medium,
     fontSize: 12,
     color: "#111827",
   },
   colQty: {
     width: 28,
+    flexShrink: 0,
     textAlign: "center",
     fontFamily: FONTS.medium,
     fontSize: 12,
     color: "#111827",
   },
   colPrice: {
-    flex: 1,
+    width: 78,
+    flexShrink: 0,
     textAlign: "right",
     fontFamily: FONTS.medium,
     fontSize: 12,
@@ -299,13 +324,16 @@ const s = StyleSheet.create({
   },
   // Attribute rows
   colAttrName: {
-    flex: 2,
+    flex: 1,
+    flexShrink: 1,
+    paddingRight: 8,
     fontFamily: FONTS.regular,
     fontSize: 11,
     color: "#9CA3AF",
   },
   colAttrPrice: {
-    flex: 1,
+    width: 78,
+    flexShrink: 0,
     textAlign: "right",
     fontFamily: FONTS.regular,
     fontSize: 11,

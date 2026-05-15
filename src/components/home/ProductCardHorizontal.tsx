@@ -9,6 +9,7 @@ interface ProductCardHorizontalProps {
   onPress: () => void;
   onAddPress: () => void;
   onMinusPress?: () => void;
+  onPrintPress?: () => void;
   searchText?: string;
   cartQuantity?: number;
 }

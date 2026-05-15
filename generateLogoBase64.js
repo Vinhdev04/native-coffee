@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const logoPath = path.join(__dirname, "src/public/favicon.ico");
+const logoPath = path.join(__dirname, "src/public/CHIPS-logo.png");
 const outPath = path.join(__dirname, "src/constants/logoBase64.ts");
 
 try {

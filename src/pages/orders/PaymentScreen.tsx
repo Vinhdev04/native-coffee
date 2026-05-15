@@ -60,9 +60,42 @@ import BillReceiptComponent, {
 } from "@/components/BillReceiptComponent";
 import { printBillOnSunmi, shareBillImage } from "@/services/billService";
 import ReceiptModal from "@/components/common/ReceiptModal";
+import { fetchOrderById } from "@/services/orderService";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type PaymentMethod = "CASH" | "VNPAY" | null;
+
+const inferVatType = (
+  rawVatType: any,
+  vatAmount: number,
+  subTotal: number,
+  discount: number,
+  totalAmountValue: number,
+) => {
+  if (rawVatType === "exclusive" || rawVatType === "inclusive") return rawVatType;
+  if (vatAmount <= 0) return "none";
+
+  const exclusiveTotal = subTotal - discount + vatAmount;
+  return Math.abs(totalAmountValue - exclusiveTotal) <= 1
+    ? "exclusive"
+    : "inclusive";
+};
+
+const inferVatRate = (
+  rawVatRate: number,
+  vatAmount: number,
+  subTotal: number,
+  discount: number,
+  vatType: string,
+) => {
+  if (rawVatRate > 0 || vatAmount <= 0) return rawVatRate;
+  const taxableAmount = Math.max(0, subTotal - discount);
+  if (taxableAmount <= 0) return 0;
+
+  const base =
+    vatType === "inclusive" ? Math.max(1, taxableAmount - vatAmount) : taxableAmount;
+  return Number(((vatAmount / base) * 100).toFixed(2));
+};
 
 const PAYMENT_STATUS_CONFIG: Record<
   string,
@@ -121,7 +154,8 @@ const PaymentScreen = () => {
   const [billSharing, setBillSharing] = useState(false);
   const [orderItems, setOrderItems] = useState<BillItem[]>([]);
   const [orderDiscount, setOrderDiscount] = useState(0);
-  const billViewShotRef = useRef<ViewShot>(null);
+  const [orderDetail, setOrderDetail] = useState<any>(null);
+  const billViewShotRef = useRef<any>(null);
 
   // Fetch chi tiết đơn để lấy danh sách món cho bill
   useEffect(() => {
@@ -130,6 +164,7 @@ const PaymentScreen = () => {
       try {
         const res = await fetchOrderById(orderId);
         const detail = (res as any)?.data ?? res;
+        setOrderDetail(detail);
         const items = (detail?.items || detail?.orderItems || []).map(
           (i: any) => ({
             name: i.productNameSnapshot || i.productName || i.name || "Món",
@@ -163,12 +198,26 @@ const PaymentScreen = () => {
 
   /** Xây dựng BillData từ lịch sử thanh toán + route params */
   const billData = useMemo(() => {
-    const total = Number(totalAmount);
-    const sub = total + (orderDiscount || 0);
-    const vat = 0;
+    const vat = Number(orderDetail?.vatAmount ?? orderDetail?.taxAmount ?? 0);
+    const rawVatRate = Number(orderDetail?.vatRate ?? orderDetail?.taxRate ?? 0);
+    const rawVatType = orderDetail?.vatType ?? orderDetail?.taxType;
+    const total = Number(
+      orderDetail?.grandTotal ??
+        orderDetail?.totalAmount ??
+        orderDetail?.total ??
+        totalAmount,
+    );
+    const sub = Number(
+      orderDetail?.subTotal ??
+        orderDetail?.subtotalAmount ??
+        total + (orderDiscount || 0) - (rawVatType === "exclusive" ? vat : 0),
+    );
+    const vatType = inferVatType(rawVatType, vat, sub, orderDiscount || 0, total);
+    const vatRate = inferVatRate(rawVatRate, vat, sub, orderDiscount || 0, vatType);
 
     return {
       id: orderId,
+      orderId,
       customerName: customerName || "Khách vãng lai",
       createdAt: new Date().toLocaleString("vi-VN"),
       items: orderItems,
@@ -178,6 +227,9 @@ const PaymentScreen = () => {
       // Các trường phụ trợ cho ReceiptModal/BillReceiptComponent
       subTotal: sub,
       vatAmount: vat,
+      vatRate,
+      vatType,
+      totalAmount: total,
       cashReceived: selectedMethod === "CASH" ? Number(cashInput) : undefined,
       cashChange: selectedMethod === "CASH" ? cashChange : undefined,
     };
@@ -187,6 +239,7 @@ const PaymentScreen = () => {
     customerName,
     orderItems,
     orderDiscount,
+    orderDetail,
     selectedMethod,
     cashInput,
     cashChange,

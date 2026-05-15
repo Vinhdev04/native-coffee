@@ -13,6 +13,7 @@ export interface UserDetail {
   id:          string;
   username:    string;
   fullName?:   string;
+  name?:       string;
   email?:      string;
   phone?:      string;
   avatar?:     string;
@@ -28,7 +29,10 @@ export interface LoginPayload {
 
 export interface LoginResponse {
   res_code: number;
-  rows: ({
+  token?: string;
+  user?: UserDetail;
+  data?: any;
+  rows?: ({
     token: string;
   } & UserDetail)[];
   error_code?: string;

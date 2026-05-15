@@ -32,6 +32,10 @@ const CartScreen = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
   
+  // VAT State
+  const [vatType, setVatType] = useState<'exclusive' | 'inclusive' | 'none'>('inclusive');
+  const [vatRate, setVatRate] = useState<string>('8');
+  
   // Note Modal State
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [currentEditingItem, setCurrentEditingItem] = useState<any>(null);
@@ -48,7 +52,19 @@ const CartScreen = () => {
   const [isReceiptVisible, setIsReceiptVisible] = useState(false);
 
   const discount = selectedVoucher ? selectedVoucher.value : 0;
-  const grandTotal = Math.max(0, totalPrice - discount);
+  const subtotalAfterDiscount = Math.max(0, totalPrice - discount);
+  
+  const vatRateNumber = parseFloat(vatRate) || 0;
+  let vatAmount = 0;
+  let grandTotal = subtotalAfterDiscount;
+
+  if (vatType === 'exclusive') {
+    vatAmount = subtotalAfterDiscount * (vatRateNumber / 100);
+    grandTotal = subtotalAfterDiscount + vatAmount;
+  } else if (vatType === 'inclusive') {
+    vatAmount = subtotalAfterDiscount * (vatRateNumber / (100 + vatRateNumber));
+    grandTotal = subtotalAfterDiscount;
+  }
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
@@ -224,6 +240,55 @@ const CartScreen = () => {
                   </View>
                   <ChevronRight size={20} color={COLORS.textMuted} />
                 </TouchableOpacity>
+
+                {/* VAT section */}
+                <View style={s.vatCard}>
+                  <View style={s.vatHeader}>
+                    <FileText size={18} color={COLORS.primary} />
+                    <Text style={s.vatTitle}>Thuế GTGT (VAT)</Text>
+                  </View>
+                  <View style={s.vatOptions}>
+                    <TouchableOpacity
+                      style={[s.vatOptionBtn, vatType === 'inclusive' && s.vatOptionActive]}
+                      onPress={() => setVatType('inclusive')}
+                    >
+                      <Text style={[s.vatOptionText, vatType === 'inclusive' && s.vatOptionTextActive]}>Đã bao gồm</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[s.vatOptionBtn, vatType === 'exclusive' && s.vatOptionActive]}
+                      onPress={() => setVatType('exclusive')}
+                    >
+                      <Text style={[s.vatOptionText, vatType === 'exclusive' && s.vatOptionTextActive]}>Cộng thêm</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[s.vatOptionBtn, vatType === 'none' && s.vatOptionActive]}
+                      onPress={() => setVatType('none')}
+                    >
+                      <Text style={[s.vatOptionText, vatType === 'none' && s.vatOptionTextActive]}>Không tính</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {vatType === 'exclusive' && (
+                    <View style={s.vatInputRow}>
+                      <Text style={s.vatInputLabel}>Nhập phần trăm (%) Thuế suất:</Text>
+                      <View style={s.vatInputWrapper}>
+                        <TextInput
+                          style={s.vatInput}
+                          keyboardType="numeric"
+                          value={vatRate}
+                          onChangeText={setVatRate}
+                          maxLength={2}
+                        />
+                        <Text style={s.vatPercentIcon}>%</Text>
+                      </View>
+                    </View>
+                  )}
+                  {vatType === 'inclusive' && (
+                    <View style={s.vatInputRow}>
+                      <Text style={s.vatInputLabel}>Thuế suất hệ thống đang áp dụng:</Text>
+                      <Text style={s.vatFixedText}>{vatRate}%</Text>
+                    </View>
+                  )}
+                </View>
               </View>
               
               <View style={{ height: 120 }} />
@@ -374,7 +439,16 @@ const CartScreen = () => {
         <ReceiptModal
           visible={isReceiptVisible}
           onClose={() => setIsReceiptVisible(false)}
-          order={{ items, totalPrice, customerName: user?.fullName || 'Khách vãng lai' }}
+          order={{ 
+            items, 
+            totalPrice, 
+            discount,
+            vatAmount,
+            vatRate: vatRateNumber,
+            vatType,
+            grandTotal,
+            customerName: user?.fullName || 'Khách vãng lai' 
+          }}
         />
       </SafeAreaView>
     </GestureHandlerRootView>
@@ -432,6 +506,40 @@ const s = StyleSheet.create({
   voucherTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
   voucherSubtitle: { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted },
   
+  vatCard: {
+    backgroundColor: COLORS.white, padding: 16, marginTop: 8,
+    borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#F3F4F6'
+  },
+  vatHeader: { marginBottom: 12, flexDirection: 'row', alignItems: 'center' },
+  vatTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary, marginLeft: 8 },
+  vatOptions: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  vatOptionBtn: {
+    flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10,
+    borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB'
+  },
+  vatOptionActive: { backgroundColor: '#FFF0E6', borderColor: COLORS.primary },
+  vatOptionText: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.textMuted },
+  vatOptionTextActive: { color: COLORS.primary, fontFamily: FONTS.bold },
+  vatInputRow: { 
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
+    marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderColor: '#E5E7EB', borderStyle: 'dashed' 
+  },
+  vatInputLabel: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textPrimary },
+  vatInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 12 },
+  vatInput: {
+    width: 40, height: 40,
+    textAlign: 'center', fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary
+  },
+  vatPercentIcon: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textMuted },
+  vatFixedText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#FFF0E6', borderRadius: 8 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  deleteBtn: { padding: 8, borderRadius: 12, backgroundColor: '#F3F4F6' },
+  scrollContent: { paddingBottom: 200 },
+  mainContainer: { flex: 1, paddingHorizontal: 20 },
+  modalProductName: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary, marginBottom: 15 },
+  voucherList: { marginTop: 10 },
+  voucherBadge: { backgroundColor: '#E0F2FE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+  voucherBadgeText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.primary },
 
   footer: { 
     position: 'absolute', bottom: 0, left: 0, right: 0,

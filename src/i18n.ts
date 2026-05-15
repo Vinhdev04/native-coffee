@@ -47,7 +47,7 @@ i18n
   .use(languageDetectorPlugin)
   .init({
     resources,
-    compatibilityJSON: 'v3',
+    compatibilityJSON: 'v4',
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,

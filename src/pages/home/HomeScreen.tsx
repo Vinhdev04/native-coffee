@@ -27,7 +27,7 @@ const sh = StyleSheet.create({
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
-  const { items, totalItems, addToCart } = useCart();
+  const { items, totalItems, addToCart, updateQuantity } = useCart();
 
   const [categories, setCategories] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
