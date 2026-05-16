@@ -86,16 +86,10 @@ const getStatusConfig = (t: any): Record<string, { label: string; color: string;
   CANCEL: { label: t('status_cancelled') || "Đã hủy", color: "#DC2626", bg: "#FEE2E2", Icon: XCircle },
 });
 
+
 const PENDING_STATUSES = ["PENDING", "PENDING_PAYMENT", "READY", "DRAFT"];
 const DONE_STATUSES = ["PAID", "DONE"];
 const CANCEL_STATUSES = ["CANCELLED", "CANCEL"];
-
-  const { t } = useTranslation();
-  const TABS = [
-    { key: "all", label: t('all') },
-    { key: "pending", label: t('pending') },
-    { key: "done", label: t('done') },
-  ];
 
 const formatDate = (raw: string, t: any) => {
   if (!raw) return t('just_now') || "Vừa xong";
@@ -326,6 +320,11 @@ const OrderScreen = () => {
   const [isReceiptVisible, setIsReceiptVisible] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
   const { t } = useTranslation();
+  const TABS = [
+    { key: "all", label: t('all') },
+    { key: "pending", label: t('pending') },
+    { key: "done", label: t('done') },
+  ];
   
   const STATUS_CONFIG = getStatusConfig(t);
 

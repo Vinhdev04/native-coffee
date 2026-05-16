@@ -51,6 +51,7 @@ const MainNavigator = () => {
         tabBarStyle: s.tabBar,
       }}
     >
+      <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
         options={{

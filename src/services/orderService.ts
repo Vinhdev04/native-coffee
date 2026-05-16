@@ -100,8 +100,12 @@ export const fetchOrders = async (params?: {
  * GET /orders/{id}
  */
 export const fetchOrderById = async (id: number | string) => {
-  console.log(`🔍 [OrderService] fetchOrderById → id=${id}`);
-  const response = await axiosClient.get(`/orders/${id}`);
+  const safeId = String(id);
+  console.log(`🔍 [OrderService] fetchOrderById → id=${safeId}`);
+  // Add branchId=1 by default to avoid 404 if order belongs to a specific branch
+  const response = await axiosClient.get(`/orders/${safeId}`, {
+    params: { branchId: 1 }
+  });
   console.log(`🔍 [OrderService] fetchOrderById response:`, response);
   return response;
 };
@@ -114,10 +118,11 @@ export const updateOrderStatus = async (
   id: number | string,
   orderStatus: "PENDING_PAYMENT" | "PAID" | "COMPLETED" | "CANCELLED",
 ) => {
+  const safeId = String(id);
   console.log(
-    `🔄 [OrderService] updateOrderStatus → id=${id}, orderStatus=${orderStatus}`,
+    `🔄 [OrderService] updateOrderStatus → id=${safeId}, orderStatus=${orderStatus}`,
   );
-  const response = await axiosClient.put(`/orders/${id}/status`, {
+  const response = await axiosClient.put(`/orders/${safeId}/status`, {
     orderStatus,
   });
   console.log(`🔄 [OrderService] updateOrderStatus response:`, response);

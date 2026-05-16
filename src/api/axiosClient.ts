@@ -33,13 +33,13 @@ axiosClient.interceptors.request.use(
           for (const p of userObj.permissions) {
             if (p.permissions && Array.isArray(p.permissions) && p.permissions.length > 0) {
                // Thường API trả về [{ roleCode: 'ADMIN', permissions: ['MENU_VIEW', ...] }]
-               const firstPerm = p.permissions[0];
-               if (typeof firstPerm === 'string') {
-                 screenCode = firstPerm;
-               } else if (firstPerm.screenCode || firstPerm.router_screen || firstPerm.code) {
-                 screenCode = firstPerm.screenCode || firstPerm.router_screen || firstPerm.code;
-               }
-               break;
+                const firstPerm = p.permissions[0];
+                if (typeof firstPerm === 'string') {
+                  screenCode = firstPerm;
+                } else if (firstPerm.screenCode || firstPerm.router_screen || firstPerm.code) {
+                  screenCode = String(firstPerm.screenCode || firstPerm.router_screen || firstPerm.code);
+                }
+                break;
             } else if (typeof p === 'string') {
                screenCode = p;
                break;
