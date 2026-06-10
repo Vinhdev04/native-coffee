@@ -25,6 +25,7 @@
     "@react-navigation/stack": "^7.8.9",
     "axios": "^1.15.0",
     "expo": "~55.0.0",
+    "expo-modules-core": "^55.0.24",
     "expo-speech": "~55.0.13",
     "expo-status-bar": "~55.0.5",
     "expo-web-browser": "^55.0.14",
