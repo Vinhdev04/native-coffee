@@ -125,14 +125,14 @@ const thermalItemRows = (name: string, qty: number, price: string): string[] => 
 export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
   try {
     if (Platform.OS !== "android") {
-      Toast.show({ type: "info", text1: "Tính năng in chỉ hỗ trợ Android" });
+      Toast.show({ type: "info", text1: "Tính năng in chỉ hỗ trợ Android!" });
       return false;
     }
     if (!SunmiPrinter) {
       Toast.show({
         type: "error",
         text1: "Không tìm thấy máy in",
-        text2: "Vui lòng kiểm tra phần cứng POS",
+        text2: "Vui lòng kiểm tra phần cứng POS!",
       });
       return false;
     }
@@ -144,9 +144,9 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
         if (!isConnected) {
           Toast.show({
             type: "error",
-            text1: "Lỗi kết nối máy in",
+            text1: "Lỗi kết nối máy in!",
             text2:
-              "Chưa kết nối được với dịch vụ in Sunmi (hoặc không phải thiết bị Sunmi).",
+              "Chưa kết nối được với dịch vụ in Sunmi (hoặc không phải thiết bị Sunmi).!",
           });
           return false;
         }
@@ -154,8 +154,8 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
         console.error("❌ [BillService] Lỗi kiểm tra máy in:", printerError);
         Toast.show({
           type: "error",
-          text1: "Lỗi kiểm tra máy in",
-          text2: "Không thể xác nhận kết nối máy in Sunmi.",
+          text1: "Lỗi kiểm tra máy in!",
+          text2: "Không thể xác nhận kết nối máy in Sunmi.!",
         });
         return false;
       }
@@ -168,8 +168,8 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     if (typeof SunmiPrinter.printerText !== "function" || typeof SunmiPrinter.setAlignment !== "function") {
       Toast.show({
         type: "error",
-        text1: "Máy in không hỗ trợ",
-        text2: "Thiết bị này không có chức năng in hóa đơn Sunmi.",
+        text1: "Máy in không hỗ trợ!",
+        text2: "Thiết bị này không có chức năng in hóa đơn Sunmi!.",
       });
       return false;
     }
@@ -197,10 +197,11 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
       // Check if response is valid (res_code === 0 means success)
       if (!response || response.res_code !== 0 || !response.data) {
         const errorMsg = response?.error_cont || "Không thể lấy dữ liệu từ backend";
-        console.error("❌ [BillService] API Error:", errorMsg, "Response:", response);
+        console.error("❌ [BillService] API Error:", errorMsg);
+        console.error("❌ [BillService] Chi tiết phản hồi:", JSON.stringify(response, null, 2));
         Toast.show({
           type: "error",
-          text1: "Lỗi lấy dữ liệu đơn hàng",
+          text1: "Lỗi lấy dữ liệu đơn hàng!",
           text2: errorMsg,
         });
         return false;
@@ -210,16 +211,26 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
       if (!latestOrder) {
         Toast.show({
           type: "error",
-          text1: "Không thể lấy dữ liệu đơn hàng mới nhất từ backend",
+          text1: "Không thể lấy dữ liệu đơn hàng mới nhất từ database!",
         });
         return false;
       }
-    } catch (fetchError) {
+    } catch (fetchError: any) {
       console.error("❌ [BillService] Lỗi fetch đơn hàng:", fetchError);
+      if (fetchError && fetchError.response) {
+        console.error("❌ [BillService] Chi tiết lỗi API (status code):", fetchError.response.status);
+        console.error("❌ [BillService] Dữ liệu phản hồi lỗi:", JSON.stringify(fetchError.response.data, null, 2));
+      }
+      if (fetchError && fetchError.config) {
+        console.error("❌ [BillService] Request Config URL:", fetchError.config.url);
+        console.error("❌ [BillService] Request Config Method:", fetchError.config.method);
+        console.error("❌ [BillService] Request Config Params:", JSON.stringify(fetchError.config.params, null, 2));
+        console.error("❌ [BillService] Request Config Data:", JSON.stringify(fetchError.config.data, null, 2));
+      }
       Toast.show({
         type: "error",
         text1: "Lỗi kết nối backend",
-        text2: fetchError instanceof Error ? fetchError.message : "Không xác định",
+        text2: fetchError instanceof Error ? fetchError.message : "Không xác định!",
       });
       return false;
     }
@@ -227,7 +238,7 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     if (!latestOrder) {
       Toast.show({
         type: "error",
-        text1: "Dữ liệu đơn hàng trống",
+        text1: "Dữ liệu đơn hàng trống!",
       });
       return false;
     }
@@ -291,10 +302,27 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     const vatType = inferVatType(rawVatType, vatAmount, sub, discount, total);
     const vatRate = inferVatRate(rawVatRate, vatAmount, sub, discount, vatType);
 
-    const items = Array.isArray(latestOrder.items) ? latestOrder.items : [];
+    const rawItems = Array.isArray(latestOrder.items) ? latestOrder.items : 
+                     Array.isArray(latestOrder.orderItems) ? latestOrder.orderItems : [];
+    const items = rawItems.map((item: any) => {
+      const qty = item.qty || item.quantity || 1;
+      const totalItemPrice = parseFloat(item.lineTotal || item.unitPriceSnapshot || "0");
+      const unitPrice = totalItemPrice > 0 ? (totalItemPrice / qty) : parseFloat(item.unitPrice || "0");
+      return {
+        name: item.productNameSnapshot || item.productName || item.name || "Món",
+        quantity: qty,
+        unitPrice: unitPrice,
+        attributes: (item.selectedOptionsSnapshot || item.selectedAttributes || []).map((attr: any) => ({
+          name: attr.name || attr.attributeName || "",
+          price: parseFloat(attr.price || "0"),
+        })),
+      };
+    });
+
     const updatedData: BillData = {
       id: latestOrder.id,
       orderId: latestOrder.id || latestOrder.orderId,
+      orderCode: latestOrder.orderCode || latestOrder.order_code,
       customerName: latestOrder.customerName || "Khách vãng lai",
       createdAt: latestOrder.createdAt,
       items,
@@ -345,7 +373,7 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
 
     // ── THÔNG TIN ĐƠN ──
     SunmiPrinter.setAlignment(0); // left
-    SunmiPrinter.printerText(`Mã đơn: #${billData.orderId}\n`);
+    SunmiPrinter.printerText(`Mã đơn: #${billData.orderCode || billData.orderId}\n`);
     const dateStr = new Date().toLocaleString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",

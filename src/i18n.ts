@@ -2,8 +2,8 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import en from './Bugs/i18n/en.json';
-import vn from './Bugs/i18n/vn.json';
+import en from './i18n/locales/en.json';
+import vn from './i18n/locales/vi.json';
 
 const STORE_LANGUAGE_KEY = 'settings.lang';
 

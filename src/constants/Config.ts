@@ -26,6 +26,7 @@ console.log('Tìm thấy khóa công khai:', !!APP_CONFIG.publicKey);
 
 export const APP_ASSETS = {
   logo: require("@/assets/images/logo.png"),
-  splashBg: require("@/assets/images/splash_bg.png"),
-  coffeePattern: require("@/assets/images/coffee_pattern.png"),
+  // Các file ảnh dưới đây chưa tồn tại trong thư mục src/assets/images nên tạm thời ẩn đi để tránh lỗi build
+  // splashBg: require("@/assets/images/splash_bg.png"),
+  // coffeePattern: require("@/assets/images/coffee_pattern.png"),
 };

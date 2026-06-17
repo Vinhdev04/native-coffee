@@ -1,0 +1,141 @@
+import { StyleSheet } from 'react-native';
+import { COLORS, FONTS } from '@/styles/theme';
+
+export const s = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FEF9F5',
+  },
+  gradient: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  backIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: '#FFF0E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: 24,
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    lineHeight: 22,
+    marginBottom: 28,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 56,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  input: {
+    flex: 1,
+    marginLeft: 12,
+    fontFamily: FONTS.regular,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+  },
+  submitBtn: {
+    backgroundColor: COLORS.primary,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  submitBtnText: {
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.white,
+  },
+  successContainer: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  checkCircle: {
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 22,
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+  successDesc: {
+    fontFamily: FONTS.regular,
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 28,
+    paddingHorizontal: 10,
+  },
+  successEmail: {
+    fontFamily: FONTS.semiBold,
+    color: COLORS.primary,
+  },
+  backToLoginBtn: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 24,
+    height: 50,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backToLoginText: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+  },
+});

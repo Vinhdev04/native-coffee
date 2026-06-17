@@ -21,6 +21,7 @@ export interface BillItem {
 export interface BillData {
   id?: string | number;
   orderId: string | number;
+  orderCode?: string;
   customerName?: string;
   createdAt?: string;
   items: BillItem[];
@@ -121,7 +122,7 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
 
         {/* ── THÔNG TIN ĐƠN ── */}
         <View style={s.section}>
-          <InfoRow label="Mã đơn" value={`#${data.orderId}`} />
+          <InfoRow label="Mã đơn" value={data.orderCode ? `#${data.orderCode}` : `#${data.orderId}`} />
           {!!data.createdAt && (
             <InfoRow label="Ngày" value={data.createdAt} />
           )}

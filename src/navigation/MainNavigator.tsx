@@ -13,11 +13,11 @@ import { COLORS, FONTS } from '@/styles/theme';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/context/CartContext';
 
-import HomeScreen    from '@/pages/home/HomeScreen';
-import MenuScreen    from '@/pages/menu/MenuScreen';
-import OrderScreen   from '@/pages/orders/OrderScreen';
-import AccountScreen from '@/pages/account/Account/AccountScreen';
-import CartScreen    from '@/pages/cart/CartScreen'; // Add CartScreen
+import HomeScreen    from '@/pages/home/screens/HomeScreen';
+import MenuScreen    from '@/pages/menu/screens/MenuScreen';
+import OrderScreen   from '@/pages/orders/screens/OrderScreen';
+import AccountScreen from '@/pages/account/screens/AccountScreen';
+import CartScreen    from '@/pages/cart/screens/CartScreen'; // Add CartScreen
 
 const Tab = createBottomTabNavigator();
 

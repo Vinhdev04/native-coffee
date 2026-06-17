@@ -93,12 +93,30 @@ const ReceiptModal = ({
     const vatType = inferVatType(rawVatType, vatAmount, sub, discount, total);
     const vatRate = inferVatRate(rawVatRate, vatAmount, sub, discount, vatType);
 
+    const rawItems = Array.isArray(order.items) ? order.items : 
+                     Array.isArray(order.orderItems) ? order.orderItems : [];
+    const items = rawItems.map((item: any) => {
+      const qty = item.qty || item.quantity || 1;
+      const totalItemPrice = parseFloat(item.lineTotal || item.unitPriceSnapshot || "0");
+      const unitPrice = totalItemPrice > 0 ? (totalItemPrice / qty) : parseFloat(item.unitPrice || "0");
+      return {
+        name: item.productNameSnapshot || item.productName || item.name || "Món",
+        quantity: qty,
+        unitPrice: unitPrice,
+        attributes: (item.selectedOptionsSnapshot || item.selectedAttributes || []).map((attr: any) => ({
+          name: attr.name || attr.attributeName || "",
+          price: parseFloat(attr.price || "0"),
+        })),
+      };
+    });
+
     return {
       id: order.id,
       orderId: order.id || order.orderId,
+      orderCode: order.orderCode,
       customerName: order.customerName || "Khách vãng lai",
       createdAt: order.createdAt,
-      items: order.items || [],
+      items,
       subTotal: sub,
       vatAmount: vatAmount,
       vatRate: vatRate,

@@ -87,6 +87,14 @@ axiosClient.interceptors.response.use(
 
     // Chỉ coi là lỗi nếu có res_code và res_code khác 0
     if (res && res.hasOwnProperty('res_code') && res.res_code !== 0) {
+      console.warn("==================================================");
+      console.warn("❌ [LỖI TRONG PHẢN HỒI API] (res_code !== 0)");
+      console.warn(`URL: ${response.config.method?.toUpperCase()} ${response.config.url}`);
+      console.warn("Params/Query:", JSON.stringify(response.config.params, null, 2));
+      console.warn("Payload/Body:", JSON.stringify(response.config.data, null, 2));
+      console.warn("Response Body:", JSON.stringify(res, null, 2));
+      console.warn("==================================================");
+
       const isAuthError = AUTH_ERROR_CODES.includes(res.error_code) || res.data?.message === "AUTHEN000";
       if (isAuthError) {
         Toast.show({
@@ -112,10 +120,19 @@ axiosClient.interceptors.response.use(
     const isNetworkError = !error.response; // Không có phản hồi nghĩa là lỗi mạng hoặc máy chủ dừng hoạt động
     const isBackgroundCheck = url.includes('/auth/me');
 
-    console.error(
-      '[Lỗi Phản hồi API]',
-      error.response?.data || error.message,
-    );
+    console.error("==================================================");
+    console.error("❌ [LỖI PHẢN HỒI API HTTP]");
+    console.error(`URL: ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+    console.error("Params/Query:", JSON.stringify(error.config?.params, null, 2));
+    console.error("Payload/Body:", JSON.stringify(error.config?.data, null, 2));
+    if (error.response) {
+      console.error(`Status Code: ${error.response.status}`);
+      console.error("Response Headers:", JSON.stringify(error.response.headers, null, 2));
+      console.error("Response Data:", JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error("Error Message:", error.message);
+    }
+    console.error("==================================================");
 
     // Không hiển thị thông báo cho tác vụ kiểm tra tài khoản nền khi máy chủ không kết nối được
     if (isBackgroundCheck && isNetworkError) {
