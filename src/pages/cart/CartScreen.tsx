@@ -22,20 +22,20 @@ const CartScreen = () => {
 
   const handleCheckout = async () => {
     if (items.length === 0) {
-      console.warn('⚠️ [CartScreen] handleCheckout — cart is empty');
+      console.warn('[CartScreen] handleCheckout — giỏ hàng đang trống');
       return;
     }
 
     try {
       setIsCheckingOut(true);
 
-      // ── Step 1: Fetch active shift session ─────────────────────────────────
-      console.log('🕐 [CartScreen] Fetching active shift session...');
+      // ── Bước 1: Lấy phiên ca làm việc đang hoạt động ─────────────────────────────────
+      console.log('[CartScreen] Đang lấy phiên ca làm việc đang hoạt động...');
       let shiftSessionId: number | null = null;
 
       try {
         const shiftRes = await fetchActiveShiftSession(1);
-        console.log('🕐 [CartScreen] shiftSession raw response:', JSON.stringify(shiftRes, null, 2));
+        console.log('[CartScreen] Phản hồi thô của shiftSession:', JSON.stringify(shiftRes, null, 2));
 
         // API response có thể là array hoặc {data: [...]}
         const shifts: any[] = (shiftRes as any)?.data?.rows
@@ -49,25 +49,25 @@ const CartScreen = () => {
 
         if (activeShift) {
           shiftSessionId = activeShift.id;
-          console.log(`✅ [CartScreen] activeShift id=${shiftSessionId}`, JSON.stringify(activeShift));
+          console.log(`[CartScreen] Ca làm việc hoạt động id=${shiftSessionId}`, JSON.stringify(activeShift));
         } else {
-          console.warn('⚠️ [CartScreen] No active shift found, response:', JSON.stringify(shifts));
+          console.warn('[CartScreen] Không tìm thấy ca làm việc hoạt động, phản hồi:', JSON.stringify(shifts));
         }
       } catch (shiftErr) {
-        console.error('❌ [CartScreen] fetchActiveShiftSession error:', shiftErr);
+        console.error('[CartScreen] Lỗi fetchActiveShiftSession:', shiftErr);
         // Thử tiếp tục mà không có shiftSessionId
       }
 
       if (!shiftSessionId) {
-        console.warn('⚠️ [CartScreen] No shiftSessionId — order may fail if required by API');
+        console.warn('[CartScreen] Không có shiftSessionId — đơn hàng có thể thất bại nếu API yêu cầu');
       }
 
-      // ── Step 2: Build payload ──────────────────────────────────────────────
+      // ── Bước 2: Xây dựng dữ liệu gửi đi (payload) ──────────────────────────────────────────────
       // Lấy tên khách hàng từ account đăng nhập, fallback 'Khách vãng lai'
       const customerName = user?.fullName || (user as any)?.full_name
         || user?.username || (user as any)?.name
         || 'Khách vãng lai';
-      console.log(`👤 [CartScreen] customerName from auth: "${customerName}"`);
+      console.log(`[CartScreen] Tên khách hàng từ xác thực: "${customerName}"`);
 
       const payload: any = {
         branchId: 1,
@@ -85,16 +85,16 @@ const CartScreen = () => {
 
       console.log('📦 [CartScreen] createOrder payload:', JSON.stringify(payload, null, 2));
 
-      // ── Step 3: Create order ───────────────────────────────────────────────
+      // ── Bước 3: Tạo đơn hàng ───────────────────────────────────────────────
       const res = await createOrder(payload);
-      console.log('📦 [CartScreen] createOrder response:', JSON.stringify(res, null, 2));
+      console.log('[CartScreen] Phản hồi tạo đơn hàng:', JSON.stringify(res, null, 2));
 
       // Lấy orderId từ response
       const newOrderId = (res as any)?.data?.id
         || (res as any)?.id
         || (res as any)?.data?.orderId;
 
-      console.log(`✅ [CartScreen] Order created — orderId=${newOrderId}`);
+      console.log(`[CartScreen] Đã tạo đơn hàng — orderId=${newOrderId}`);
 
       Toast.show({
         type: 'success',
@@ -108,12 +108,12 @@ const CartScreen = () => {
       if (newOrderId) {
         navigation.navigate('OrderDetail', { orderId: newOrderId });
       } else {
-        console.warn('⚠️ [CartScreen] No orderId in response, navigating to OrdersTab');
+        console.warn('[CartScreen] Không có orderId trong phản hồi, đang chuyển hướng đến OrdersTab');
         navigation.navigate('Main', { screen: 'OrdersTab' });
       }
     } catch (error: any) {
-      console.error('❌ [CartScreen] handleCheckout error:', error);
-      console.error('❌ [CartScreen] error response:', JSON.stringify(error?.response?.data, null, 2));
+      console.error('[CartScreen] Lỗi handleCheckout:', error);
+      console.error('[CartScreen] Phản hồi lỗi:', JSON.stringify(error?.response?.data, null, 2));
       Toast.show({
         type: 'error',
         text1: 'Lỗi đặt hàng',
@@ -265,7 +265,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
-    height: 110, // Match item height approx
+    height: 110, // Khớp với chiều cao xấp xỉ của mục
     borderRadius: 16,
     marginBottom: 16,
     marginLeft: 10,

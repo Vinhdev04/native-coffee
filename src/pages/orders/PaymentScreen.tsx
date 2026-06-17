@@ -25,7 +25,7 @@ import { payCash, createVNPayUrl, getPaymentHistory } from '@/services/paymentSe
 import { speakPaymentSuccess } from '@/services/ttsService';
 import Toast from 'react-native-toast-message';
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// ─── Các kiểu dữ liệu (Types) ─────────────────────────────────────────────────────────────────────
 type PaymentMethod = 'CASH' | 'VNPAY' | null;
 
 const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -38,7 +38,7 @@ const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string; bg: 
   CANCELLED:  { label: 'Đã hủy',        color: '#6B7280', bg: '#F3F4F6' },
 };
 
-// ─── Helper ────────────────────────────────────────────────────────────────────
+// ─── Tiện ích hỗ trợ (Helper) ────────────────────────────────────────────────────────────────────
 const formatDateTime = (raw: string) => {
   if (!raw) return '—';
   try {
@@ -51,7 +51,7 @@ const formatDateTime = (raw: string) => {
   } catch { return raw; }
 };
 
-// ─── Component ─────────────────────────────────────────────────────────────────
+// ─── Hợp phần (Component) ─────────────────────────────────────────────────────────────────
 const PaymentScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -63,40 +63,40 @@ const PaymentScreen = () => {
   const [confirmedAmount, setConfirmedAmount] = useState<number>(0);
   const [orderAlreadyPaid, setOrderAlreadyPaid] = useState(false);
   const [vnpayOpened, setVnpayOpened] = useState(false);
-  const [vnpayUrl, setVnpayUrl] = useState<string | null>(null); // ✅ Thêm state cho WebView URL
+  const [vnpayUrl, setVnpayUrl] = useState<string | null>(null); // Thêm state cho WebView URL
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
-  // ✅ Tiền khách đưa (mặc định = tổng đơn)
+  // Tiền khách đưa (mặc định = tổng đơn)
   const [cashInput, setCashInput] = useState<string>(String(Number(totalAmount)));
   const cashChange = Math.max(0, Number(cashInput || 0) - Number(totalAmount));
 
-  console.log(`💳 [PaymentScreen] mount — orderId=${orderId}, total=${totalAmount}, customer=${customerName}`);
+  console.log(`[PaymentScreen] mount — orderId=${orderId}, total=${totalAmount}, customer=${customerName}`);
 
   const loadHistory = useCallback(async () => {
     if (!orderId) return;
     try {
       setHistoryLoading(true);
       const res = await getPaymentHistory(orderId);
-      console.log(`📋 [PaymentScreen] payment history:`, JSON.stringify(res, null, 2));
+      console.log(`[PaymentScreen] lịch sử thanh toán:`, JSON.stringify(res, null, 2));
       const list = (res as any)?.data || (res as any)?.rows || res || [];
       const rawList = Array.isArray(list) ? list : (list ? [list] : []);
 
-      // ✅ Kiểm tra đơn đã có giao dịch thành công chưa → block thanh toán lại
+      // Kiểm tra đơn đã có giao dịch thành công chưa → chặn thanh toán lại
       const successRecord = rawList.find((p: any) => p.status === 'SUCCESS' || p.status === 'PAID');
       if (successRecord) {
         const paid = parseFloat(successRecord.amount || totalAmount);
-        console.log(`⚠️ [PaymentScreen] Order ${orderId} already paid: amount=${paid}`);
+        console.log(`[PaymentScreen] Đơn hàng ${orderId} đã được thanh toán: số tiền=${paid}`);
         setOrderAlreadyPaid(true);
         setConfirmedAmount(paid);
         setPaymentDone(true);
       }
 
-      // ✅ Chỉ hiển thị Thành công và Thất bại, không hiện Đang xử lý
+      // Chỉ hiển thị Thành công và Thất bại, không hiện Đang xử lý
       const filteredList = rawList.filter((p: any) => p.status !== 'PENDING' && p.status !== 'PROCESSING');
-      console.log(`📋 [PaymentScreen] history display count=${filteredList.length}`);
+      console.log(`[PaymentScreen] số lượng lịch sử hiển thị=${filteredList.length}`);
       setPaymentHistory(filteredList);
     } catch (err) {
-      console.error('❌ [PaymentScreen] loadHistory error:', err);
+      console.error('[PaymentScreen] Lỗi loadHistory:', err);
     } finally {
       setHistoryLoading(false);
     }
@@ -105,7 +105,7 @@ const PaymentScreen = () => {
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
 
-  // ── Auto-polling for VNPay ───────────────────────────────────────────────────
+  // ── Tự động kiểm tra trạng thái VNPay (Auto-polling) ───────────────────────────────────────────────────
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (vnpayOpened && !paymentDone) {
@@ -115,15 +115,15 @@ const PaymentScreen = () => {
           const list = (res as any)?.data || (res as any)?.rows || res || [];
           const rawList = Array.isArray(list) ? list : (list ? [list] : []);
 
-          // ✅ Lấy record SUCCESS từ API, dùng amount của API (không dùng local)
+          // Lấy record SUCCESS từ API, dùng amount của API (không dùng local)
           const successRecord = rawList.find((p: any) => p.status === 'SUCCESS' || p.status === 'PAID');
           if (successRecord) {
             const paidAmount = parseFloat(successRecord.amount || totalAmount);
-            console.log(`✅ [PaymentScreen] Auto-detected VNPay success! apiAmount=${paidAmount}`);
+            console.log(`[PaymentScreen] Tự động phát hiện VNPay thành công! apiAmount=${paidAmount}`);
             setConfirmedAmount(paidAmount);
             setOrderAlreadyPaid(true);
             
-            // ✅ Đóng WebView ngay lập tức
+            // Đóng WebView ngay lập tức
             setVnpayUrl(null);
             setVnpayOpened(false);
 
@@ -143,13 +143,13 @@ const PaymentScreen = () => {
               navigation.navigate('Main', { screen: 'OrdersTab' });
             }, 2500);
           }
-        } catch (err) { console.warn('⚠️ [Poll] error', err); }
+        } catch (err) { console.warn('[Poll] lỗi', err); }
       }, 3000);
     }
     return () => clearInterval(interval);
   }, [vnpayOpened, paymentDone, orderId, totalAmount, customerName, loadHistory]);
 
-  // ── AppState listener — khi user quay lại từ VNPay browser ────────────────
+  // ── Trình lắng nghe AppState — khi người dùng quay lại từ trình duyệt VNPay ────────────────
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   useEffect(() => {
     const sub = AppState.addEventListener('change', async (nextState) => {
@@ -157,7 +157,7 @@ const PaymentScreen = () => {
       appStateRef.current = nextState;
       // Chỉ kiểm tra khi: đang chờ VNPay + chưa done + app vừa active trở lại
       if (vnpayOpened && !paymentDone && prev !== 'active' && nextState === 'active') {
-        console.log('🔄 [PaymentScreen] AppState active → checking VNPay status...');
+        console.log('[PaymentScreen] AppState active → đang kiểm tra trạng thái VNPay...');
         try {
           const res = await getPaymentHistory(orderId);
           const list = (res as any)?.data || (res as any)?.rows || res || [];
@@ -165,7 +165,7 @@ const PaymentScreen = () => {
           const successRecord = rawList.find((p: any) => p.status === 'SUCCESS' || p.status === 'PAID');
           if (successRecord) {
             const paidAmount = parseFloat(successRecord.amount || totalAmount);
-            console.log(`✅ [PaymentScreen] AppState: VNPay success detected! amount=${paidAmount}`);
+            console.log(`[PaymentScreen] AppState: Phát hiện VNPay thành công! số tiền=${paidAmount}`);
             setConfirmedAmount(paidAmount);
             setOrderAlreadyPaid(true);
             setVnpayUrl(null); // Đóng WebView
@@ -185,13 +185,13 @@ const PaymentScreen = () => {
               navigation.navigate('Main', { screen: 'OrdersTab' });
             }, 2500);
           }
-        } catch (e) { console.warn('⚠️ [AppState check] error:', e); }
+        } catch (e) { console.warn('[AppState check] lỗi:', e); }
       }
     });
     return () => sub.remove();
   }, [vnpayOpened, paymentDone, orderId, totalAmount, customerName, loadHistory]);
 
-  // ── Cash Payment ────────────────────────────────────────────────────────────
+  // ── Thanh toán bằng tiền mặt (Cash Payment) ────────────────────────────────────────────────────────────
   const handleCashPayment = async () => {
     if (orderAlreadyPaid) {
       Toast.show({ type: 'info', text1: 'Đơn đã được thanh toán', text2: 'Vui lòng kiểm tra lại lịch sử.' });
@@ -204,22 +204,22 @@ const PaymentScreen = () => {
     }
     try {
       setProcessing(true);
-      console.log(`💵 [PaymentScreen] CASH → orderId=${orderId}, cashReceived=${cashReceived}`);
+      console.log(`[PaymentScreen] Tiền mặt → orderId=${orderId}, số tiền nhận=${cashReceived}`);
 
       const res = await payCash(orderId, cashReceived);
-      console.log(`✅ [PaymentScreen] payCash full response:`, JSON.stringify(res, null, 2));
+      console.log(`[PaymentScreen] Phản hồi đầy đủ của payCash:`, JSON.stringify(res, null, 2));
 
-      // ✅ Thành công khi: res_code=0 VÀ có paymentId trong data
+      // Thành công khi: res_code=0 VÀ có paymentId trong data
       const resCode = (res as any)?.res_code;
       const data    = (res as any)?.data;
       const isSuccess = resCode === 0 && (data?.paymentId != null || data?.isSuccess === true);
       const apiAmount  = parseFloat(data?.amount || String(cashReceived));
 
-      console.log(`💵 [PaymentScreen] resCode=${resCode}, isSuccess=${isSuccess}, paymentId=${data?.paymentId}, apiAmount=${apiAmount}`);
+      console.log(`[PaymentScreen] resCode=${resCode}, isSuccess=${isSuccess}, paymentId=${data?.paymentId}, apiAmount=${apiAmount}`);
 
       if (!isSuccess) {
         const errMsg = (res as any)?.error_cont || data?.message || 'Thanh toán không thành công.';
-        console.error(`❌ [PaymentScreen] payCash failed: ${errMsg}`);
+        console.error(`[PaymentScreen] payCash thất bại: ${errMsg}`);
         Toast.show({ type: 'error', text1: 'Thanh toán thất bại', text2: errMsg });
         return;
       }
@@ -242,8 +242,8 @@ const PaymentScreen = () => {
         navigation.navigate('Main', { screen: 'OrdersTab' });
       }, 2500);
     } catch (err: any) {
-      console.error('❌ [PaymentScreen] Cash error:', err);
-      console.error('❌ response:', JSON.stringify(err?.response?.data, null, 2));
+      console.error('[PaymentScreen] Lỗi thanh toán tiền mặt:', err);
+      console.error('Phản hồi lỗi:', JSON.stringify(err?.response?.data, null, 2));
       const errMsg = err?.response?.data?.error_cont || err?.message || 'Vui lòng thử lại.';
       Toast.show({ type: 'error', text1: 'Thanh toán thất bại', text2: errMsg });
     } finally {
@@ -252,14 +252,14 @@ const PaymentScreen = () => {
   };
 
 
-  // ── VNPay Payment ───────────────────────────────────────────────────────────
+  // ── Thanh toán VNPay (VNPay Payment) ───────────────────────────────────────────────────────────
   const handleVNPayPayment = async () => {
     try {
       setProcessing(true);
-      console.log(`🏦 [PaymentScreen] Creating VNPay URL for order=${orderId}`);
+      console.log(`[PaymentScreen] Đang tạo đường dẫn VNPay cho đơn hàng=${orderId}`);
 
       const res = await createVNPayUrl(orderId);
-      console.log(`🏦 [PaymentScreen] VNPay URL response:`, JSON.stringify(res, null, 2));
+      console.log(`[PaymentScreen] Phản hồi đường dẫn VNPay:`, JSON.stringify(res, null, 2));
 
       // Lấy URL từ response
       const url = (res as any)?.data?.paymentUrl
@@ -268,19 +268,19 @@ const PaymentScreen = () => {
         || (res as any)?.url;
 
       if (!url) {
-        console.error('❌ [PaymentScreen] VNPay URL not found in response:', res);
+        console.error('[PaymentScreen] Không tìm thấy URL VNPay trong phản hồi:', res);
         Toast.show({ type: 'error', text1: 'Lỗi VNPay', text2: 'Không lấy được link thanh toán.' });
         return;
       }
 
-      console.log(`🔗 [PaymentScreen] Opening VNPay in WebView: ${url}`);
+      console.log(`[PaymentScreen] Đang mở VNPay trong WebView: ${url}`);
       
       setVnpayOpened(true);
-      // ✅ Bật WebView thay vì mở browser ngoài
+      // Bật WebView thay vì mở trình duyệt ngoài
       setVnpayUrl(url);
 
     } catch (err: any) {
-      console.error('❌ [PaymentScreen] VNPay error:', err);
+      console.error('[PaymentScreen] Lỗi VNPay:', err);
       const errMsg = err?.response?.data?.error_cont || err?.message || 'Vui lòng thử lại.';
       Toast.show({ type: 'error', text1: 'Tạo link VNPay thất bại', text2: errMsg });
     } finally {
@@ -288,7 +288,7 @@ const PaymentScreen = () => {
     }
   };
 
-  // ── Confirm Handler ─────────────────────────────────────────────────────────
+  // ── Xử lý xác nhận (Confirm Handler) ─────────────────────────────────────────────────────────
   const handleConfirm = () => {
     if (!selectedMethod) {
       Toast.show({ type: 'info', text1: 'Chọn hình thức thanh toán', text2: 'Vui lòng chọn Cash hoặc VNPay.' });
@@ -300,7 +300,7 @@ const PaymentScreen = () => {
 
   return (
     <SafeAreaView style={s.container}>
-      {/* ── Header ── */}
+      {/* ── Tiêu đề ── */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color={COLORS.textPrimary} />
@@ -312,7 +312,7 @@ const PaymentScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        {/* ── Order Summary ── */}
+        {/* ── Tóm tắt đơn hàng ── */}
         <View style={s.summaryCard}>
           <Text style={s.summaryLabel}>Đơn hàng #{orderId}</Text>
           <Text style={s.summaryAmount}>{formatCurrency(totalAmount)}</Text>
@@ -321,7 +321,7 @@ const PaymentScreen = () => {
           )}
         </View>
 
-        {/* ── Payment Done Banner ── */}
+        {/* ── Biểu ngữ thanh toán thành công ── */}
         {paymentDone && (
           <View style={s.successBanner}>
             <CheckCircle size={28} color={COLORS.success} />
@@ -332,7 +332,7 @@ const PaymentScreen = () => {
           </View>
         )}
 
-        {/* ── Method Selection ── */}
+        {/* ── Chọn hình thức thanh toán ── */}
         {!paymentDone && (
           <View style={s.card}>
             <Text style={s.cardTitle}>Hình thức thanh toán</Text>
@@ -354,7 +354,7 @@ const PaymentScreen = () => {
               </View>
             </TouchableOpacity>
 
-            {/* Cash input — hiện khi chọn Tiền mặt */}
+            {/* Nhập tiền mặt — hiện khi chọn Tiền mặt */}
             {selectedMethod === 'CASH' && (
               <View style={s.cashInputCard}>
                 <Text style={s.cashInputLabel}>Cần thanh toán</Text>
@@ -402,7 +402,7 @@ const PaymentScreen = () => {
               </View>
             </TouchableOpacity>
 
-            {/* TTS note — hiện cho cả 2 phương thức */}
+            {/* Ghi chú TTS — hiện cho cả 2 phương thức */}
             {!!selectedMethod && (
               <View style={s.ttsNote}>
                 <AlertCircle size={13} color={COLORS.primary} />
@@ -416,7 +416,7 @@ const PaymentScreen = () => {
           </View>
         )}
 
-        {/* ── Payment History ── */}
+        {/* ── Lịch sử thanh toán ── */}
         <View style={s.card}>
           <Text style={s.cardTitle}>Lịch sử thanh toán</Text>
           {historyLoading ? (
@@ -430,7 +430,7 @@ const PaymentScreen = () => {
             paymentHistory.map((pay: any, idx: number) => {
               const payCfg = PAYMENT_STATUS_CONFIG[pay.status] || PAYMENT_STATUS_CONFIG.PENDING;
               const method = (pay.provider || pay.method) === 'CASH' ? '💵 Tiền mặt' : '🏦 VNPay';
-              console.log(`💳 [PaymentScreen] history[${idx}]:`, JSON.stringify(pay));
+              console.log(`[PaymentScreen] lịch sử[${idx}]:`, JSON.stringify(pay));
               return (
                 <View key={pay.id || idx} style={[s.historyItem, idx < paymentHistory.length - 1 && s.historyBorder]}>
                   <View style={s.historyLeft}>
@@ -455,8 +455,8 @@ const PaymentScreen = () => {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* ── Footer ── */}
-      {/* Case 1: Chưa thanh toán — hiện nút xác nhận */}
+      {/* ── Chân trang ── */}
+      {/* Trường hợp 1: Chưa thanh toán — hiện nút xác nhận */}
       {!paymentDone && !vnpayOpened && (
         <View style={s.footer}>
           <TouchableOpacity
@@ -474,7 +474,7 @@ const PaymentScreen = () => {
           </TouchableOpacity>
         </View>
       )}
-      {/* Case 2: Đã mở VNPay URL — chờ user xác nhận */}
+      {/* Trường hợp 2: Đã mở VNPay URL — chờ người dùng xác nhận */}
       {!paymentDone && vnpayOpened && (
         <View style={s.footer}>
           <View style={s.vnpayPendingNote}>
@@ -493,7 +493,7 @@ const PaymentScreen = () => {
                 const successRecord = rawList.find((p: any) => p.status === 'SUCCESS' || p.status === 'PAID');
                 
                 if (successRecord) {
-                  console.log('✅ [PaymentScreen] VNPay confirmed by BE → playing TTS');
+                  console.log('[PaymentScreen] VNPay được xác nhận bởi BE → đang phát TTS');
                   const paidAmount = parseFloat(successRecord.amount || totalAmount);
                   setPaymentDone(true);
                   setVnpayUrl(null);
@@ -513,7 +513,7 @@ const PaymentScreen = () => {
                     navigation.navigate('Main', { screen: 'OrdersTab' });
                   }, 2500);
                 } else {
-                  console.log('⚠️ [PaymentScreen] VNPay not yet successful on BE');
+                  console.log('[PaymentScreen] VNPay chưa thành công trên BE');
                   Toast.show({
                     type: 'error',
                     text1: 'Thanh toán chưa hoàn tất',
@@ -522,7 +522,7 @@ const PaymentScreen = () => {
                   loadHistory();
                 }
               } catch (err) {
-                console.error('❌ [PaymentScreen] manual check error:', err);
+                console.error('[PaymentScreen] Lỗi kiểm tra thủ công:', err);
                 Toast.show({ type: 'error', text1: 'Lỗi kiểm tra', text2: 'Không thể kiểm tra trạng thái.' });
               } finally {
                 setProcessing(false);
@@ -540,7 +540,7 @@ const PaymentScreen = () => {
           </TouchableOpacity>
         </View>
       )}
-      {/* Case 3: Hoàn thành — Tự động quay về OrdersTab */}
+      {/* Trường hợp 3: Hoàn thành — Tự động quay về OrdersTab */}
       {paymentDone && (
         <View style={s.footer}>
           <TouchableOpacity
@@ -576,7 +576,7 @@ const PaymentScreen = () => {
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Định dạng giao diện (Styles) ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2F3F5' },
 

@@ -19,34 +19,34 @@ const axiosClient = axios.create({
   timeout: 15000,
 });
 
-// LOG REQUEST & Gắn Token
+// Ghi nhật ký yêu cầu và đính kèm Token
 axiosClient.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("@token");
     const isPublic = config.url?.includes("/auth/login") || config.url?.includes("/auth/forgot_password") || config.url?.startsWith("/public/");
     if (token && !isPublic) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log(`🔑 [Token Attached] to ${config.url}`);
+      console.log(`[Đính kèm Token] cho ${config.url}`);
     } else if (isPublic) {
-      console.log(`🔓 [Public Request] ${config.url} - No token attached`);
+      console.log(`[Yêu cầu Công khai] ${config.url} - Không đính kèm token`);
     }
     console.log(
-      `☕ [API Request] ${config.method?.toUpperCase()} ${config.url}`,
+      `[Yêu cầu API] ${config.method?.toUpperCase()} ${config.url}`,
       config.data || "",
     );
     return config;
   },
   (error) => {
-    console.error("❌ [API Request Error]", error);
+    console.error("[Lỗi Yêu cầu API]", error);
     return Promise.reject(error);
   },
 );
 
-// LOG RESPONSE
+// Ghi nhật ký phản hồi
 axiosClient.interceptors.response.use(
   (response) => {
     const res = response.data;
-    console.log(`✅ [API Response] ${response.config.url}:`, res);
+    console.log(`[Phản hồi API] ${response.config.url}:`, res);
 
     const AUTH_ERROR_CODES = [
       "AUTHEN000",
@@ -78,15 +78,15 @@ axiosClient.interceptors.response.use(
   },
   (error) => {
     const url = error.config?.url || '';
-    const isNetworkError = !error.response; // Không có response = network/server down
+    const isNetworkError = !error.response; // Không có phản hồi nghĩa là lỗi mạng hoặc máy chủ dừng hoạt động
     const isBackgroundCheck = url.includes('/auth/me');
 
     console.error(
-      '❌ [API Response Error]',
+      '[Lỗi Phản hồi API]',
       error.response?.data || error.message,
     );
 
-    // Không show toast cho background auth check khi server không kết nối được
+    // Không hiển thị thông báo cho tác vụ kiểm tra tài khoản nền khi máy chủ không kết nối được
     if (isBackgroundCheck && isNetworkError) {
       return Promise.reject(error);
     }

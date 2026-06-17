@@ -38,13 +38,13 @@ const ProductDetailScreen = () => {
         setLoadingAttr(true);
         setLoadingProduct(true);
         
-        // Fetch both attributes mapping and full product details
+        // Lấy cả ánh xạ thuộc tính và thông tin chi tiết đầy đủ của sản phẩm
         const [attrRes, prodRes] = await Promise.all([
           fetchAttributes(),
           fetchProductById(product.id),
         ]);
 
-        // Map global attributes (e.g., id 1 -> "Size")
+        // Ánh xạ các thuộc tính toàn cục (ví dụ: id 1 -> "Size")
         const attrData = attrRes.data?.rows || attrRes.data || [];
         const mapping: Record<number, string> = {};
         attrData.forEach((a: any) => {
@@ -52,12 +52,12 @@ const ProductDetailScreen = () => {
         });
         setAttributeGroups(mapping);
 
-        // Update product with full details including productAttributes
+        // Cập nhật sản phẩm với chi tiết đầy đủ bao gồm productAttributes
         if (prodRes.data) {
           setFullProduct(prodRes.data);
         }
       } catch (err) {
-        console.error('[ProductDetail] fetch data error:', err);
+        console.error('[Chi tiết sản phẩm] Lỗi khi tải dữ liệu sản phẩm:', err);
       } finally {
         setLoadingAttr(false);
         setLoadingProduct(false);
@@ -68,7 +68,7 @@ const ProductDetailScreen = () => {
 
   const attributes = fullProduct.options || fullProduct.productAttributes || [];
 
-  /* Group attributes by their group (attributeName or attributeId) */
+  /* Gom nhóm các thuộc tính theo nhóm của chúng (attributeName hoặc attributeId) */
   const groupedAttributes = React.useMemo(() => {
     const groups: Record<string, any[]> = {};
     attributes.forEach((attr: any) => {
@@ -127,40 +127,40 @@ const ProductDetailScreen = () => {
             style={s.heroImage}
             resizeMode="cover"
           />
-          {/* Overlay gradient effect */}
+          {/* Hiệu ứng làm mờ đè lên hình ảnh */}
           <View style={s.heroOverlay} />
 
-          {/* Back button */}
+          {/* Nút quay lại */}
           <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
             <ChevronLeft size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
 
-          {/* Favorite button */}
+          {/* Nút yêu thích */}
           <TouchableOpacity style={s.favBtn} onPress={() => setIsFavorited(!isFavorited)}>
             <Heart size={20} color={isFavorited ? '#EF4444' : COLORS.textPrimary} fill={isFavorited ? '#EF4444' : 'transparent'} />
           </TouchableOpacity>
         </View>
 
-        {/* Info Card */}
+        {/* Thẻ thông tin */}
         <View style={s.infoCard}>
-          {/* Product name + price row */}
+          {/* Hàng chứa tên sản phẩm + giá */}
           <View style={s.titleRow}>
             <Text style={s.productName}>{product.name}</Text>
             <Text style={s.productPrice}>{formatCurrency(basePrice)}</Text>
           </View>
 
-          {/* Description */}
+          {/* Mô tả sản phẩm */}
           <Text style={s.description}>
             {product.description ||
               'Hương vị thức uống nguyên bản được pha chế từ nguyên liệu tươi ngon, mang đến trải nghiệm sảng khoái và đầy hương vị.'}
           </Text>
 
-          {/* Divider */}
+          {/* Thanh phân cách */}
           <View style={s.divider} />
 
-          {/* Grouped Attributes */}
+          {/* Các thuộc tính đã gom nhóm */}
           {Object.entries(groupedAttributes).map(([groupKey, items]) => {
-            // groupKey could be attributeName like "SIZE", or attributeId like "1".
+            // groupKey có thể là attributeName như "SIZE", hoặc attributeId như "1".
             const isNumeric = !isNaN(Number(groupKey));
             const groupName = isNumeric && attributeGroups[Number(groupKey)] 
               ? attributeGroups[Number(groupKey)] 
@@ -202,7 +202,7 @@ const ProductDetailScreen = () => {
 
           <View style={s.divider} />
 
-          {/* Note section */}
+          {/* Phần ghi chú */}
           <View style={s.section}>
             <Text style={s.sectionTitle}>GHI CHÚ</Text>
             <TextInput
@@ -215,9 +215,10 @@ const ProductDetailScreen = () => {
             />
           </View>
 
+          {/* Thanh phân cách */}
           <View style={s.divider} />
 
-          {/* Quantity */}
+          {/* Số lượng */}
           <View style={s.qtySection}>
             <Text style={s.sectionTitle}>Số lượng</Text>
             <View style={s.qtyControls}>
@@ -240,7 +241,7 @@ const ProductDetailScreen = () => {
         <View style={{ height: 110 }} />
       </ScrollView>
 
-      {/* Bottom CTA */}
+      {/* Nút hành động ở dưới cùng */}
       <SafeAreaView style={s.footer} edges={['bottom', 'left', 'right']}>
         <View style={s.footerContent}>
           <View style={s.totalBlock}>

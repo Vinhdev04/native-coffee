@@ -12,9 +12,9 @@ import axiosClient from '@/api/axiosClient';
  * @param cashReceived Số tiền khách đưa (bằng totalAmount hoặc hơn)
  */
 export const payCash = async (orderId: number | string, cashReceived: number) => {
-  console.log(`💰 [PaymentService] payCash → orderId=${orderId}, cashReceived=${cashReceived}`);
+  console.log(`[Dịch vụ Thanh toán] Thanh toán tiền mặt -> mã đơn = ${orderId}, số tiền nhận = ${cashReceived}`);
   const response = await axiosClient.post(`/payments/cash/${orderId}`, { cashReceived });
-  console.log(`💰 [PaymentService] payCash response:`, response);
+  console.log(`[Dịch vụ Thanh toán] Phản hồi thanh toán tiền mặt:`, response);
   return response;
 };
 
@@ -23,9 +23,9 @@ export const payCash = async (orderId: number | string, cashReceived: number) =>
  * POST /payments/vnpay/create-url/{orderId}
  */
 export const createVNPayUrl = async (orderId: number | string) => {
-  console.log(`🏦 [PaymentService] createVNPayUrl → orderId=${orderId}`);
+  console.log(`[Dịch vụ Thanh toán] Tạo URL VNPay -> mã đơn = ${orderId}`);
   const response = await axiosClient.post(`/payments/vnpay/create-url/${orderId}`);
-  console.log(`🏦 [PaymentService] createVNPayUrl response:`, response);
+  console.log(`[Dịch vụ Thanh toán] Phản hồi tạo URL VNPay:`, response);
   return response;
 };
 
@@ -34,8 +34,8 @@ export const createVNPayUrl = async (orderId: number | string) => {
  * GET /payments/order/{orderId}
  */
 export const getPaymentHistory = async (orderId: number | string) => {
-  console.log(`📋 [PaymentService] getPaymentHistory → orderId=${orderId}`);
+  console.log(`[Dịch vụ Thanh toán] Lấy lịch sử thanh toán -> mã đơn = ${orderId}`);
   const response = await axiosClient.get(`/payments/order/${orderId}`);
-  console.log(`📋 [PaymentService] getPaymentHistory response:`, response);
+  console.log(`[Dịch vụ Thanh toán] Phản hồi lịch sử thanh toán:`, response);
   return response;
 };

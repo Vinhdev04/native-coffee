@@ -15,10 +15,10 @@ export const APP_CONFIG = {
   publicKey: process.env.EXPO_PUBLIC_PUBLIC_KEY ? process.env.EXPO_PUBLIC_PUBLIC_KEY.replace(/\\n/g, '\n').replace(/"/g, '') : '',
 };
 
-console.log('--- NATIVE COFFEE CONFIG ---');
-console.log('API Base URL:', APP_CONFIG.apiUrl);
-console.log('Full Login URL:', `${APP_CONFIG.apiUrl}/auth/login`);
-console.log('Public Key Found:', !!APP_CONFIG.publicKey);
+console.log('--- CẤU HÌNH Chips Bill ---');
+console.log('Đường dẫn API gốc:', APP_CONFIG.apiUrl);
+console.log('Đường dẫn đăng nhập đầy đủ:', `${APP_CONFIG.apiUrl}/auth/login`);
+console.log('Tìm thấy khóa công khai:', !!APP_CONFIG.publicKey);
 
 export const APP_ASSETS = {
   logo: require('@/assets/images/logo.png'),

@@ -19,7 +19,7 @@ class SocketClient {
     this.url = url;
 
     if (this.socket) {
-      console.log('🔄 [Socket Re-initializing] with new token');
+      console.log('[Socket đang khởi tạo lại] với token mới');
       this.socket.disconnect();
       this.socket = null;
     }
@@ -33,19 +33,19 @@ class SocketClient {
     });
 
     this.socket.on('connect', () => {
-      console.log('☕ [Socket Connected]:', this.url);
+      console.log('[Socket đã kết nối]:', this.url);
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('🔌 [Socket Disconnected]:', reason);
+      console.log('[Socket đã ngắt kết nối]:', reason);
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('⚠️ [Socket Connection Error]:', error);
+      console.error('[Lỗi kết nối Socket]:', error);
     });
 
     this.socket.on('exception', (data: any) => {
-      console.error('🛑 [Socket Exception]:', data);
+      console.error('[Ngoại lệ Socket]:', data);
       this.handleError(data);
     });
 
@@ -57,7 +57,7 @@ class SocketClient {
     const errorMsg = data?.error_cont || data?.message || 'Lỗi hệ thống';
 
     if (this.AUTH_ERROR_CODES.includes(errorCode)) {
-      console.warn('🚨 [Auth Error] Logging out due to:', errorCode);
+      console.warn('[Lỗi xác thực] Đang đăng xuất do:', errorCode);
       Toast.show({
         type: 'error',
         text1: 'Phiên đăng nhập hết hạn',
@@ -96,7 +96,7 @@ class SocketClient {
 
   async emit(event: string, data: any): Promise<any> {
     if (this.socket && !this.socket.connected) {
-      console.log(`⏳ [Socket Waiting] for ${event}...`);
+      console.log(`[Socket đang đợi] sự kiện ${event}...`);
       let waitCount = 0;
       while (!this.socket.connected && waitCount < 50) {
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -106,16 +106,16 @@ class SocketClient {
 
     return new Promise((resolve, reject) => {
       if (this.socket?.connected) {
-        console.log(`📤 [Socket Emit] ${event}:`, data);
+        console.log(`[Socket gửi dữ liệu] ${event}:`, data);
 
         const timeout = setTimeout(() => {
-          console.warn(`⏳ [Socket Timeout] ${event} took too long!`);
+          console.warn(`[Socket hết hạn] sự kiện ${event} mất quá nhiều thời gian!`);
           reject(new Error('Socket timeout'));
         }, 10000);
 
         this.socket.emit(event, data, (response: any) => {
           clearTimeout(timeout);
-          console.log(`📥 [Socket Ack] ${event}:`, response);
+          console.log(`[Socket nhận phản hồi] ${event}:`, response);
 
           if (response && response.res_code !== 0) {
             const isAuthError = this.handleError(response);
@@ -129,7 +129,7 @@ class SocketClient {
           }
         });
       } else {
-        console.warn(`🛑 [Socket Emit Failed] ${event}: Socket not connected.`);
+        console.warn(`[Gửi dữ liệu Socket thất bại] ${event}: Socket chưa kết nối.`);
         reject(new Error('Socket not connected'));
       }
     });
@@ -138,7 +138,7 @@ class SocketClient {
   on(event: string, callback: (data: any) => void) {
     if (this.socket) {
       this.socket.on(event, (data) => {
-        console.log(`📩 [Socket Listen] ${event}:`, data);
+        console.log(`[Socket lắng nghe] sự kiện ${event}:`, data);
         callback(data);
       });
     }

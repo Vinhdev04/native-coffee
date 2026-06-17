@@ -54,7 +54,7 @@ const LoginScreen = () => {
       try { 
         encryptedPassword = await encryptWithRSA(password); 
       } catch (_) {
-        console.warn('RSA encryption failed');
+        console.warn('Mã hóa RSA thất bại');
       }
 
       const response = await loginApi({
@@ -62,7 +62,7 @@ const LoginScreen = () => {
         password: encryptedPassword,
       });
 
-      // Hỗ trợ cả cấu trúc rows (legacy) và user/data (new chips api)
+      // Hỗ trợ cả cấu trúc rows cũ và user/data mới từ API
       const userDataFromRows = response?.rows?.[0];
       const userDataFromData = response?.user || response?.data;
       const finalUserData = userDataFromRows || userDataFromData;
@@ -86,7 +86,7 @@ const LoginScreen = () => {
         });
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Lỗi đăng nhập:', error);
       Toast.show({ 
         type: 'error', 
         text1: 'Lỗi kết nối', 
@@ -115,7 +115,7 @@ const LoginScreen = () => {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              {/* Header / Logo */}
+              {/* Tiêu đề và biểu tượng */}
               <View style={styles.header}>
                 <View style={styles.logoBadge}>
                   <CoffeeIcon size={40} color={COLORS.white} />
@@ -125,11 +125,11 @@ const LoginScreen = () => {
                 <Text style={styles.tagline}>Premium Coffee Experience</Text>
               </View>
 
-              {/* Form Section */}
+              {/* Phần biểu mẫu */}
               <View style={styles.formContainer}>
                 <Text style={styles.welcomeText}>Chào mừng trở lại!</Text>
                 
-                {/* Username Input */}
+                {/* Ô nhập tên đăng nhập */}
                 <View style={styles.inputContainer}>
                   <User size={20} color={COLORS.textMuted} />
                   <TextInput
@@ -142,7 +142,7 @@ const LoginScreen = () => {
                   />
                 </View>
 
-                {/* Password Input */}
+                {/* Ô nhập mật khẩu */}
                 <View style={styles.inputContainer}>
                   <Lock size={20} color={COLORS.textMuted} />
                   <TextInput
@@ -162,7 +162,7 @@ const LoginScreen = () => {
                   <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
                 </TouchableOpacity>
 
-                {/* Login Button */}
+                {/* Nút đăng nhập */}
                 <TouchableOpacity
                   style={[styles.loginBtn, isLoading && styles.btnDisabled]}
                   onPress={handleLogin}
@@ -183,7 +183,7 @@ const LoginScreen = () => {
                   </TouchableOpacity>
                 </View>
 
-                {/* Bio Login Placeholder */}
+                {/* Phần đăng nhập bằng vân tay */}
                 <TouchableOpacity style={styles.bioBtn}>
                   <Fingerprint size={32} color={COLORS.accent} />
                   <Text style={styles.bioText}>Sử dụng vân tay</Text>
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     padding: 24,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.15)',
-    backdropFilter: 'blur(10px)', // Note: Only works on some platforms/libs, but good for design intent
+    backdropFilter: 'blur(10px)', // Lưu ý: Chỉ hoạt động trên một số nền tảng hoặc thư viện
   },
   welcomeText: {
     fontFamily: FONTS.bold,

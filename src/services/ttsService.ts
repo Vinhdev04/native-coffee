@@ -11,13 +11,13 @@ let Speech: any = null;
 const loadSpeech = async () => {
   try {
     Speech = require('expo-speech');
-    console.log('🔊 [TTS] expo-speech loaded successfully');
+    console.log('[TTS] Nạp expo-speech thành công');
   } catch (e) {
-    console.warn('⚠️ [TTS] expo-speech not available, TTS disabled:', e);
+    console.warn('[TTS] Thư viện expo-speech không khả dụng, đã tắt tính năng TTS:', e);
   }
 };
 
-// Load at module init
+// Tải khi khởi tạo mô-đun
 loadSpeech();
 
 /**
@@ -30,27 +30,27 @@ export const speakPaymentSuccess = (amount: number, customerName?: string) => {
   const amountStr = amount.toString();
   const text = `Đã nhận thanh toán ${amountStr} đồng. Xin cảm ơn!`;
 
-  console.log(`🔊 [TTS] speakPaymentSuccess → text: "${text}"`);
+  console.log(`[TTS] Phát thông báo thanh toán thành công -> văn bản: "${text}"`);
 
   if (!Speech) {
-    console.warn('⚠️ [TTS] Speech module not loaded, skipping TTS');
+    console.warn('[TTS] Mô-đun giọng nói chưa được nạp, bỏ qua phát âm thanh');
     return;
   }
 
   try {
-    // Dừng phát âm cũ (không await để tránh delay khởi tạo âm thanh mới)
+    // Dừng phát giọng nói cũ (không await để tránh trễ thời gian khởi tạo âm thanh mới)
     Speech.stop();
 
     Speech.speak(text, {
       language: 'vi-VN',
-      rate: 1.0, // Tăng tốc độ để cảm giác phản hồi nhanh hơn
+      rate: 1.0, // Tốc độ đọc
       pitch: 1.0,
-      onStart: () => console.log('🔊 [TTS] Speaking started'),
-      onDone: () => console.log('🔊 [TTS] Speaking done'),
-      onError: (err: any) => console.error('❌ [TTS] Speaking error:', err),
+      onStart: () => console.log('[TTS] Bắt đầu phát giọng nói'),
+      onDone: () => console.log('[TTS] Kết thúc phát giọng nói'),
+      onError: (err: any) => console.error('[TTS] Lỗi phát giọng nói:', err),
     });
   } catch (e) {
-    console.error('❌ [TTS] Failed to speak:', e);
+    console.error('[TTS] Không thể phát giọng nói:', e);
   }
 };
 
@@ -61,8 +61,8 @@ export const stopSpeaking = async () => {
   if (!Speech) return;
   try {
     await Speech.stop();
-    console.log('🔇 [TTS] Speaking stopped');
+    console.log('[TTS] Đã dừng phát giọng nói');
   } catch (e) {
-    console.error('❌ [TTS] Failed to stop:', e);
+    console.error('[TTS] Dừng phát giọng nói thất bại:', e);
   }
 };

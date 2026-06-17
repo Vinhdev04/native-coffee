@@ -18,9 +18,9 @@ const VendorListScreen = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Fallback: Using mock data since we might not have a full branch API populated
-      // Real app: await fetchBranches()
-      console.warn("No data for [VendorList] from API. Using mock data for UI.");
+      // Phương án dự phòng: Sử dụng dữ liệu giả lập do API chi nhánh chưa được đổ đầy đủ dữ liệu
+      // Ứng dụng thực tế: await fetchBranches()
+      console.warn("Không có dữ liệu [VendorList] từ API. Sử dụng dữ liệu giả lập cho giao diện.");
       setVendors([
         {
           id: 1,
@@ -54,7 +54,7 @@ const VendorListScreen = () => {
         }
       ]);
     } catch (error) {
-      console.error('Error loading vendors', error);
+      console.error('Lỗi khi tải danh sách cửa hàng', error);
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ const VendorListScreen = () => {
     <SafeAreaView style={s.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       
-      {/* Header */}
+      {/* Tiêu đề */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
           <ArrowLeft size={24} color={COLORS.textPrimary} />
@@ -118,7 +118,7 @@ const VendorListScreen = () => {
         </View>
       </View>
 
-      {/* Filter Chips */}
+      {/* Các bộ lọc nhanh */}
       <View style={s.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterScroll}>
           <TouchableOpacity style={s.filterChipOutline} onPress={() => setFilterVisible(true)}>
@@ -150,9 +150,9 @@ const VendorListScreen = () => {
                  <ArrowRight size={20} color={COLORS.textPrimary} />
               </View>
               <Text style={s.flashDealSub}>Ưu đãi giờ vàng, đặt ngay kẻo lỡ!</Text>
-              {/* Add a banner card here if needed */}
+              {/* Thêm thẻ banner ở đây nếu cần */}
               <View style={s.flashDealCard}>
-                 {/* Empty state logging already done */}
+                 {/* Trạng thái trống đã được ghi nhận */}
                  <Text style={{fontFamily: FONTS.medium, color: COLORS.textMuted}}>No data for [Flash Deals]</Text>
               </View>
            </View>

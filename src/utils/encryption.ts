@@ -19,7 +19,7 @@ function getConfiguredPublicKeyPem(): string | null {
   // Kiểm tra biến môi trường an toàn cho cả React Native (process.env) và Web (import.meta.env)
   const processEnv = typeof process !== "undefined" ? process.env : {};
   let importMetaEnv: any = {};
-  if (typeof document !== "undefined") {
+  if (typeof globalThis !== "undefined" && (globalThis as any).document !== undefined) {
     try {
       const getImportMeta = new Function("return import.meta");
       importMetaEnv = getImportMeta().env || {};
@@ -52,7 +52,7 @@ export async function loadServerPublicKey(url: string): Promise<string> {
 
   const configuredPem = getConfiguredPublicKeyPem();
   if (configuredPem && !configuredPem.includes("Au7KdUZ")) {
-    console.log("🔑 [Encryption] Using configured PEM:", configuredPem.replace(/\n/g, '').substring(0, 80) + "...");
+    console.log("[Mã hóa] Đang dùng khóa PEM từ cấu hình:", configuredPem.replace(/\n/g, '').substring(0, 80) + "...");
     cachedPublicKeyPem = configuredPem;
     return configuredPem;
   }
@@ -69,12 +69,12 @@ export async function loadServerPublicKey(url: string): Promise<string> {
     }
   }
 
-  console.log("🔑 [Encryption] Fetching PEM from server URL:", targetUrl);
+  console.log("[Mã hóa] Đang tải khóa PEM từ máy chủ:", targetUrl);
   const resp = await fetch(targetUrl);
-  if (!resp.ok) throw new Error(`Failed to load server public key file ${targetUrl}`);
+  if (!resp.ok) throw new Error(`Tải khóa công khai thất bại từ máy chủ ${targetUrl}`);
 
   const pem = normalizePem(await resp.text());
-  console.log("🔑 [Encryption] Fetched PEM from server successfully:", pem.replace(/\n/g, '').substring(0, 80) + "...");
+  console.log("[Mã hóa] Tải thành công khóa PEM từ máy chủ:", pem.replace(/\n/g, '').substring(0, 80) + "...");
   cachedPublicKeyPem = pem;
   return pem;
 }
@@ -101,14 +101,14 @@ export async function encryptForClient(text: string): Promise<string> {
 }
 
 /**
- * Hàm mã hóa ngược tương thích (backwards compatible wrapper) cho các màn hình hiện tại
+ * Hàm mã hóa tương thích ngược cho các màn hình hiện tại
  */
 export async function encryptWithRSA(text: string): Promise<string> {
   try {
     return await encryptForClient(text);
   } catch (error) {
-    console.error('❌ Encryption (RSA) failed:', error);
-    console.warn('⚠️ Sending plain password as fallback');
+    console.error('Lỗi mã hóa RSA thất bại:', error);
+    console.warn('Đang gửi mật khẩu dạng không mã hóa làm dự phòng');
     return text;
   }
 }

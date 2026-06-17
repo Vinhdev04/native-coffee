@@ -22,7 +22,7 @@ import {
 
 const { height: SH } = Dimensions.get('window');
 
-// ─── Status Config ───────────────────────────────────────────────────────────
+// ─── Cấu hình trạng thái ───────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; Icon: any }> = {
   DRAFT:           { label: 'Nháp',           color: '#6B7280', bg: '#F3F4F6', Icon: Clock },
   PENDING:         { label: 'Đang chờ',       color: '#D97706', bg: '#FEF3C7', Icon: Clock },
@@ -68,7 +68,7 @@ const formatDateTime = (raw: string) => {
   } catch { return raw; }
 };
 
-// ─── Bottom Sheet Component ───────────────────────────────────────────────────
+// ─── Hợp phần Bottom Sheet (Bảng kéo từ dưới lên) ───────────────────────────────────────────────────
 const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: () => void; onPayment: () => void }) => {
   if (!order) return null;
   const statusKey = order.orderStatus || order.status || 'PENDING';
@@ -107,7 +107,7 @@ const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: 
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: SH * 0.45 }}>
-          {/* Items */}
+          {/* Các món ăn/đồ uống */}
           <Text style={bs.sectionTitle}>CHI TIẾT MÓN</Text>
           {items.length === 0 ? (
             <Text style={bs.emptyItems}>Không có sản phẩm</Text>
@@ -129,7 +129,7 @@ const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: 
             );
           })}
 
-          {/* Summary */}
+          {/* Tóm tắt đơn hàng */}
           <View style={bs.summaryBox}>
             <View style={bs.summaryRow}>
               <Text style={bs.summaryLabel}>Tổng món</Text>
@@ -148,7 +148,7 @@ const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: 
           </View>
         </ScrollView>
 
-        {/* CTA */}
+        {/* Nút hành động */}
         {canPay && (
           <TouchableOpacity style={bs.payBtn} onPress={onPayment}>
             <CreditCard size={18} color="#fff" />
@@ -160,7 +160,7 @@ const OrderBottomSheet = ({ order, onClose, onPayment }: { order: any; onClose: 
   );
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Hợp phần chính ───────────────────────────────────────────────────────────
 const OrderScreen = () => {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'done'>('all');
@@ -177,7 +177,7 @@ const OrderScreen = () => {
       const all: any[] = (res as any)?.data?.rows || (res as any)?.data || (res as any)?.rows || res || [];
       setAllOrders(all);
     } catch (err) {
-      console.error('❌ [OrderScreen] loadOrders error:', err);
+      console.error('[OrderScreen] Lỗi loadOrders:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -195,7 +195,7 @@ const OrderScreen = () => {
     return true;
   });
 
-  // Summary stats (today)
+  // Thống kê tóm tắt (hôm nay)
   const todayOrders = allOrders.filter((o: any) => {
     if (!o.createTime) return false;
     const today = new Date();
@@ -213,7 +213,7 @@ const OrderScreen = () => {
   const handleOrderPress = async (item: any) => {
     try {
       setSheetLoading(true);
-      setSelectedOrder(item); // show sheet immediately with basic data
+      setSelectedOrder(item); // hiển thị bảng ngay lập tức với dữ liệu cơ bản
       const res = await fetchOrderById(item.id);
       const detail = (res as any)?.data ?? res;
       setSelectedOrder(detail);
@@ -281,7 +281,7 @@ const OrderScreen = () => {
     <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
 
-      {/* Header */}
+      {/* Tiêu đề */}
       <View style={s.header}>
         <View>
           <Text style={s.headerTitle}>Đơn hàng</Text>
@@ -292,7 +292,7 @@ const OrderScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Summary Card */}
+      {/* Thẻ tóm tắt */}
       <View style={s.summaryRow}>
         <View style={s.summaryCardOrange}>
           <View style={s.summaryCardTopRow}>
@@ -312,7 +312,7 @@ const OrderScreen = () => {
         </View>
       </View>
 
-      {/* Tabs */}
+      {/* Các tab chuyển đổi */}
       <View style={s.tabsWrap}>
         {TABS.map((tab) => (
           <TouchableOpacity
@@ -326,7 +326,7 @@ const OrderScreen = () => {
         ))}
       </View>
 
-      {/* List */}
+      {/* Danh sách đơn hàng */}
       {loading && !refreshing ? (
         <View style={s.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
@@ -355,7 +355,7 @@ const OrderScreen = () => {
         />
       )}
 
-      {/* Bottom Sheet */}
+      {/* Bảng chi tiết kéo lên */}
       <Modal visible={!!selectedOrder} transparent animationType="slide" onRequestClose={() => setSelectedOrder(null)}>
         {sheetLoading && selectedOrder ? (
           <View style={bs.overlay}>
@@ -372,7 +372,7 @@ const OrderScreen = () => {
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Định dạng giao diện (Styles) ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F8' },
 

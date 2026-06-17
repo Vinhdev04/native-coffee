@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const storedUser  = await AsyncStorage.getItem('@user');
 
       if (!storedToken) {
-        // No socket init needed
+        // Không cần khởi tạo socket
       }
 
       if (storedToken && storedUser) {
@@ -74,10 +74,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
           })
-          .catch((err) => console.warn('Sync /me error:', err));
+          .catch((err) => console.warn('Lỗi đồng bộ /me:', err));
       }
     } catch (e) {
-      console.error(e);
+      console.error('Lỗi tải thông tin xác thực đã lưu:', e);
     } finally {
       setIsLoading(false);
     }
@@ -105,16 +105,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         })
-        .catch((err) => console.warn('Sync /me error during login:', err));
+        .catch((err) => console.warn('Lỗi đồng bộ /me trong quá trình đăng nhập:', err));
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Lỗi đăng nhập:', error);
     }
   };
 
   const logout = async () => {
     try {
       // Gọi API logout nhưng không dùng await để tránh treo UI
-      logoutApi().catch(err => console.warn('Background logout API error:', err));
+      logoutApi().catch(err => console.warn('Lỗi API đăng xuất chạy ngầm:', err));
       
       // Xóa dữ liệu local ngay lập tức
       await AsyncStorage.removeItem('@token');
@@ -124,9 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setIsAuthenticated(false);
       
-      console.log('✅ Logout successful (local state cleared)');
+      console.log('[Đăng xuất thành công] trạng thái local đã được xóa');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Lỗi đăng xuất:', error);
     }
   };
 

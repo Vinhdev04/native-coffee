@@ -16,7 +16,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import Toast from '@/components/common/Toast';
 import ProductModal from '@/components/menu/ProductModal';
 
-/* ── Fallback images ── */
+/* ── Hình ảnh dự phòng ── */
 const DRINK_FALLBACKS = [
   'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=200&q=80',
   'https://images.unsplash.com/photo-1515823064-d6e0c04616a4?auto=format&fit=crop&w=200&q=80',
@@ -114,7 +114,7 @@ const MenuScreen = () => {
       setCategories(catRes.data?.rows || catRes.data || []);
       setAllProducts(prodRes.data?.rows || prodRes.data || []);
     } catch (err) {
-      console.error('[MenuScreen] load error:', err);
+      console.error('[MenuScreen] Lỗi khi tải dữ liệu thực đơn:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

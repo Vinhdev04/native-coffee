@@ -42,7 +42,7 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
         setFullProduct(res.data);
       }
     } catch (err) {
-      console.error('[ProductModal] fetch error:', err);
+      console.error('[ProductModal] Lỗi khi tải chi tiết sản phẩm:', err);
     } finally {
       setLoading(false);
     }
@@ -62,8 +62,8 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
   const toggleAttribute = (attr: any, groupName: string) => {
     const groupNameUpper = String(groupName).toUpperCase().trim();
     
-    // Check if it's a single-choice group (Radio behavior)
-    // We match by keyword to identify groups like Size, Ice, Sugar, etc.
+    // Kiểm tra xem đó có phải là nhóm chọn một (hành vi Radio)
+    // Chúng ta khớp theo từ khóa để xác định các nhóm như Size, Đá, Đường, v.v.
     const singleChoiceKeywords = ['SIZE', 'ĐÁ', 'ICE', 'ĐƯỜNG', 'SUGAR', 'PHÂN LOẠI', 'MỨC', 'MÓN', 'LOẠI', 'KÍCH', 'CHỌN'];
     const isSingleChoice = singleChoiceKeywords.some(kw => groupNameUpper.includes(kw));
 
@@ -72,7 +72,7 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
       const isAlreadySelected = selectedAttributes.some(a => a.id === attr.id);
       if (isAlreadySelected) return;
 
-      // Remove any existing selection from the SAME group (matched by groupName)
+      // Xóa mọi lựa chọn hiện có khỏi CÙNG nhóm (khớp theo groupName)
       const otherGroups = selectedAttributes.filter(a => {
         const aGroupName = (a.attributeName || a.attributeId || 'Tùy chọn').toUpperCase().trim();
         return aGroupName !== groupNameUpper;
@@ -80,7 +80,7 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
       
       setSelectedAttributes([...otherGroups, attr]);
     } else {
-      // Multi-choice (Checkbox behavior)
+      // Chọn nhiều (hành vi Checkbox)
       const isExist = selectedAttributes.find(a => a.id === attr.id);
       if (isExist) {
         setSelectedAttributes(selectedAttributes.filter(a => a.id !== attr.id));
@@ -123,7 +123,7 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
-            {/* Product Summary */}
+            {/* Tóm tắt sản phẩm */}
             <View style={s.summary}>
               <Image 
                 source={{ uri: product.imageUrl || product.image }} 
@@ -189,7 +189,7 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
             <View style={{ height: 160 }} />
           </ScrollView>
 
-          {/* Bottom Footer Section */}
+          {/* Phần chân trang dưới cùng */}
           <View style={s.footer}>
             <View style={s.footerTop}>
               <View style={s.qtyControls}>

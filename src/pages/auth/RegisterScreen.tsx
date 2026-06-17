@@ -55,7 +55,7 @@ const RegisterScreen = () => {
       try { 
         encryptedPassword = await encryptWithRSA(password); 
       } catch (err) {
-        console.warn('RSA Encryption failed, sending plain password', err);
+        console.warn('Mã hóa RSA thất bại, đang gửi mật khẩu dạng không mã hóa', err);
       }
 
       const response = await registerApi({
@@ -73,7 +73,7 @@ const RegisterScreen = () => {
         Toast.show({ type: 'error', text1: response?.error_cont || 'Đăng ký thất bại', position: 'bottom' });
       }
     } catch (error) {
-      console.error('Register error:', error);
+      console.error('Lỗi đăng ký:', error);
       Toast.show({ type: 'error', text1: 'Có lỗi xảy ra, vui lòng thử lại sau', position: 'bottom' });
     } finally {
       setIsLoading(false);

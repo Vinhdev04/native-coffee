@@ -20,8 +20,8 @@ import { formatCurrency } from '@/utils';
 import { fetchOrderById, cancelOrder } from '@/services/orderService';
 import Toast from 'react-native-toast-message';
 
-// ─── Status Config ─────────────────────────────────────────────────────────────
-// ✅ API dùng field `orderStatus`, không phải `status`
+// ─── Cấu hình trạng thái ─────────────────────────────────────────────────────────────
+// API dùng trường `orderStatus`, không phải `status`
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   DRAFT:           { label: 'Nháp',           color: '#6B7280', bg: '#F3F4F6', icon: Clock },
   PENDING:         { label: 'Chờ xử lý',      color: '#92400E', bg: '#FEF3C7', icon: Clock },
@@ -44,7 +44,7 @@ const LOG_STATUS_LABELS: Record<string, string> = {
   CANCEL:          'Đã hủy',
 };
 
-// ─── Helper ────────────────────────────────────────────────────────────────────
+// ─── Tiện ích hỗ trợ ────────────────────────────────────────────────────────────────────
 const formatDateTime = (raw: string) => {
   if (!raw) return '—';
   try {
@@ -63,7 +63,7 @@ const formatDateTime = (raw: string) => {
   }
 };
 
-// ─── Component ─────────────────────────────────────────────────────────────────
+// ─── Hợp phần (Component) ─────────────────────────────────────────────────────────────────
 const OrderDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -74,22 +74,22 @@ const OrderDetailScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  console.log(`🔍 [OrderDetailScreen] mount — orderId=${orderId}`);
+  console.log(`[OrderDetailScreen] mount — orderId=${orderId}`);
 
   const loadOrder = useCallback(async () => {
     if (!orderId) {
-      console.error('❌ [OrderDetailScreen] No orderId provided!');
+      console.error('[OrderDetailScreen] Không cung cấp orderId!');
       return;
     }
     try {
       const res = await fetchOrderById(orderId);
-      console.log(`✅ [OrderDetailScreen] order data:`, JSON.stringify(res, null, 2));
+      console.log(`[OrderDetailScreen] dữ liệu đơn hàng:`, JSON.stringify(res, null, 2));
       // API trả về data ở res.data hoặc thẳng res
       const orderData = (res as any)?.data ?? res;
-      console.log(`✅ [OrderDetailScreen] orderStatus=${orderData?.orderStatus}, paymentStatus=${orderData?.paymentStatus}`);
+      console.log(`[OrderDetailScreen] orderStatus=${orderData?.orderStatus}, paymentStatus=${orderData?.paymentStatus}`);
       setOrder(orderData);
     } catch (err) {
-      console.error('❌ [OrderDetailScreen] loadOrder error:', err);
+      console.error('[OrderDetailScreen] Lỗi loadOrder:', err);
       Toast.show({ type: 'error', text1: 'Không tải được đơn hàng', text2: 'Vui lòng thử lại.' });
     } finally {
       setLoading(false);
@@ -106,7 +106,7 @@ const OrderDetailScreen = () => {
       Toast.show({ type: 'success', text1: 'Đã hủy đơn hàng' });
       loadOrder();
     } catch (err) {
-      console.error('❌ [OrderDetailScreen] cancelOrder error:', err);
+      console.error('[OrderDetailScreen] Lỗi cancelOrder:', err);
       Toast.show({ type: 'error', text1: 'Hủy đơn thất bại' });
     } finally {
       setCancelling(false);
@@ -114,9 +114,9 @@ const OrderDetailScreen = () => {
   };
 
   const handlePayment = () => {
-    // ✅ FIX: dùng orderStatus và parseFloat cho totalAmount
+    // Sửa lỗi: dùng orderStatus và parseFloat cho totalAmount
     const total = parseFloat(order?.totalAmount || order?.total || '0');
-    console.log(`💳 [OrderDetailScreen] navigate to Payment → orderId=${orderId}, total=${total}`);
+    console.log(`[OrderDetailScreen] chuyển hướng sang Thanh toán → orderId=${orderId}, total=${total}`);
     navigation.navigate('Payment', {
       orderId,
       totalAmount: total,
@@ -124,7 +124,7 @@ const OrderDetailScreen = () => {
     });
   };
 
-  // ✅ FIX: dùng orderStatus thay vì status
+  // Sửa lỗi: dùng orderStatus thay vì status
   const orderStatus = order?.orderStatus || order?.status || '';
   const cfg = STATUS_CONFIG[orderStatus] || STATUS_CONFIG.PENDING_PAYMENT;
   const StatusIcon = cfg.icon;
@@ -159,11 +159,11 @@ const OrderDetailScreen = () => {
   const logs: any[] = order.logs || order.orderLogs || [];
   const items: any[] = order.items || order.orderItems || [];
   const displayTotal = parseFloat(order.totalAmount || order.total || '0');
-  console.log(`🔍 [OrderDetailScreen] orderStatus=${orderStatus}, canPay=${canPay}, canCancel=${canCancel}, total=${displayTotal}`);
+  console.log(`[OrderDetailScreen] orderStatus=${orderStatus}, canPay=${canPay}, canCancel=${canCancel}, total=${displayTotal}`);
 
   return (
     <SafeAreaView style={s.container}>
-      {/* ── Header ── */}
+      {/* ── Tiêu đề ── */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color={COLORS.textPrimary} />
@@ -183,7 +183,7 @@ const OrderDetailScreen = () => {
             tintColor={COLORS.primary} colors={[COLORS.primary]} />
         }
       >
-        {/* ── Customer Info ── */}
+        {/* ── Thông tin khách hàng ── */}
         <View style={s.card}>
           <Text style={s.cardTitle}>Thông tin khách hàng</Text>
           <View style={s.infoRow}>
@@ -212,14 +212,14 @@ const OrderDetailScreen = () => {
           </View>
         </View>
 
-        {/* ── Order Items ── */}
+        {/* ── Sản phẩm trong đơn hàng ── */}
         <View style={s.card}>
           <Text style={s.cardTitle}>Sản phẩm ({items.length})</Text>
           {items.length === 0 ? (
             <Text style={s.emptyText}>Không có sản phẩm</Text>
           ) : (
             items.map((item: any, idx: number) => {
-              // ✅ API trả về snapshot fields (không phải productName trực tiếp)
+              // API trả về snapshot fields (không phải productName trực tiếp)
               const productName = item.productNameSnapshot
                 || item.productName || item.name
                 || `Sản phẩm #${item.productId || item.id}`;
@@ -260,7 +260,7 @@ const OrderDetailScreen = () => {
           </View>
         </View>
 
-        {/* ── Status Timeline ── */}
+        {/* ── Tiến trình trạng thái ── */}
         {logs.length > 0 && (
           <View style={s.card}>
             <Text style={s.cardTitle}>Lịch sử trạng thái</Text>
@@ -292,7 +292,7 @@ const OrderDetailScreen = () => {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* ── Action Buttons ── */}
+      {/* ── Nút hành động ── */}
       <View style={s.actions}>
         {canCancel && (
           <TouchableOpacity
@@ -325,7 +325,7 @@ const OrderDetailScreen = () => {
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Định dạng giao diện (Styles) ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2F3F5' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 },

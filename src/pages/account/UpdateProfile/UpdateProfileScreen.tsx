@@ -77,7 +77,7 @@ const UpdateProfileScreen = () => {
 
         // Cập nhật lại AuthContext
         if (token) {
-          // Ở đây ta có thể giả định server trả về user mới hoặc ta tự merge
+          // Giả định máy chủ trả về thông tin người dùng mới hoặc tự thực hiện gộp dữ liệu
           const updatedUser = { ...user, name, phone, email };
           await login(token, updatedUser);
         }
@@ -91,7 +91,7 @@ const UpdateProfileScreen = () => {
         });
       }
     } catch (error) {
-      console.error("Update profile error", error);
+      console.error("Lỗi cập nhật thông tin cá nhân", error);
       Toast.show({
         type: "error",
         text1: t("error"),

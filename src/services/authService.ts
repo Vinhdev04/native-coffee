@@ -32,7 +32,7 @@ export const registerApi = async (payload: any): Promise<any> => {
 export const logoutApi = async () => {
   try {
     // Gọi API logout nhưng không sử dụng interceptor mặc định nếu có thể
-    // Hoặc đơn giản là bắt lỗi để tránh hiện Toast đỏ
+    // Hoặc đơn giản là bắt lỗi để tránh hiển thị thông báo Toast lỗi
     const response = await axiosClient.post('/auth/logout');
     return response;
   } catch (error) {

@@ -72,7 +72,7 @@ const ChangePasswordScreen = () => {
         });
       }
     } catch (error) {
-      console.error("Change password error", error);
+      console.error("Lỗi đổi mật khẩu:", error);
       Toast.show({
         type: "error",
         text1: t("error"),
