@@ -61,6 +61,7 @@ const OrderDetailScreen = () => {
 
   console.log(`[OrderDetailScreen] Gắn màn hình — orderId=${orderId}`);
 
+  // TODO: Hàm loadOrder lấy chi tiết thông tin đơn hàng từ Backend và lưu vào cache
   const loadOrder = useCallback(async () => {
     if (!orderId) {
       console.error('[OrderDetailScreen] Không cung cấp orderId!');
@@ -86,6 +87,7 @@ const OrderDetailScreen = () => {
 
   useEffect(() => { loadOrder(); }, [loadOrder]);
 
+  // TODO: Hàm handleCancel gửi yêu cầu hủy đơn hàng hiện tại lên hệ thống
   const handleCancel = async () => {
     try {
       setCancelling(true);
@@ -100,6 +102,7 @@ const OrderDetailScreen = () => {
     }
   };
 
+  // TODO: Hàm handlePayment điều hướng người dùng sang màn hình thanh toán đơn hàng
   const handlePayment = () => {
     // Tích hợp: Sử dụng orderStatus và parseFloat cho totalAmount
     const total = parseFloat(String(order?.totalAmount || order?.total || '0'));

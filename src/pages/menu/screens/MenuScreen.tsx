@@ -60,6 +60,7 @@ const MenuScreen = () => {
 
   useEffect(() => { loadData(); }, []);
 
+  // TODO: Hàm loadData thực hiện tải danh mục và danh sách sản phẩm từ API dịch vụ branch
   const loadData = async () => {
     try {
       setLoading(true);
@@ -100,6 +101,7 @@ const MenuScreen = () => {
       .filter((s) => s.data.length > 0);
   }, [categories, allProducts, debouncedSearch]);
 
+  // TODO: Hàm handleCategoryPress xử lý sự kiện bấm chọn danh mục và tự động cuộn đến khu vực danh sách tương ứng
   const handleCategoryPress = (catId: number | 'all') => {
     setActiveCategory(catId);
     if (catId === 'all') {
@@ -138,6 +140,7 @@ const MenuScreen = () => {
     );
   };
 
+  // TODO: Hàm handleAddToCart xử lý thêm sản phẩm trực tiếp vào giỏ hàng và hiện thông báo Toast
   const handleAddToCart = (item: any) => {
     addToCart(item);
     setToast({
@@ -147,6 +150,7 @@ const MenuScreen = () => {
     });
   };
 
+  // TODO: Hàm handlePrintProduct tạo hóa đơn nháp và hiển thị hộp thoại xem trước in thử cho sản phẩm
   const handlePrintProduct = (item: any) => {
     setReceiptOrder({
       id: 'DRAFT-' + Math.floor(Math.random() * 1000),
@@ -157,6 +161,7 @@ const MenuScreen = () => {
     setIsReceiptVisible(true);
   };
 
+  // TODO: Hàm handleProductPress mở hộp thoại cấu hình thuộc tính chi tiết sản phẩm trước khi mua
   const handleProductPress = (product: any) => {
     setSelectedProduct(product);
     setIsModalVisible(true);

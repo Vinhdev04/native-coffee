@@ -10,6 +10,7 @@ import { Platform, NativeModules, Share } from "react-native";
 import type { RefObject } from "react";
 import Toast from "react-native-toast-message";
 import { BillData } from "@/components/BillReceiptComponent";
+import { captureRef } from "react-native-view-shot";
 
 import { LOGO_BASE64 } from "@/constants/logoBase64";
 import { fetchOrderById } from "@/services/orderService";
@@ -515,8 +516,11 @@ export const shareBillImage = async (
     }
 
     console.log("📸 [BillService] Chụp ảnh bill...");
-    // capture() trả về URI file ảnh (jpg)
-    const uri: string = await (viewShotRef.current as any).capture();
+    // todo: Dùng captureRef trực tiếp từ ref của View gốc để tránh lỗi layout đo đạc trên POS
+    const uri: string = await captureRef(viewShotRef, {
+      format: "jpg",
+      quality: 0.95,
+    });
     console.log("📸 [BillService] captured URI:", uri);
 
     await Share.share({

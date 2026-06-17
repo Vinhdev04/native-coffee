@@ -18,20 +18,24 @@ import ProductModal from '@/components/menu/ProductModal';
 import ReceiptModal from '@/components/common/ReceiptModal';
 import { s, sh } from '../styles/HomeScreen.styles';
 
+// TODO: Component con hiển thị tiêu đề cho từng phần danh mục sản phẩm
 const SectionHeader = ({ title }: { title: string }) => (
   <View style={sh.wrap}>
     <Text style={sh.title}>{title}</Text>
   </View>
 );
 
+// TODO: Thành phần chính HomeScreen hiển thị giao diện trang chủ
 const HomeScreen = () => {
   const { width } = useWindowDimensions();
+  // todo: kiểm tra màn hình nhỏ để điều chỉnh padding hợp lý
   const isSmallScreen = width < 360;
 
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
   const { items, totalItems, addToCart, updateQuantity } = useCart();
 
+  // todo: Trạng thái lưu trữ danh mục và danh sách sản phẩm
   const [categories, setCategories] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [activeCatId, setActiveCatId] = useState<number | 'all'>('all');
@@ -43,12 +47,14 @@ const HomeScreen = () => {
   const [isReceiptVisible, setIsReceiptVisible] = useState(false);
   const [receiptOrder, setReceiptOrder] = useState<any>(null);
 
+  // todo: Refs điều hướng cuộn danh sách danh mục
   const sectionListRef = useRef<SectionList>(null);
   const catBarRef = useRef<FlatList>(null);
   const isScrollingFromPress = useRef(false);
 
   useEffect(() => { loadData(); }, []);
 
+  // TODO: Tải dữ liệu danh mục và sản phẩm từ API
   const loadData = async () => {
     try {
       setLoading(true);
@@ -61,6 +67,7 @@ const HomeScreen = () => {
     } catch {} finally { setLoading(false); }
   };
 
+  // todo: Gom nhóm các sản phẩm theo danh mục và lọc theo từ khóa tìm kiếm
   const sections = useMemo(() => {
     if (searchText.trim()) {
       const q = searchText.toLowerCase();
@@ -78,8 +85,10 @@ const HomeScreen = () => {
       .filter(s => s.data.length > 0);
   }, [categories, allProducts, searchText]);
 
+  // todo: Thêm tùy chọn "Tất cả" vào đầu danh sách danh mục
   const allCats = useMemo(() => [{ id: 'all', name: t('all') }, ...categories], [categories, t]);
 
+  // TODO: Xử lý sự kiện nhấn vào một danh mục sản phẩm để cuộn tới phần tương ứng
   const handleCatPress = useCallback((catId: number | 'all') => {
     setActiveCatId(catId);
     if (catId === 'all') {
@@ -96,6 +105,7 @@ const HomeScreen = () => {
     }
   }, [sections]);
 
+  // TODO: Tự động cuộn thanh chọn danh mục để mục đang hiển thị nằm trong tầm nhìn
   const scrollCatBarToActive = useCallback((catId: number | 'all') => {
     const idx = allCats.findIndex(c => c.id === catId);
     if (idx >= 0) {
@@ -103,6 +113,7 @@ const HomeScreen = () => {
     }
   }, [allCats]);
 
+  // TODO: Callback phát hiện phần tử đang hiển thị trên màn hình khi người dùng cuộn
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (isScrollingFromPress.current || searchText) return;
     if (viewableItems.length > 0) {
@@ -115,8 +126,10 @@ const HomeScreen = () => {
     }
   }, [activeCatId, searchText, scrollCatBarToActive]);
 
+  // todo: cấu hình ngưỡng hiển thị phát hiện danh mục hoạt động
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
 
+  // TODO: Thêm sản phẩm vào giỏ hàng từ trang chủ và hiển thị Toast thông báo
   const handleAddToCart = (item: any) => {
     addToCart(item);
     setToast({
@@ -126,6 +139,7 @@ const HomeScreen = () => {
     });
   };
 
+  // TODO: Xử lý sự kiện khi bấm vào thẻ sản phẩm để xem chi tiết
   const handleProductPress = (product: any) => {
     setSelectedProduct(product);
     setIsModalVisible(true);

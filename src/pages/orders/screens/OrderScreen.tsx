@@ -298,6 +298,7 @@ const OrderScreen = () => {
   
   const STATUS_CONFIG = getStatusConfig(t);
 
+  // TODO: Hàm loadOrders tải danh sách toàn bộ đơn hàng từ backend và cập nhật số lượng món từ cache
   const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
@@ -339,6 +340,7 @@ const OrderScreen = () => {
     }, [loadOrders, route.params?.initialTab]),
   );
 
+  // TODO: Hàm onRefresh xử lý sự kiện kéo xuống để làm mới danh sách đơn hàng
   const onRefresh = () => {
     setRefreshing(true);
     loadOrders();
@@ -375,6 +377,7 @@ const OrderScreen = () => {
   const completionPct =
     allOrders.length > 0 ? Math.round((doneCount / allOrders.length) * 100) : 0;
 
+  // TODO: Hàm handleOrderPress tải chi tiết đơn hàng được chọn và hiển thị thông tin lên BottomSheet
   const handleOrderPress = async (item: any) => {
     try {
       setSheetLoading(true);
@@ -397,6 +400,7 @@ const OrderScreen = () => {
     }
   };
 
+  // TODO: Hàm handlePayment điều hướng đơn hàng sang màn hình chọn phương thức thanh toán
   const handlePayment = () => {
     if (!selectedOrder) return;
     const total = parseFloat(
@@ -410,6 +414,7 @@ const OrderScreen = () => {
     });
   };
 
+  // TODO: Hàm handlePrintOrder thiết lập dữ liệu hóa đơn xem trước và mở modal in hóa đơn
   const handlePrintOrder = (order: any) => {
     setReceiptData({
       id: order.id,

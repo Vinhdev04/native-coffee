@@ -39,6 +39,7 @@ const AccountScreen = () => {
     </TouchableOpacity>
   );
 
+  // TODO: Hàm changeLanguage thay đổi ngôn ngữ hiển thị của ứng dụng thông qua thư viện i18n
   const changeLanguage = (lang: string) => {
     i18n.changeLanguage(lang);
     setLangModalVisible(false);

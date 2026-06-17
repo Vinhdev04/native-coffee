@@ -30,7 +30,6 @@ import {
   Modal,
   useWindowDimensions,
 } from "react-native";
-import ViewShot from "react-native-view-shot";
 import { WebView } from "react-native-webview";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -135,19 +134,20 @@ const PaymentScreen = () => {
   const [vnpayUrl, setVnpayUrl] = useState<string | null>(null); // State cho WebView URL
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
-  // Tiền khách đưa (mặc định = tổng đơn)
+  // todo: Tiền khách đưa (mặc định = tổng đơn)
   const [cashInput, setCashInput] = useState<string>(
     String(Number(totalAmount)),
   );
+  // todo: Tính tiền thừa thối lại cho khách
   const cashChange = Math.max(0, Number(cashInput || 0) - Number(totalAmount));
 
+  // todo: Các trạng thái hỗ trợ hiển thị hóa đơn và in ấn
   const [billModalVisible, setBillModalVisible] = useState(false);
   const [billPrinting, setBillPrinting] = useState(false);
   const [billSharing, setBillSharing] = useState(false);
   const [orderItems, setOrderItems] = useState<BillItem[]>([]);
   const [orderDiscount, setOrderDiscount] = useState(0);
   const [orderDetail, setOrderDetail] = useState<any>(null);
-  const billViewShotRef = useRef<any>(null);
 
   // Lấy chi tiết đơn để lấy danh sách món cho bill
   useEffect(() => {
@@ -414,6 +414,7 @@ const PaymentScreen = () => {
   ]);
 
   // ── Thanh toán bằng tiền mặt (Cash Payment) ────────────────────────────────────────────────────────────
+  // TODO: Hàm handleCashPayment xử lý thanh toán đơn hàng bằng tiền mặt tại quầy và gọi API cập nhật
   const handleCashPayment = async () => {
     if (orderAlreadyPaid) {
       Toast.show({
@@ -508,6 +509,7 @@ const PaymentScreen = () => {
   };
 
   // ── Thanh toán VNPay (VNPay Payment) ───────────────────────────────────────────────────────────
+  // TODO: Hàm handleVNPayPayment tạo link thanh toán VNPay thông qua API và mở WebView cho người dùng quét mã
   const handleVNPayPayment = async () => {
     try {
       setProcessing(true);
@@ -558,6 +560,7 @@ const PaymentScreen = () => {
   };
 
   // ── Xử lý xác nhận (Confirm Handler) ─────────────────────────────────────────────────────────
+  // TODO: Hàm handleConfirm điều hướng thanh toán dựa theo phương thức được chọn (Tiền mặt / VNPay)
   const handleConfirm = () => {
     if (!selectedMethod) {
       Toast.show({

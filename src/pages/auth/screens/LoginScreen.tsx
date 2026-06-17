@@ -17,18 +17,22 @@ import {
 } from 'lucide-react-native';
 import { s } from '../styles/LoginScreen.styles';
 
+// TODO: Thành phần chính LoginScreen cung cấp giao diện và xử lý đăng nhập cho người dùng
 const LoginScreen = () => {
   const { login } = useAuth();
   const navigation = useNavigation<any>();
 
+  // todo: lưu tên đăng nhập và mật khẩu
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'ADMIN' | 'STAFF' | null>(null);
 
+  // todo: giá trị hoạt ảnh mờ dần khi chuyển đổi giao diện
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
+  // TODO: Chuyển hoạt ảnh từ màn hình chọn vai trò sang form đăng nhập
   const animateToForm = (role: 'ADMIN' | 'STAFF') => {
     Animated.timing(fadeAnim, {
       toValue: 0,
@@ -44,6 +48,7 @@ const LoginScreen = () => {
     });
   };
 
+  // TODO: Quay lại màn hình chọn vai trò với hiệu ứng hoạt ảnh mờ dần
   const handleBack = () => {
     Animated.timing(fadeAnim, {
       toValue: 0,
@@ -59,6 +64,7 @@ const LoginScreen = () => {
     });
   };
 
+  // TODO: Xử lý sự kiện đăng nhập và kiểm tra dữ liệu qua mã hóa RSA
   const handleLogin = async () => {
     if (!userName.trim() || !password.trim()) {
       Toast.show({ type: 'error', text1: 'Vui lòng nhập đầy đủ thông tin', position: 'bottom' });
@@ -70,6 +76,7 @@ const LoginScreen = () => {
       const cleanPassword = password.trim();
       let encryptedPassword = cleanPassword;
       try {
+        // todo: Thực hiện mã hóa mật khẩu bằng thuật toán RSA
         encryptedPassword = await encryptWithRSA(cleanPassword);
       } catch (_) {
         console.warn('Mã hóa RSA thất bại');
@@ -80,7 +87,7 @@ const LoginScreen = () => {
         password: encryptedPassword,
       });
 
-      // Hỗ trợ cả cấu trúc rows cũ và user/data mới từ API
+      // todo: Hỗ trợ cả cấu trúc rows cũ và user/data mới từ API
       const userDataFromRows = response?.rows?.[0];
       const userDataFromData = response?.user || response?.data;
       const finalUserData = userDataFromRows || userDataFromData;
@@ -116,6 +123,7 @@ const LoginScreen = () => {
     }
   };
 
+  // TODO: Render màn hình lựa chọn vai trò làm việc
   const renderRoleSelection = () => (
     <Animated.View style={[s.animatedContainer, { opacity: fadeAnim }]}>
       <View style={s.header}>
@@ -171,6 +179,7 @@ const LoginScreen = () => {
     </Animated.View>
   );
 
+  // TODO: Render form đăng nhập dành cho vai trò đã chọn
   const renderLoginForm = () => (
     <Animated.View style={[s.animatedContainer, { opacity: fadeAnim }]}>
       <TouchableOpacity style={s.backBtn} onPress={handleBack} activeOpacity={0.7}>

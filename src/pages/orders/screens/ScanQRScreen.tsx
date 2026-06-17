@@ -9,12 +9,15 @@ import { OrderBottomSheet } from './OrderScreen';
 import { fetchOrderById } from '@/services/orderService';
 import { s } from '../styles/ScanQRScreen.styles';
 
+// TODO: Thành phần chính ScanQRScreen thực hiện quét mã QR qua Camera
 const ScanQRScreen = () => {
   const navigation = useNavigation<any>();
+  // todo: trạng thái đã quét thành công hay chưa
   const [scanned, setScanned] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
 
+  // TODO: Xử lý khi camera đọc được mã QR
   const handleReadCode = async (event: any) => {
     if (scanned || loadingOrder || selectedOrder) return;
     
@@ -24,13 +27,13 @@ const ScanQRScreen = () => {
     let orderId = null;
 
     try {
-      // 1. Cố gắng parse theo định dạng JSON cũ (Backward compatibility)
+      // todo: Cố gắng parse theo định dạng JSON cũ (Backward compatibility)
       const data = JSON.parse(qrValue);
       if (data.action === 'view_order' && data.orderId) {
         orderId = data.orderId;
       }
     } catch (e) {
-      // 2. Nếu không phải JSON, kiểm tra xem có phải định dạng URL mới không
+      // todo: Nếu không phải JSON, kiểm tra xem có phải định dạng URL mới không
       if (qrValue.includes('/order/')) {
         const parts = qrValue.split('/order/');
         if (parts.length > 1) {
@@ -47,12 +50,13 @@ const ScanQRScreen = () => {
       setLoadingOrder(true);
       
       try {
+        // todo: gọi API để lấy thông tin chi tiết đơn hàng mới nhất
         const res = await fetchOrderById(orderId);
         const detail = (res as any)?.data ?? res;
         setSelectedOrder(detail);
       } catch (err) {
         Toast.show({ type: 'error', text1: 'Lỗi', text2: 'Không thể lấy dữ liệu đơn hàng' });
-        // Cho quét lại ngay nếu lỗi
+        // todo: cho phép quét lại sau 2 giây nếu có lỗi xảy ra
         setTimeout(() => setScanned(false), 2000);
       } finally {
         setLoadingOrder(false);
@@ -60,21 +64,23 @@ const ScanQRScreen = () => {
 
     } else {
       Toast.show({ type: 'error', text1: 'Mã QR không hợp lệ' });
-      // Reset scanned state after 3s to allow scanning again
+      // todo: reset trạng thái quét sau 3 giây để cho quét lại
       setTimeout(() => {
         setScanned(false);
       }, 3000);
     }
   };
 
+  // TODO: Xử lý đóng modal chi tiết đơn hàng
   const handleCloseModal = () => {
     setSelectedOrder(null);
-    // Cho phép quét lại sau 2 giây đóng Modal
+    // todo: cho phép quét lại sau 2 giây
     setTimeout(() => {
       setScanned(false);
     }, 2000);
   };
 
+  // TODO: Xử lý chuyển tiếp sang màn hình thanh toán
   const handlePayment = () => {
     if (!selectedOrder) return;
     const total = parseFloat(selectedOrder.totalAmount || selectedOrder.total || '0');

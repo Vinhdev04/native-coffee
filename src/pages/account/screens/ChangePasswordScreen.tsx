@@ -38,6 +38,7 @@ const ChangePasswordScreen = () => {
     visible: false, type: 'success', title: '', message: '' 
   });
 
+  // TODO: Hàm handleSubmit gửi yêu cầu đổi mật khẩu mới lên server thông qua API changePasswordApi
   const handleSubmit = async (values: any, { resetForm }: any) => {
     try {
       setLoading(true);

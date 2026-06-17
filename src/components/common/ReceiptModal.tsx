@@ -12,10 +12,10 @@ import {
 } from "react-native";
 import { X, Printer, Share2 } from "lucide-react-native";
 import { COLORS, FONTS } from "@/styles/theme";
-import ViewShot from "react-native-view-shot";
 import BillReceiptComponent, { BillData } from "@/components/BillReceiptComponent";
 import { printBillOnSunmi, shareBillImage } from "@/services/billService";
 
+// todo: các thuộc tính props cho component ReceiptModal
 interface ReceiptModalProps {
   visible: boolean;
   onClose: () => void;
@@ -23,6 +23,7 @@ interface ReceiptModalProps {
   title?: string;
 }
 
+// TODO: Hàm phụ trợ để phân tích các giá trị số hợp lệ từ nhiều trường nguồn khác nhau
 const numberFrom = (...values: any[]) => {
   for (const value of values) {
     if (value === null || value === undefined || value === "") continue;
@@ -32,6 +33,7 @@ const numberFrom = (...values: any[]) => {
   return 0;
 };
 
+// TODO: Suy đoán loại VAT (đã bao gồm hay chưa bao gồm) dựa trên số tiền
 const inferVatType = (
   rawVatType: any,
   vatAmount: number,
@@ -46,6 +48,7 @@ const inferVatType = (
   return Math.abs(totalAmount - exclusiveTotal) <= 1 ? "exclusive" : "inclusive";
 };
 
+// TODO: Tính toán thuế suất VAT thực tế dựa trên tổng doanh thu chịu thuế và số tiền VAT tính toán
 const inferVatRate = (
   rawVatRate: number,
   vatAmount: number,
@@ -62,6 +65,7 @@ const inferVatRate = (
   return Number(((vatAmount / base) * 100).toFixed(2));
 };
 
+// TODO: Component chính ReceiptModal hiển thị hộp thoại xem trước hóa đơn và hỗ trợ in/chia sẻ
 const ReceiptModal = ({
   visible,
   onClose,
@@ -71,8 +75,7 @@ const ReceiptModal = ({
   const [isSharing, setIsSharing] = useState(false);
   const viewShotRef = useRef<any>(null);
 
-  // Map order sang định dạng BillData của BillReceiptComponent
-  // Đã tính toán VAT đồng bộ
+  // todo: Ánh xạ dữ liệu đơn hàng thô thành cấu trúc BillData nhất quán của BillReceiptComponent
   const billData: BillData | null = useMemo(() => {
     if (!order) return null;
     const discount = numberFrom(order.discount, order.discountAmount, order.totalDiscount);
@@ -131,12 +134,14 @@ const ReceiptModal = ({
 
   if (!order || !billData) return null;
 
+  // TODO: Kích hoạt luồng in nhiệt hóa đơn vật lý
   const handlePrint = async () => {
     setIsPrinting(true);
     await printBillOnSunmi(billData);
     setIsPrinting(false);
   };
 
+  // TODO: Chụp lại vùng màn hình hiển thị hóa đơn và mở hộp thoại chia sẻ của hệ thống
   const handleShare = async () => {
     setIsSharing(true);
     await shareBillImage(viewShotRef);
@@ -152,7 +157,6 @@ const ReceiptModal = ({
     >
       <View style={s.overlay}>
         <SafeAreaView style={s.container}>
-          {/* Header Actions */}
           <View style={s.topActions}>
             <TouchableOpacity style={s.closeBtn} onPress={onClose}>
               <X size={22} color={COLORS.textPrimary} />
@@ -184,12 +188,8 @@ const ReceiptModal = ({
             showsVerticalScrollIndicator={false}
             contentContainerStyle={s.scrollContent}
           >
-            <ViewShot
-              ref={viewShotRef}
-              options={{ format: "jpg", quality: 0.95 }}
-            >
-              <BillReceiptComponent data={billData} />
-            </ViewShot>
+            {/* todo: truyền ref trực tiếp vào BillReceiptComponent để captureRef khi cần chia sẻ, tránh bọc bằng ViewShot gây lỗi kích thước 0 trên thiết bị POS */}
+            <BillReceiptComponent ref={viewShotRef} data={billData} />
           </ScrollView>
 
           <TouchableOpacity style={s.bottomCta} onPress={onClose}>

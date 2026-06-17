@@ -6,6 +6,7 @@
  */
 
 import 'react-native-reanimated';
+import './src/utils/logger';
 import { registerRootComponent } from 'expo';
 import App from './App';
 

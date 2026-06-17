@@ -20,6 +20,7 @@ const UpdateProfileScreen = () => {
   const [username, setUsername] = useState(user?.username || '');
   const [loading, setLoading] = useState(false);
 
+  // TODO: Hàm handleSave thực hiện lưu thông tin cá nhân mới cập nhật của nhân viên lên máy chủ
   const handleSave = async () => {
     if (!name.trim()) {
       Toast.show({ type: 'error', text1: 'Vui lòng nhập họ tên' });

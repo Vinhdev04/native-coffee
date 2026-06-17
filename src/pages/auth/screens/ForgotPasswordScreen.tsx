@@ -13,17 +13,21 @@ import LinearGradient from 'react-native-linear-gradient';
 import { Mail, ChevronLeft, CheckCircle, KeyRound } from 'lucide-react-native';
 import { s } from '../styles/ForgotPasswordScreen.styles';
 
+// TODO: Thành phần chính ForgotPasswordScreen dùng để khôi phục mật khẩu tài khoản
 const ForgotPasswordScreen = () => {
   const { width } = useWindowDimensions();
+  // todo: kiểm tra kích thước màn hình nhỏ
   const isSmallScreen = width < 360;
   
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
 
+  // todo: lưu trữ email người dùng nhập
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // TODO: Hàm xử lý gửi yêu cầu khôi phục mật khẩu tới API
   const handleSubmit = async () => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {

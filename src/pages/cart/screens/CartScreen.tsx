@@ -20,13 +20,16 @@ import ReceiptModal from '@/components/common/ReceiptModal';
 import { Printer } from 'lucide-react-native';
 import { s } from '../styles/CartScreen.styles';
 
+// todo: Danh sách các mã giảm giá mặc định của hệ thống
 const VOUCHERS = [
   { id: '1', code: 'COFFEE5', value: 5000, desc: 'Giảm ngay 5.000đ cho đơn hàng' },
   { id: '2', code: 'COFFEE10', value: 10000, desc: 'Giảm ngay 10.000đ cho đơn hàng' },
 ];
 
+// TODO: Thành phần chính CartScreen quản lý giỏ hàng, tính toán VAT, giảm giá và đặt hàng
 const CartScreen = () => {
   const { width } = useWindowDimensions();
+  // todo: kiểm tra màn hình nhỏ
   const isSmallScreen = width < 360;
 
   const navigation = useNavigation<any>();
@@ -37,23 +40,23 @@ const CartScreen = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
   
-  // VAT State
+  // todo: Trạng thái và loại thuế suất áp dụng
   const [vatType, setVatType] = useState<'exclusive' | 'inclusive' | 'none'>('inclusive');
   const [vatRate, setVatRate] = useState<string>('8');
   
-  // Note Modal State
+  // todo: Các trạng thái modal nhập ghi chú
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [currentEditingItem, setCurrentEditingItem] = useState<any>(null);
   const [tempNote, setTempNote] = useState('');
 
-  // Voucher Modal State
+  // todo: Trạng thái modal mã giảm giá
   const [voucherModalVisible, setVoucherModalVisible] = useState(false);
 
-  // Edit Modal State
+  // todo: Trạng thái modal chỉnh sửa thuộc tính sản phẩm
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
 
-  // Receipt Modal State
+  // todo: Trạng thái hiển thị xem trước hóa đơn
   const [isReceiptVisible, setIsReceiptVisible] = useState(false);
 
   const discount = selectedVoucher ? selectedVoucher.value : 0;
@@ -63,6 +66,7 @@ const CartScreen = () => {
   let vatAmount = 0;
   let grandTotal = subtotalAfterDiscount;
 
+  // todo: Tính toán giá trị thuế suất theo tùy chọn
   if (vatType === 'exclusive') {
     vatAmount = subtotalAfterDiscount * (vatRateNumber / 100);
     grandTotal = subtotalAfterDiscount + vatAmount;
@@ -71,6 +75,7 @@ const CartScreen = () => {
     grandTotal = subtotalAfterDiscount;
   }
 
+  // TODO: Xử lý quá trình thanh toán đơn hàng (checkout)
   const handleCheckout = async () => {
     if (items.length === 0) {
       console.warn('[CartScreen] handleCheckout — giỏ hàng đang trống');
@@ -80,7 +85,7 @@ const CartScreen = () => {
     try {
       setIsCheckingOut(true);
 
-      // ── Bước 1: Lấy phiên ca làm việc đang hoạt động ─────────────────────────────────
+      // todo: Lấy thông tin ca làm việc hiện tại đang chạy
       console.log('[CartScreen] Đang lấy phiên ca làm việc đang hoạt động...');
       let shiftSessionId: number | null = null;
       try {
@@ -110,7 +115,7 @@ const CartScreen = () => {
         console.warn('[CartScreen] Không có shiftSessionId — đơn hàng có thể thất bại nếu API yêu cầu');
       }
 
-      // ── Bước 2: Xây dựng dữ liệu gửi đi (payload) ──────────────────────────────────────────────
+      // todo: Khởi tạo thông tin khách hàng và dữ liệu gửi lên server
       const customerName = user?.fullName || (user as any)?.full_name
         || user?.username || (user as any)?.name
         || 'Khách vãng lai';
@@ -130,7 +135,7 @@ const CartScreen = () => {
 
       console.log('[CartScreen] Dữ liệu gửi đi tạo đơn hàng (payload):', JSON.stringify(payload, null, 2));
 
-      // ── Bước 3: Tạo đơn hàng ───────────────────────────────────────────────
+      // todo: Gọi API gửi tạo đơn hàng mới
       const res = await createOrder(payload);
       console.log('[CartScreen] Phản hồi tạo đơn hàng:', JSON.stringify(res, null, 2));
 
@@ -161,12 +166,14 @@ const CartScreen = () => {
     }
   };
 
+  // TODO: Mở cửa sổ nhập ghi chú cho sản phẩm
   const openNoteModal = (item: any) => {
     setCurrentEditingItem(item);
     setTempNote(item.note || '');
     setNoteModalVisible(true);
   };
 
+  // TODO: Lưu ghi chú tạm thời vào sản phẩm trong giỏ hàng
   const saveNote = () => {
     if (currentEditingItem) {
       updateNote(currentEditingItem.cartId, tempNote);
@@ -174,11 +181,13 @@ const CartScreen = () => {
     setNoteModalVisible(false);
   };
 
+  // TODO: Mở cửa sổ chỉnh sửa thông tin/options của sản phẩm
   const handleEditItem = (item: any) => {
     setEditingItem(item);
     setEditModalVisible(true);
   };
 
+  // TODO: Lưu cập nhật thay đổi thuộc tính của sản phẩm
   const onUpdateItem = (updatedItem: any) => {
     if (editingItem) {
       updateItem(editingItem.cartId, {
@@ -189,6 +198,7 @@ const CartScreen = () => {
     }
   };
 
+  // TODO: Render một phần tử sản phẩm trong danh sách giỏ hàng
   const renderItem = (item: any, isLast: boolean) => (
     <TouchableOpacity 
       key={item.cartId} 

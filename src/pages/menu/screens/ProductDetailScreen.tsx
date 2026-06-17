@@ -85,6 +85,7 @@ const ProductDetailScreen = () => {
       : groupKey;
   };
 
+  // TODO: Hàm toggleAttribute xử lý sự kiện bấm chọn hoặc bỏ chọn một tùy chọn thuộc tính của sản phẩm (hỗ trợ chọn duy nhất hoặc chọn nhiều tùy topping)
   const toggleAttribute = (attr: any) => {
     const groupKey = attr.attributeId || attr.attributeName || 'Tùy chọn';
     const groupName = getGroupDisplayName(String(groupKey));
@@ -108,6 +109,7 @@ const ProductDetailScreen = () => {
   const basePrice  = Number(product.basePrice) || Number(product.price) || 0;
   const totalPrice = (basePrice + extraPrice) * quantity;
 
+  // TODO: Hàm handleAddToCart lưu sản phẩm đã cấu hình cùng các thuộc tính được chọn và ghi chú vào giỏ hàng
   const handleAddToCart = () => {
     addToCart({ ...product, quantity, selectedAttributes, totalPrice: basePrice + extraPrice, note });
     setToast({
