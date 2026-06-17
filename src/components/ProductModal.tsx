@@ -8,15 +8,13 @@ import {
   Image,
   ScrollView,
   TextInput,
-  Dimensions,
   Platform,
   KeyboardAvoidingView,
+  useWindowDimensions,
 } from 'react-native';
 import { X, Minus, Plus } from 'lucide-react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
-
-const { height } = Dimensions.get('window');
 
 // Mock data based on the image
 const MOCK_TOPPINGS = [
@@ -46,6 +44,13 @@ export const ProductModal = ({
   onAddToCart,
   editItem,
 }: ProductModalProps) => {
+  const { height, width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+  const contentPadding = isSmallScreen ? 16 : 24;
+  const imgSize = isSmallScreen ? 90 : 110;
+  const footerPadding = isSmallScreen ? 16 : 24;
+  const titleFontSize = isSmallScreen ? 18 : 22;
+
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState('M');
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
@@ -116,14 +121,16 @@ export const ProductModal = ({
         
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalContainer}
+          style={[styles.modalContainer, { maxHeight: height * 0.85 }]}
         >
           {/* Handle */}
           <View style={styles.handle} />
 
           {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>{product.name || 'Trà Sữa Matcha'}</Text>
+          <View style={[styles.header, { paddingHorizontal: contentPadding }]}>
+            <Text style={[styles.headerTitle, { fontSize: titleFontSize }]} numberOfLines={1} adjustsFontSizeToFit>
+              {product.name || 'Trà Sữa Matcha'}
+            </Text>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <X size={20} color={COLORS.textMuted} />
             </TouchableOpacity>
@@ -131,10 +138,10 @@ export const ProductModal = ({
 
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
             {/* Product Basic Info */}
-            <View style={styles.productInfoRow}>
+            <View style={[styles.productInfoRow, { paddingHorizontal: contentPadding }]}>
               <Image 
                 source={{ uri: product.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
-                style={styles.productImage} 
+                style={[styles.productImage, { width: imgSize, height: imgSize }]} 
               />
               <View style={styles.productDetails}>
                 <Text style={styles.productDesc} numberOfLines={3}>
@@ -144,7 +151,7 @@ export const ProductModal = ({
               </View>
             </View>
 
-            <View style={styles.content}>
+            <View style={[styles.content, { paddingHorizontal: contentPadding }]}>
               {/* SIZE Section */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>SIZE</Text>
@@ -157,7 +164,7 @@ export const ProductModal = ({
                         style={[styles.sizeBtn, isSelected && styles.activeBtn]}
                         onPress={() => setSize(opt.id)}
                       >
-                        <Text style={[styles.btnText, isSelected && styles.activeBtnText]}>
+                        <Text style={[styles.btnText, isSelected && styles.activeBtnText]} adjustsFontSizeToFit numberOfLines={1}>
                           {opt.name} {opt.price > 0 ? `(+${formatCurrency(opt.price)})` : ''}
                         </Text>
                       </TouchableOpacity>
@@ -178,7 +185,7 @@ export const ProductModal = ({
                         style={[styles.toppingBtn, isSelected && styles.activeBtn]}
                         onPress={() => toggleTopping(top.id)}
                       >
-                        <Text style={[styles.btnText, isSelected && styles.activeBtnText]}>
+                        <Text style={[styles.btnText, isSelected && styles.activeBtnText]} adjustsFontSizeToFit numberOfLines={1}>
                           {top.name} (+{formatCurrency(top.price)})
                         </Text>
                       </TouchableOpacity>
@@ -202,7 +209,7 @@ export const ProductModal = ({
           </ScrollView>
 
           {/* Footer */}
-          <View style={styles.footer}>
+          <View style={[styles.footer, { padding: footerPadding, paddingBottom: Platform.OS === 'ios' ? (isSmallScreen ? 20 : 35) : (isSmallScreen ? 16 : 24) }]}>
             <View style={styles.footerRow}>
               <View style={styles.qtyContainer}>
                 <TouchableOpacity style={styles.qtyBtn} onPress={() => setQuantity(Math.max(1, quantity - 1))}>
@@ -235,7 +242,6 @@ const styles = StyleSheet.create({
   modalContainer: { 
     backgroundColor: COLORS.white, 
     borderTopLeftRadius: 30, borderTopRightRadius: 30, 
-    maxHeight: height * 0.85 
   },
   handle: { 
     width: 50, height: 5, backgroundColor: '#E5E7EB', 

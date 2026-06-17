@@ -28,6 +28,7 @@ import {
   AppState,
   AppStateStatus,
   Modal,
+  useWindowDimensions,
 } from "react-native";
 import ViewShot from "react-native-view-shot";
 import { WebView } from "react-native-webview";
@@ -130,6 +131,9 @@ const formatDateTime = (raw: string) => {
 
 // ─── Hợp phần (Component) ─────────────────────────────────────────────────────────────────
 const PaymentScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { orderId, totalAmount, customerName } = route.params || {};
@@ -582,7 +586,7 @@ const PaymentScreen = () => {
   return (
     <SafeAreaView style={s.container}>
       {/* ── Tiêu đề ── */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: isSmallScreen ? 12 : 20 }]}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
@@ -593,7 +597,7 @@ const PaymentScreen = () => {
       </View>
 
       <ScrollView
-        contentContainerStyle={s.scroll}
+        contentContainerStyle={[s.scroll, { padding: isSmallScreen ? 12 : 16 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Tóm tắt đơn hàng ── */}
@@ -618,7 +622,7 @@ const PaymentScreen = () => {
 
         {/* ── Chọn hình thức thanh toán ── */}
         {!paymentDone && (
-          <View style={s.card}>
+          <View style={[s.card, { padding: isSmallScreen ? 12 : 18 }]}>
             <Text style={s.cardTitle}>Hình thức thanh toán</Text>
 
             {/* Cash */}
@@ -761,7 +765,7 @@ const PaymentScreen = () => {
         )}
 
         {/* ── Lịch sử thanh toán ── */}
-        <View style={s.card}>
+        <View style={[s.card, { padding: isSmallScreen ? 12 : 18 }]}>
           <Text style={s.cardTitle}>Lịch sử thanh toán</Text>
           {historyLoading ? (
             <ActivityIndicator

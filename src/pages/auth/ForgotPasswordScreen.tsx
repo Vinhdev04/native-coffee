@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, KeyboardAvoidingView,
-  Platform, ScrollView, StatusBar,
+  Platform, ScrollView, StatusBar, useWindowDimensions,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -13,6 +13,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import { Mail, ChevronLeft, CheckCircle, KeyRound } from 'lucide-react-native';
 
 const ForgotPasswordScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+  
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
 
@@ -57,7 +60,7 @@ const ForgotPasswordScreen = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <LinearGradient colors={['#FEF9F5', '#FFF0E5']} style={styles.gradient}>
+      <LinearGradient colors={['#FEF9F5', '#FFF0E5']} style={[styles.gradient, { paddingHorizontal: isSmallScreen ? 16 : 24 }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -67,25 +70,25 @@ const ForgotPasswordScreen = () => {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.card}>
+            <View style={[styles.card, { padding: isSmallScreen ? 18 : 28 }]}>
               <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
                 <View style={styles.backIconWrapper}>
                   <ChevronLeft size={20} color={COLORS.textPrimary} />
                 </View>
               </TouchableOpacity>
 
-              <View style={styles.iconContainer}>
+              <View style={[styles.iconContainer, isSmallScreen && { marginBottom: 12 }]}>
                 <KeyRound size={32} color={COLORS.primary} />
               </View>
 
-              <Text style={styles.title}>Quên mật khẩu?</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { fontSize: isSmallScreen ? 20 : 24 }]}>Quên mật khẩu?</Text>
+              <Text style={[styles.subtitle, { fontSize: isSmallScreen ? 13 : 15, marginBottom: isSmallScreen ? 18 : 28 }]}>
                 Nhập email đã đăng ký, chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu cho bạn.
               </Text>
 
               {!isSuccess ? (
                 <>
-                  <View style={styles.inputContainer}>
+                  <View style={[styles.inputContainer, { marginBottom: isSmallScreen ? 16 : 24 }]}>
                     <Mail size={20} color={COLORS.textMuted} />
                     <TextInput
                       style={styles.input}
@@ -158,7 +161,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.white,
     borderRadius: 24,
-    padding: 28,
     shadowColor: '#D97706',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.08,

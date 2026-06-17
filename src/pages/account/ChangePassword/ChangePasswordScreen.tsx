@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  TextInput, ScrollView, ActivityIndicator, Platform,
+  TextInput, ScrollView, ActivityIndicator, Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -25,6 +25,9 @@ const validationSchema = Yup.object().shape({
 });
 
 const ChangePasswordScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+
   const navigation = useNavigation();
   const { user } = useAuth();
 
@@ -72,7 +75,7 @@ const ChangePasswordScreen = () => {
       />
 
       {/* Header */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
           <ArrowLeft size={24} color="#374151" />
         </TouchableOpacity>
@@ -80,7 +83,7 @@ const ChangePasswordScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[s.content, { paddingHorizontal: isSmallScreen ? 16 : 20 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Banner Info */}
         <View style={s.banner}>
           <View style={s.bannerIconBox}>

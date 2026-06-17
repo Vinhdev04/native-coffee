@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "NativeCoffee.app"
-               BlueprintName = "NativeCoffee"
-               ReferencedContainer = "container:NativeCoffee.xcodeproj">
+               BuildableName = "ChipsBill.app"
+               BlueprintName = "ChipsBill"
+               ReferencedContainer = "container:ChipsBill.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "NativeCoffeeTests.xctest"
-               BlueprintName = "NativeCoffeeTests"
-               ReferencedContainer = "container:NativeCoffee.xcodeproj">
+               BuildableName = "ChipsBillTests.xctest"
+               BlueprintName = "ChipsBillTests"
+               ReferencedContainer = "container:ChipsBill.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "NativeCoffee.app"
-            BlueprintName = "NativeCoffee"
-            ReferencedContainer = "container:NativeCoffee.xcodeproj">
+            BuildableName = "ChipsBill.app"
+            BlueprintName = "ChipsBill"
+            ReferencedContainer = "container:ChipsBill.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "NativeCoffee.app"
-            BlueprintName = "NativeCoffee"
-            ReferencedContainer = "container:NativeCoffee.xcodeproj">
+            BuildableName = "ChipsBill.app"
+            BlueprintName = "ChipsBill"
+            ReferencedContainer = "container:ChipsBill.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -1,8 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const logoPath = path.join(__dirname, "src/public/CHIPS-logo.png");
-const outPath = path.join(__dirname, "src/constants/logoBase64.ts");
+// Đọc từ thư mục public/logo.png ở gốc dự án
+const logoPath = path.join(__dirname, "../public/logo.png");
+const outPath = path.join(__dirname, "../src/constants/logoBase64.ts");
 
 try {
   const base64 = fs.readFileSync(logoPath, "base64");
@@ -15,7 +16,7 @@ try {
 
   const content = `export const LOGO_BASE64 = '${base64}';\n`;
   fs.writeFileSync(outPath, content, "utf8");
-  console.log("✅ Đã tạo file src/constants/logoBase64.ts thành công!");
+  console.log("✅ Đã tạo file src/constants/logoBase64.ts thành công từ public/logo.png!");
 } catch (e) {
   console.error("❌ Lỗi:", e.message);
 }

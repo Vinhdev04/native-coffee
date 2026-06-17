@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   StatusBar, SectionList, Dimensions,
   ActivityIndicator, Platform, TextInput, FlatList, Image,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -27,6 +28,9 @@ const sh = StyleSheet.create({
 });
 
 const HomeScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
   const { items, totalItems, addToCart, updateQuantity } = useCart();
@@ -150,10 +154,10 @@ const HomeScreen = () => {
         }}
       />
 
-      <View style={s.topBar}>
+      <View style={[s.topBar, { paddingHorizontal: isSmallScreen ? 12 : 20 }]}>
         <View style={s.headerLeft}>
           <Image
-            source={require('@/public/logo.png')}
+            source={require('@/assets/images/logo.png')}
             style={s.headerLogo}
             resizeMode="contain"
           />
@@ -161,12 +165,12 @@ const HomeScreen = () => {
         <View style={s.headerRight}>
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
             <ShoppingBag size={20} color={COLORS.primary} />
-            {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText}>{totalItems > 9 ? '9+' : totalItems}</Text></View>}
+            {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText} adjustsFontSizeToFit numberOfLines={1}>{totalItems > 9 ? '9+' : totalItems}</Text></View>}
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={s.searchSection}>
+      <View style={[s.searchSection, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
         <View style={s.searchBar}>
           <Search size={18} color="#9CA3AF" />
           <TextInput
@@ -198,7 +202,7 @@ const HomeScreen = () => {
               const isActive = item.id === activeCatId || (item.id === 'all' && activeCatId === 'all');
               return (
                 <TouchableOpacity
-                  style={[s.catChip, isActive && s.catChipActive]}
+                  style={[s.catChip, isActive && s.catChipActive, { paddingHorizontal: isSmallScreen ? 12 : 18 }]}
                   onPress={() => handleCatPress(item.id as any)}
                 >
                   <Text style={[s.catText, isActive && s.catTextActive]}>{item.name}</Text>

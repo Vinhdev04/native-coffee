@@ -122,7 +122,7 @@ const LoginScreen = () => {
     <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
       <View style={styles.header}>
         <Image
-          source={require('@/public/logo.png')}
+          source={require('@/assets/images/logo.png')}
           style={styles.mainLogo}
           resizeMode="contain"
         />
@@ -185,7 +185,7 @@ const LoginScreen = () => {
         <View style={styles.formIconRow}>
           <View style={styles.formIcon}>
             <Image
-              source={require('@/public/logo.png')}
+              source={require('@/assets/images/logo.png')}
               style={{ width: 32, height: 32 }}
               resizeMode="contain"
             />
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: width < 360 ? 16 : 24,
   },
   scrollContent: {
     flexGrow: 1,
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   },
   mainLogo: {
     width: width * 0.6,
-    height: 80,
+    height: width < 360 ? 60 : 80,
     marginBottom: 10,
   },
   logoImg: {
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   formCard: {
     backgroundColor: COLORS.white,
     borderRadius: 28,
-    padding: 28,
+    padding: width < 360 ? 16 : 28,
     shadowColor: '#D97706',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.1,

@@ -1,4 +1,4 @@
-package com.vinhdev04.nativecoffee
+package com.vinhdev04.chipsbill
 
 import android.os.Build
 import android.os.Bundle

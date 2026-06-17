@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
   StatusBar, ScrollView, Platform,
-  Dimensions, TextInput,
+  TextInput, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -15,9 +15,14 @@ import {
 } from 'lucide-react-native';
 import Toast from '@/components/common/Toast';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 const ProductDetailScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+  const contentPadding = isSmallScreen ? 16 : 24;
+  const nameSize = isSmallScreen ? 20 : 24;
+  const priceSize = isSmallScreen ? 18 : 22;
+  const footerGap = isSmallScreen ? 12 : 20;
+
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { addToCart } = useCart();
@@ -148,7 +153,7 @@ const ProductDetailScreen = () => {
 
       <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
         {/* Ảnh sản phẩm */}
-        <View style={s.heroContainer}>
+        <View style={[s.heroContainer, { width: width, height: width * 0.85 }]}>
           <Image
             source={{ uri: product.imageUrl || product.image || FALLBACK_IMAGE }}
             style={s.heroImage}
@@ -169,11 +174,11 @@ const ProductDetailScreen = () => {
         </View>
 
         {/* Thẻ thông tin */}
-        <View style={s.infoCard}>
+        <View style={[s.infoCard, { paddingHorizontal: contentPadding }]}>
           {/* Hàng chứa tên sản phẩm + giá */}
           <View style={s.titleRow}>
-            <Text style={s.productName}>{product.name}</Text>
-            <Text style={s.productPrice}>{formatCurrency(basePrice)}</Text>
+            <Text style={[s.productName, { fontSize: nameSize }]} numberOfLines={2} adjustsFontSizeToFit>{product.name}</Text>
+            <Text style={[s.productPrice, { fontSize: priceSize }]}>{formatCurrency(basePrice)}</Text>
           </View>
 
           {/* Mô tả sản phẩm */}
@@ -289,14 +294,14 @@ const ProductDetailScreen = () => {
 
       {/* Nút hành động ở dưới cùng */}
       <SafeAreaView style={s.footer} edges={['bottom', 'left', 'right']}>
-        <View style={s.footerContent}>
+        <View style={[s.footerContent, { gap: footerGap, paddingHorizontal: contentPadding }]}>
           <View style={s.totalBlock}>
             <Text style={s.totalLabel}>Tổng cộng</Text>
             <Text style={s.totalPrice}>{formatCurrency(totalPrice)}</Text>
           </View>
           <TouchableOpacity style={s.addBtn} onPress={handleAddToCart}>
             <ShoppingBag size={18} color={COLORS.white} />
-            <Text style={s.addBtnText}>Thêm vào giỏ</Text>
+            <Text style={[s.addBtnText, isSmallScreen && { fontSize: 14 }]}>Thêm vào giỏ</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -307,7 +312,7 @@ const ProductDetailScreen = () => {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.white },
 
-  heroContainer: { width: SCREEN_WIDTH, height: SCREEN_WIDTH * 0.85, position: 'relative' },
+  heroContainer: { position: 'relative' },
   heroImage: { width: '100%', height: '100%' },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -337,7 +342,6 @@ const s = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: 24,
     paddingTop: 28,
   },
   titleRow: {

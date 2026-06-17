@@ -8,7 +8,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  SafeAreaView, ActivityIndicator, RefreshControl, Platform, StatusBar, Image
+  SafeAreaView, ActivityIndicator, RefreshControl, Platform, StatusBar, Image, useWindowDimensions
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
@@ -54,6 +54,9 @@ const formatDateTime = (raw: string) => {
 
 // ─── Hợp phần (Component) ─────────────────────────────────────────────────────────────────
 const OrderDetailScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { orderId } = route.params || {};
@@ -155,7 +158,7 @@ const OrderDetailScreen = () => {
       <StatusBar barStyle="dark-content" />
       
       {/* ── Tiêu đề ── */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: isSmallScreen ? 12 : 20 }]}>
         <TouchableOpacity style={s.headerBtn} onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
@@ -164,18 +167,18 @@ const OrderDetailScreen = () => {
       </View>
 
       <ScrollView
-        contentContainerStyle={s.scroll}
+        contentContainerStyle={[s.scroll, { padding: isSmallScreen ? 12 : 16 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadOrder(); }} />
         }
       >
         {/* ── Thẻ trạng thái đơn hàng ── */}
-        <View style={s.statusCard}>
+        <View style={[s.statusCard, { padding: isSmallScreen ? 16 : 24 }]}>
           <View style={[s.statusIconContainer, { backgroundColor: cfg.bg }]}>
              <StatusIcon size={32} color={cfg.color} />
           </View>
-          <Text style={[s.statusText, { color: cfg.color }]}>{cfg.label}</Text>
+          <Text style={[s.statusText, { color: cfg.color, fontSize: isSmallScreen ? 18 : 22 }]}>{cfg.label}</Text>
           <Text style={s.orderIdText}>Mã đơn: #{orderId}</Text>
           <View style={s.orderMetaRow}>
             <View style={s.metaItem}>
@@ -191,7 +194,7 @@ const OrderDetailScreen = () => {
         </View>
 
         {/* ── Danh sách sản phẩm ── */}
-        <View style={s.sectionCard}>
+        <View style={[s.sectionCard, { padding: isSmallScreen ? 14 : 20 }]}>
           <View style={s.sectionHeader}>
             <Package size={18} color={COLORS.textPrimary} />
             <Text style={s.sectionTitle}>Sản phẩm đã chọn</Text>
@@ -237,7 +240,7 @@ const OrderDetailScreen = () => {
         </View>
 
         {/* ── Payment Summary ── */}
-        <View style={s.sectionCard}>
+        <View style={[s.sectionCard, { padding: isSmallScreen ? 14 : 20 }]}>
           <View style={s.sectionHeader}>
             <CreditCard size={18} color={COLORS.textPrimary} />
             <Text style={s.sectionTitle}>Thông tin thanh toán</Text>
@@ -269,7 +272,7 @@ const OrderDetailScreen = () => {
 
       {/* ── Nút hành động ── */}
       {(canCancel || canPay) && (
-        <View style={s.actions}>
+        <View style={[s.actions, { padding: isSmallScreen ? 12 : 20 }]}>
           {canCancel && (
             <TouchableOpacity
               style={[s.cancelBtn, cancelling && { opacity: 0.6 }]}

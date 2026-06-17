@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Image, StatusBar, Platform, Modal,
+  ScrollView, Image, StatusBar, Platform, Modal, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -16,6 +16,9 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
 const AccountScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+
   const navigation = useNavigation();
   const { user, logout } = useAuth();
   const { t, i18n } = useTranslation();
@@ -72,7 +75,7 @@ const AccountScreen = () => {
             <View style={s.profileInfo}>
               <View style={s.avatarContainer}>
                 <Image 
-                  source={require('@/public/logo.png')} 
+                  source={require('@/assets/images/logo.png')} 
                   style={s.avatar} 
                   resizeMode="contain"
                 />
@@ -89,18 +92,18 @@ const AccountScreen = () => {
         </LinearGradient>
 
         {/* ── Stats Bar ── */}
-        <View style={s.statsContainer}>
-          <View style={s.statCard}>
-            <Text style={s.statValue}>128</Text>
-            <Text style={s.statLabel}>{t('today_orders')}</Text>
+        <View style={[s.statsContainer, isSmallScreen && { paddingHorizontal: 12 }]}>
+          <View style={[s.statCard, isSmallScreen && { paddingVertical: 12 }]}>
+            <Text style={s.statValue} adjustsFontSizeToFit numberOfLines={1}>128</Text>
+            <Text style={s.statLabel} adjustsFontSizeToFit numberOfLines={1}>{t('today_orders')}</Text>
           </View>
-          <View style={s.statCard}>
-            <Text style={s.statValue}>4.9</Text>
-            <Text style={s.statLabel}>{t('rating')}</Text>
+          <View style={[s.statCard, isSmallScreen && { paddingVertical: 12 }]}>
+            <Text style={s.statValue} adjustsFontSizeToFit numberOfLines={1}>4.9</Text>
+            <Text style={s.statLabel} adjustsFontSizeToFit numberOfLines={1}>{t('rating')}</Text>
           </View>
-          <View style={s.statCard}>
-            <Text style={s.statValue}>92%</Text>
-            <Text style={s.statLabel}>{t('completed')}</Text>
+          <View style={[s.statCard, isSmallScreen && { paddingVertical: 12 }]}>
+            <Text style={s.statValue} adjustsFontSizeToFit numberOfLines={1}>92%</Text>
+            <Text style={s.statLabel} adjustsFontSizeToFit numberOfLines={1}>{t('completed')}</Text>
           </View>
         </View>
 

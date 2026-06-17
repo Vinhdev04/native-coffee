@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   StatusBar, SectionList, Image,
   TextInput, ActivityIndicator,
-  FlatList, RefreshControl, Platform,
+  FlatList, RefreshControl, Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -32,6 +32,9 @@ const sh = StyleSheet.create({
 });
 
 const MenuScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { t } = useTranslation();
@@ -135,7 +138,7 @@ const MenuScreen = () => {
   const renderCategory = ({ item }: { item: any }) => {
     const isActive = item.id === activeCategory || (item.id === 'all' && activeCategory === 'all');
     return (
-      <TouchableOpacity style={[s.catChip, isActive && s.catChipActive]} onPress={() => handleCategoryPress(item.id)}>
+      <TouchableOpacity style={[s.catChip, isActive && s.catChipActive, { paddingHorizontal: isSmallScreen ? 12 : 16 }]} onPress={() => handleCategoryPress(item.id)}>
         {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={s.catIcon} />}
         <Text style={[s.catText, isActive && s.catTextActive]} numberOfLines={1}>{item.name}</Text>
       </TouchableOpacity>
@@ -189,16 +192,16 @@ const MenuScreen = () => {
         }}
       />
 
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: isSmallScreen ? 12 : 20 }]}>
         <View style={s.headerLeft} />
         <Text style={s.headerTitle}>{t('menu_title')}</Text>
         <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
           <ShoppingBag size={20} color={COLORS.primary} />
-          {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText}>{totalItems}</Text></View>}
+          {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText} adjustsFontSizeToFit numberOfLines={1}>{totalItems}</Text></View>}
         </TouchableOpacity>
       </View>
 
-      <View style={s.searchRow}>
+      <View style={[s.searchRow, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
         <View style={s.searchInputWrap}>
           <Search size={17} color="#9CA3AF" />
           <TextInput

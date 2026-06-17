@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, Image, SafeAreaView, ActivityIndicator,
-  Platform, StatusBar, ScrollView, Modal, TextInput, Alert
+  Platform, StatusBar, ScrollView, Modal, TextInput, Alert, useWindowDimensions
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useCart } from '@/context/CartContext';
@@ -26,6 +26,9 @@ const VOUCHERS = [
 ];
 
 const CartScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
   const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart, updateNote, updateItem } = useCart();
@@ -246,7 +249,7 @@ const CartScreen = () => {
         <StatusBar barStyle="dark-content" />
         
         {/* Header */}
-        <View style={s.header}>
+        <View style={[s.header, { paddingHorizontal: isSmallScreen ? 12 : 20 }]}>
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.goBack()}>
             <ChevronLeft size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
@@ -298,19 +301,19 @@ const CartScreen = () => {
                       style={[s.vatOptionBtn, vatType === 'inclusive' && s.vatOptionActive]}
                       onPress={() => setVatType('inclusive')}
                     >
-                      <Text style={[s.vatOptionText, vatType === 'inclusive' && s.vatOptionTextActive]}>{t('vat_inclusive')}</Text>
+                      <Text style={[s.vatOptionText, vatType === 'inclusive' && s.vatOptionTextActive]} adjustsFontSizeToFit numberOfLines={1}>{t('vat_inclusive')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[s.vatOptionBtn, vatType === 'exclusive' && s.vatOptionActive]}
                       onPress={() => setVatType('exclusive')}
                     >
-                      <Text style={[s.vatOptionText, vatType === 'exclusive' && s.vatOptionTextActive]}>{t('vat_exclusive')}</Text>
+                      <Text style={[s.vatOptionText, vatType === 'exclusive' && s.vatOptionTextActive]} adjustsFontSizeToFit numberOfLines={1}>{t('vat_exclusive')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[s.vatOptionBtn, vatType === 'none' && s.vatOptionActive]}
                       onPress={() => setVatType('none')}
                     >
-                      <Text style={[s.vatOptionText, vatType === 'none' && s.vatOptionTextActive]}>{t('vat_none')}</Text>
+                      <Text style={[s.vatOptionText, vatType === 'none' && s.vatOptionTextActive]} adjustsFontSizeToFit numberOfLines={1}>{t('vat_none')}</Text>
                     </TouchableOpacity>
                   </View>
                   {vatType === 'exclusive' && (

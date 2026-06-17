@@ -20,6 +20,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
@@ -136,6 +137,9 @@ export const OrderBottomSheet = ({
   onPayment: () => void;
   onPrint?: () => void;
 }) => {
+  const { height: SH, width: SW } = useWindowDimensions();
+  const isSmallScreen = SW < 360;
+
   const { t } = useTranslation();
   if (!order) return null;
   const STATUS_CONFIG = getStatusConfig(t);
@@ -309,6 +313,9 @@ export const OrderBottomSheet = ({
 
 // ─── Hợp phần chính ───────────────────────────────────────────────────────────
 const OrderScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "done">("all");
@@ -570,7 +577,7 @@ const OrderScreen = () => {
             <Clock size={14} color="rgba(255,255,255,0.8)" />
             <Text style={s.summaryCardLabel}>{t('today')}</Text>
           </View>
-          <Text style={s.summaryCardAmount}>{formatCurrency(todayTotal)}</Text>
+          <Text style={s.summaryCardAmount} adjustsFontSizeToFit numberOfLines={1}>{formatCurrency(todayTotal)}</Text>
           <Text style={s.summaryCardSub}>{todayOrders.length} đơn</Text>
         </View>
         <View style={s.summaryCardRight}>
@@ -578,7 +585,7 @@ const OrderScreen = () => {
             <CheckCircle size={14} color={COLORS.success} />
             <Text style={s.completionLabel}>{t('completed')}</Text>
           </View>
-          <Text style={s.completionPct}>{completionPct}%</Text>
+          <Text style={s.completionPct} adjustsFontSizeToFit numberOfLines={1}>{completionPct}%</Text>
           <Text style={s.completionSub}>
             {doneCount}/{allOrders.length} đơn
           </Text>
@@ -1073,6 +1080,7 @@ const bs = StyleSheet.create({
     height: 54,
     borderRadius: 16,
     marginTop: 14,
+    marginHorizontal: 20,
     elevation: 4,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
@@ -1084,6 +1092,7 @@ const bs = StyleSheet.create({
     marginTop: 20,
     alignItems: "center",
     padding: 16,
+    marginHorizontal: 20,
     backgroundColor: "#FAFAFA",
     borderRadius: 16,
     borderWidth: 1,

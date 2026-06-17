@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.vinhdev04.nativecoffee'
+    namespace 'com.vinhdev04.chipsbill'
     defaultConfig {
-        applicationId 'com.vinhdev04.nativecoffee'
+        applicationId 'com.vinhdev04.chipsbill'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

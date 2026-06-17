@@ -24,7 +24,25 @@ class SocketClient {
       this.socket = null;
     }
 
-    this.socket = io(this.url, {
+    // Tách origin và path để tránh lỗi Invalid namespace khi kết nối qua Socket.IO
+    let connectionUrl = this.url;
+    let pathOption: string | undefined = undefined;
+
+    if (this.url.startsWith('http')) {
+      const doubleSlashIndex = this.url.indexOf('//');
+      if (doubleSlashIndex !== -1) {
+        const nextSlashIndex = this.url.indexOf('/', doubleSlashIndex + 2);
+        if (nextSlashIndex !== -1) {
+          connectionUrl = this.url.substring(0, nextSlashIndex);
+          pathOption = this.url.substring(nextSlashIndex);
+        }
+      }
+    }
+
+    console.log('[Socket khởi tạo]: Url =', connectionUrl, 'Path =', pathOption);
+
+    this.socket = io(connectionUrl, {
+      path: pathOption,
       transports: ['websocket'],
       autoConnect: true,
       auth: {

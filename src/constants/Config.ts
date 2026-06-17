@@ -25,7 +25,7 @@ console.log('Đường dẫn đăng nhập đầy đủ:', `${APP_CONFIG.apiUrl}
 console.log('Tìm thấy khóa công khai:', !!APP_CONFIG.publicKey);
 
 export const APP_ASSETS = {
-  logo: require("@/public/logo.png"),
+  logo: require("@/assets/images/logo.png"),
   splashBg: require("@/assets/images/splash_bg.png"),
   coffeePattern: require("@/assets/images/coffee_pattern.png"),
 };

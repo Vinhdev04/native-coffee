@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, User, Mail, Save, Smile } from 'lucide-react-native';
@@ -9,6 +9,9 @@ import { updateProfileApi } from '@/services/authService';
 import Toast from 'react-native-toast-message';
 
 const UpdateProfileScreen = () => {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
+
   const navigation = useNavigation();
   const { user, login, token } = useAuth(); 
 
@@ -56,7 +59,7 @@ const UpdateProfileScreen = () => {
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
           <ArrowLeft size={24} color="#374151" />
         </TouchableOpacity>
@@ -64,7 +67,7 @@ const UpdateProfileScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[s.content, { paddingHorizontal: isSmallScreen ? 16 : 20 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={s.avatarSection}>
           <View style={s.avatarWrap}>
             <Smile size={36} color="#F97316" />

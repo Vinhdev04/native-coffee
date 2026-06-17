@@ -9,7 +9,8 @@
     "start": "react-native start",
     "test": "jest",
     "postinstall": "patch-package",
-    "generate-icons": "npx icon-set-creator create -A -I ./src/public/logo.png -b '#ffffff'",
+    "generate-icons": "npx icon-set-creator create -A -I ./public/logo.png -b '#ffffff'",
+    "generate-base64": "node scripts/generateLogoBase64.js",
     "expo:start": "expo start",
     "expo:android": "expo run:android",
     "expo:ios": "expo run:ios"
