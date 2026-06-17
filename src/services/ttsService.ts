@@ -27,8 +27,8 @@ loadSpeech();
  */
 export const speakPaymentSuccess = (amount: number, customerName?: string) => {
   // Định dạng số tiền có dấu phân cách nghìn cho dễ đọc/phát âm (nếu engine hỗ trợ)
-  const amountStr = amount.toString();
-  const text = `Đã nhận thanh toán ${amountStr} đồng. Xin cảm ơn!`;
+  const amountStr = amount.toLocaleString('vi-VN');
+  const text = `Thanh toán thành công ${amountStr} đồng`;
 
   console.log(`[TTS] Phát thông báo thanh toán thành công -> văn bản: "${text}"`);
 
@@ -38,16 +38,23 @@ export const speakPaymentSuccess = (amount: number, customerName?: string) => {
   }
 
   try {
-    // Dừng phát giọng nói cũ (không await để tránh trễ thời gian khởi tạo âm thanh mới)
-    Speech.stop();
+    try { Speech.stop(); } catch {}
 
     Speech.speak(text, {
       language: 'vi-VN',
-      rate: 1.0, // Tốc độ đọc
+      rate: 1.0,
       pitch: 1.0,
       onStart: () => console.log('[TTS] Bắt đầu phát giọng nói'),
       onDone: () => console.log('[TTS] Kết thúc phát giọng nói'),
-      onError: (err: any) => console.error('[TTS] Lỗi phát giọng nói:', err),
+      onError: (err: any) => {
+        console.error('[TTS] Lỗi phát giọng nói (vi-VN):', err);
+        // Fallback sang giọng mặc định của hệ thống nếu vi-VN thất bại
+        Speech.speak(text, {
+          rate: 1.0,
+          onStart: () => console.log('[TTS] Bắt đầu phát giọng nói (dự phòng)'),
+          onError: (e: any) => console.error('[TTS] Lỗi phát giọng nói (dự phòng):', e),
+        });
+      },
     });
   } catch (e) {
     console.error('[TTS] Không thể phát giọng nói:', e);
@@ -60,7 +67,7 @@ export const speakPaymentSuccess = (amount: number, customerName?: string) => {
 export const stopSpeaking = async () => {
   if (!Speech) return;
   try {
-    await Speech.stop();
+    try { await Speech.stop(); } catch {}
     console.log('[TTS] Đã dừng phát giọng nói');
   } catch (e) {
     console.error('[TTS] Dừng phát giọng nói thất bại:', e);

@@ -11,7 +11,7 @@ import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
 import { fetchAttributes, fetchProductById } from '@/services/productService';
 import {
-  ChevronLeft, Star, Minus, Plus, ShoppingBag, Heart, CheckCircle2, Circle
+  ChevronLeft, Minus, Plus, ShoppingBag, Heart, CheckCircle2, Circle, CheckSquare, Square
 } from 'lucide-react-native';
 import Toast from '@/components/common/Toast';
 
@@ -79,13 +79,40 @@ const ProductDetailScreen = () => {
     return groups;
   }, [attributes]);
 
+  // Từ khóa nhận diện nhóm TOPPING (chọn nhiều)
+  const TOPPING_KEYWORDS = ['topping', 'TOP PING'];
+  const isToppingGroup = (name: string) =>
+    TOPPING_KEYWORDS.some((kw) => name.toLowerCase().includes(kw.toLowerCase()));
+
+  const getGroupDisplayName = (groupKey: string) => {
+    const isNumeric = !isNaN(Number(groupKey));
+    return isNumeric && attributeGroups[Number(groupKey)]
+      ? attributeGroups[Number(groupKey)]
+      : groupKey;
+  };
+
   const toggleAttribute = (attr: any) => {
-    if (selectedAttributes.find((a) => a.id === attr.id)) {
+    const groupKey = attr.attributeId || attr.attributeName || 'Tùy chọn';
+    const groupName = getGroupDisplayName(String(groupKey));
+    const isTopping = isToppingGroup(groupName);
+    const alreadySelected = selectedAttributes.find((a) => a.id === attr.id);
+
+    if (alreadySelected) {
+      // Bỏ chọn nếu đã chọn (áp dụng cho cả radio và checkbox)
       setSelectedAttributes(selectedAttributes.filter((a) => a.id !== attr.id));
-    } else {
+    } else if (isTopping) {
+      // TOPPING: checkbox — chọn nhiều được
       setSelectedAttributes([...selectedAttributes, attr]);
+    } else {
+      // Các nhóm khác: radio — chỉ chọn 1
+      const withoutSameGroup = selectedAttributes.filter((a) => {
+        const aGroup = a.attributeId || a.attributeName || 'Tùy chọn';
+        return aGroup !== groupKey;
+      });
+      setSelectedAttributes([...withoutSameGroup, attr]);
     }
   };
+
 
   const extraPrice = selectedAttributes.reduce((sum, attr) => sum + (Number(attr.priceDelta) || 0), 0);
   const basePrice  = Number(product.basePrice) || Number(product.price) || 0;
@@ -120,7 +147,7 @@ const ProductDetailScreen = () => {
       />
 
       <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-        {/* Hero Image */}
+        {/* Ảnh sản phẩm */}
         <View style={s.heroContainer}>
           <Image
             source={{ uri: product.imageUrl || product.image || FALLBACK_IMAGE }}
@@ -160,29 +187,47 @@ const ProductDetailScreen = () => {
 
           {/* Các thuộc tính đã gom nhóm */}
           {Object.entries(groupedAttributes).map(([groupKey, items]) => {
-            // groupKey có thể là attributeName như "SIZE", hoặc attributeId như "1".
-            const isNumeric = !isNaN(Number(groupKey));
-            const groupName = isNumeric && attributeGroups[Number(groupKey)] 
-              ? attributeGroups[Number(groupKey)] 
-              : groupKey;
+            const groupName = getGroupDisplayName(groupKey);
+            const isTopping = isToppingGroup(groupName);
 
             return (
               <View key={groupKey} style={s.section}>
-                <Text style={s.sectionTitle}>{groupName.toUpperCase()}</Text>
+                {/* Tiêu đề nhóm thuộc tính kèm nhãn */}
+                <View style={s.sectionHeader}>
+                  <Text style={s.sectionTitle}>{groupName.toUpperCase()}</Text>
+                  {isTopping && (
+                    <View style={s.badgeMulti}>
+                      <Text style={s.badgeMultiText}>Chọn nhiều</Text>
+                    </View>
+                  )}
+                </View>
+
                 <View style={s.chipRow}>
                   {items.map((attr: any) => {
                     const isActive = !!selectedAttributes.find((a) => a.id === attr.id);
                     return (
                       <TouchableOpacity
                         key={attr.id}
-                        style={[s.chip, isActive && s.chipActive]}
+                        style={[
+                          s.chip,
+                          isActive && (isTopping ? s.chipActiveTopping : s.chipActive),
+                        ]}
                         onPress={() => toggleAttribute(attr)}
                         activeOpacity={0.7}
                       >
-                        {isActive ? (
-                          <CheckCircle2 size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                        {/* Icon: checkbox cho topping, hình tròn chọn một cho các nhóm khác */}
+                        {isTopping ? (
+                          isActive ? (
+                            <CheckSquare size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                          ) : (
+                            <Square size={16} color="#D1D5DB" style={{ marginRight: 6 }} />
+                          )
                         ) : (
-                          <Circle size={16} color="#D1D5DB" style={{ marginRight: 6 }} />
+                          isActive ? (
+                            <CheckCircle2 size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                          ) : (
+                            <Circle size={16} color="#D1D5DB" style={{ marginRight: 6 }} />
+                          )
                         )}
                         <Text style={[s.chipText, isActive && s.chipTextActive]}>
                           {attr.name}
@@ -199,6 +244,7 @@ const ProductDetailScreen = () => {
               </View>
             );
           })}
+
 
           <View style={s.divider} />
 
@@ -311,7 +357,26 @@ const s = StyleSheet.create({
   divider: { height: 1, backgroundColor: '#F3F4F6', marginBottom: 22 },
 
   section: { marginBottom: 22 },
-  sectionTitle: { fontFamily: FONTS.semiBold, fontSize: 15, color: COLORS.textPrimary, marginBottom: 14 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 8,
+  },
+  sectionTitle: { fontFamily: FONTS.semiBold, fontSize: 15, color: COLORS.textPrimary },
+  badgeMulti: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  badgeMultiText: {
+    fontFamily: FONTS.medium,
+    fontSize: 10,
+    color: COLORS.primary,
+  },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: {
     flexDirection: 'row',
@@ -320,6 +385,7 @@ const s = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   chipActive: { borderColor: COLORS.primary, backgroundColor: '#FFF7ED' },
+  chipActiveTopping: { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
   chipText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textSecondary },
   chipPrice: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textMuted },
   chipTextActive: { color: COLORS.primary },

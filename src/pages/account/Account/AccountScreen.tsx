@@ -1,31 +1,30 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Image, StatusBar, Alert, Platform,
+  ScrollView, Image, StatusBar, Platform, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { 
   User, Lock, Printer, Globe, Headset, 
-  LogOut, ChevronRight, ArrowLeft 
+  LogOut, ChevronRight, ArrowLeft, Check 
 } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { COLORS, FONTS } from '@/styles/theme';
 import Toast from '@/components/common/Toast';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 const AccountScreen = () => {
+  const navigation = useNavigation();
   const { user, logout } = useAuth();
+  const { t, i18n } = useTranslation();
   const [toast, setToast] = useState({ visible: false, title: '', message: '' });
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [langModalVisible, setLangModalVisible] = useState(false);
 
-  const displayName = user?.fullName || user?.username || 'Trần Thị Nhân Viên';
-  const displayRole = user?.role || 'Nhân viên bán hàng';
-
-  const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn chắc chắn muốn đăng xuất?', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: 'Đăng xuất', style: 'destructive', onPress: logout },
-    ]);
-  };
+  const displayName = user?.fullName || user?.username || t('anonymous_customer');
+  const displayRole = user?.role || t('staff_role');
 
   const MenuItem = ({ icon: Icon, label, onPress }: any) => (
     <TouchableOpacity style={s.menuItem} onPress={onPress} activeOpacity={0.7}>
@@ -36,6 +35,11 @@ const AccountScreen = () => {
       <ChevronRight size={18} color="#D1D5DB" />
     </TouchableOpacity>
   );
+
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+    setLangModalVisible(false);
+  };
 
   return (
     <View style={s.container}>
@@ -61,22 +65,23 @@ const AccountScreen = () => {
               <TouchableOpacity style={s.backBtn}>
                 <ArrowLeft size={24} color="#FFF" />
               </TouchableOpacity>
-              <Text style={s.headerTitle}>Hồ Sơ</Text>
+              <Text style={s.headerTitle}>{t('profile')}</Text>
               <View style={{ width: 40 }} />
             </View>
 
             <View style={s.profileInfo}>
               <View style={s.avatarContainer}>
                 <Image 
-                  source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' }} 
+                  source={require('@/public/logo.png')} 
                   style={s.avatar} 
+                  resizeMode="contain"
                 />
               </View>
               <View style={s.nameContainer}>
                 <Text style={s.profileName}>{displayName}</Text>
                 <Text style={s.profileRole}>{displayRole}</Text>
                 <View style={s.badge}>
-                  <Text style={s.badgeText}>Staff</Text>
+                  <Text style={s.badgeText}>{t('staff_badge')}</Text>
                 </View>
               </View>
             </View>
@@ -87,36 +92,100 @@ const AccountScreen = () => {
         <View style={s.statsContainer}>
           <View style={s.statCard}>
             <Text style={s.statValue}>128</Text>
-            <Text style={s.statLabel}>Đơn hôm nay</Text>
+            <Text style={s.statLabel}>{t('today_orders')}</Text>
           </View>
           <View style={s.statCard}>
             <Text style={s.statValue}>4.9</Text>
-            <Text style={s.statLabel}>Đánh giá</Text>
+            <Text style={s.statLabel}>{t('rating')}</Text>
           </View>
           <View style={s.statCard}>
             <Text style={s.statValue}>92%</Text>
-            <Text style={s.statLabel}>Hoàn thành</Text>
+            <Text style={s.statLabel}>{t('completed')}</Text>
           </View>
         </View>
 
         {/* ── Settings List ── */}
         <View style={s.menuSection}>
-          <Text style={s.sectionTitle}>CÀI ĐẶT</Text>
-          <MenuItem icon={User} label="Thông Tin Tài Khoản" onPress={() => {}} />
-          <MenuItem icon={Lock} label="Đổi Mật Khẩu" onPress={() => {}} />
-          <MenuItem icon={Printer} label="Cài Đặt Máy In" onPress={() => {}} />
-          <MenuItem icon={Globe} label="Ngôn Ngữ" onPress={() => {}} />
-          <MenuItem icon={Headset} label="Hỗ Trợ" onPress={() => {}} />
+          <Text style={s.sectionTitle}>{t('settings_uppercase')}</Text>
+          <MenuItem icon={User} label={t('account_info')} onPress={() => navigation.navigate('UpdateProfile' as never)} />
+          <MenuItem icon={Lock} label={t('change_password')} onPress={() => navigation.navigate('ChangePassword' as never)} />
+          <MenuItem icon={Printer} label={t('printer_settings')} onPress={() => {}} />
+          <MenuItem icon={Globe} label={t('language')} onPress={() => setLangModalVisible(true)} />
+          <MenuItem icon={Headset} label={t('support')} onPress={() => {}} />
         </View>
 
         {/* ── Logout Button ── */}
-        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+        <TouchableOpacity style={s.logoutBtn} onPress={() => setLogoutModalVisible(true)}>
           <LogOut size={22} color="#EF4444" />
-          <Text style={s.logoutText}>Đăng Xuất</Text>
+          <Text style={s.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* ── Language Modal ── */}
+      <Modal
+        visible={langModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLangModalVisible(false)}
+      >
+        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => setLangModalVisible(false)}>
+          <View style={[s.modalContent, { padding: 0, overflow: 'hidden' }]}>
+            <View style={{ padding: 20, backgroundColor: '#FFF7ED', width: '100%', alignItems: 'center' }}>
+              <Globe size={28} color="#F97316" style={{ marginBottom: 10 }} />
+              <Text style={s.modalTitle}>{t('change_language')}</Text>
+            </View>
+            <View style={{ width: '100%', padding: 16 }}>
+              <TouchableOpacity 
+                style={[s.langOption, i18n.language === 'vn' && s.langOptionActive]} 
+                onPress={() => changeLanguage('vn')}
+              >
+                <Text style={[s.langText, i18n.language === 'vn' && s.langTextActive]}>{t('vietnamese')}</Text>
+                {i18n.language === 'vn' && <Check size={20} color="#F97316" />}
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[s.langOption, i18n.language === 'en' && s.langOptionActive]} 
+                onPress={() => changeLanguage('en')}
+              >
+                <Text style={[s.langText, i18n.language === 'en' && s.langTextActive]}>{t('english')}</Text>
+                {i18n.language === 'en' && <Check size={20} color="#F97316" />}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ── Custom Logout Modal ── */}
+      <Modal
+        visible={logoutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutModalVisible(false)}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <View style={s.modalIconWrap}>
+              <LogOut size={28} color="#EF4444" />
+            </View>
+            <Text style={s.modalTitle}>{t('logout_confirm_title')}</Text>
+            <Text style={s.modalSub}>{t('logout_confirm_desc')}</Text>
+            
+            <View style={s.modalActions}>
+              <TouchableOpacity style={s.btnCancel} onPress={() => setLogoutModalVisible(false)}>
+                <Text style={s.btnCancelText}>{t('stay')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.btnConfirm} onPress={() => {
+                setLogoutModalVisible(false);
+                logout();
+              }}>
+                <Text style={s.btnConfirmText}>{t('logout')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -153,10 +222,13 @@ const s = StyleSheet.create({
     marginTop: 24,
   },
   avatarContainer: {
-    width: 72, height: 72, borderRadius: 36,
-    borderWidth: 3, borderColor: '#FFF',
+    width: 72, height: 72, borderRadius: 16,
+    borderWidth: 2, borderColor: '#FFF',
     overflow: 'hidden',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 8,
   },
   avatar: { width: '100%', height: '100%' },
   nameContainer: { marginLeft: 16 },
@@ -230,6 +302,84 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: '#FEE2E2',
   },
   logoutText: { fontFamily: FONTS.bold, fontSize: 16, color: '#EF4444' },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalIconWrap: {
+    width: 60, height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: { fontFamily: FONTS.bold, fontSize: 20, color: '#111827', marginBottom: 6 },
+  modalSub: { fontFamily: FONTS.regular, fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
+  modalActions: { flexDirection: 'row', gap: 12, width: '100%' },
+  btnCancel: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+  },
+  btnCancelText: { fontFamily: FONTS.semiBold, fontSize: 15, color: '#374151' },
+  btnConfirm: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  btnConfirmText: { fontFamily: FONTS.bold, fontSize: 15, color: '#FFF' },
+  langOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#F3F4F6'
+  },
+  langOptionActive: {
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FED7AA'
+  },
+  langText: {
+    fontFamily: FONTS.medium,
+    fontSize: 16,
+    color: '#4B5563'
+  },
+  langTextActive: {
+    fontFamily: FONTS.bold,
+    color: '#F97316'
+  }
 });
 
 export default AccountScreen;

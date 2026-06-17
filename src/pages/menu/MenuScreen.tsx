@@ -8,61 +8,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { COLORS, FONTS } from '@/styles/theme';
-import { Search, X, Plus, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { Search, X, ShoppingBag, Coffee as CoffeeIcon } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
-import { formatCurrency } from '@/utils';
 import { useCart } from '@/context/CartContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import Toast from '@/components/common/Toast';
 import ProductModal from '@/components/menu/ProductModal';
+import ProductCardHorizontal from '@/components/home/ProductCardHorizontal';
+import ReceiptModal from '@/components/common/ReceiptModal';
 
-/* ── Hình ảnh dự phòng ── */
-const DRINK_FALLBACKS = [
-  'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1515823064-d6e0c04616a4?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1558857563-b37102e99e00?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1622597467836-f3e5474e4b61?auto=format&fit=crop&w=200&q=80',
-];
-const getFallback = (id: number) => DRINK_FALLBACKS[id % DRINK_FALLBACKS.length];
-
-const ProductRow = ({ item, onPress, onAddCart }: { item: any; onPress: () => void; onAddCart: () => void; }) => (
-  <TouchableOpacity style={pr.card} activeOpacity={0.9} onPress={onPress}>
-    <Image source={{ uri: item.imageUrl || item.image || getFallback(item.id) }} style={pr.image} resizeMode="cover" />
-    <View style={pr.info}>
-      <View style={{ flex: 1 }}>
-        <Text style={pr.name} numberOfLines={1}>{item.name}</Text>
-        <Text style={pr.desc} numberOfLines={2}>
-          {item.description || item.categoryName || 'Hương vị tươi ngon mỗi ngày.'}
-        </Text>
-      </View>
-      <View style={pr.bottom}>
-        <Text style={pr.price}>{formatCurrency(item.basePrice || item.price || 0)}</Text>
-        <TouchableOpacity style={pr.addBtn} onPress={onAddCart}>
-          <Text style={pr.addBtnText}>Thêm</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </TouchableOpacity>
-);
-
-const pr = StyleSheet.create({
-  card: {
-    flexDirection: 'row', padding: 12, marginHorizontal: 16, marginVertical: 8,
-    backgroundColor: COLORS.white, borderRadius: 22, shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
-  },
-  image: { width: 95, height: 95, borderRadius: 18, backgroundColor: '#F3F4F6' },
-  info: { flex: 1, marginLeft: 14, justifyContent: 'space-between', paddingVertical: 2 },
-  name: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary },
-  desc: { fontFamily: FONTS.regular, fontSize: 12, color: '#9CA3AF', lineHeight: 16 },
-  bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  price: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
-  addBtn: {
-    paddingHorizontal: 18, paddingVertical: 7, borderRadius: 16, backgroundColor: COLORS.primary,
-  },
-  addBtnText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white },
-});
 
 const SectionHeader = ({ title }: { title: string }) => (
   <View style={sh.wrap}>
@@ -79,7 +34,8 @@ const sh = StyleSheet.create({
 const MenuScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { totalItems, addToCart } = useCart();
+  const { t } = useTranslation();
+  const { items, totalItems, addToCart } = useCart();
 
   const [categories, setCategories] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -90,6 +46,8 @@ const MenuScreen = () => {
   const [toast, setToast] = useState({ visible: false, title: '', message: '' });
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isReceiptVisible, setIsReceiptVisible] = useState(false);
+  const [receiptOrder, setReceiptOrder] = useState<any>(null);
 
   const sectionListRef = useRef<SectionList>(null);
   const categoryListRef = useRef<FlatList>(null);
@@ -121,6 +79,16 @@ const MenuScreen = () => {
     }
   };
 
+  const allCats = React.useMemo(() => [{ id: 'all', name: t('all'), imageUrl: null }, ...categories], [categories, t]);
+
+  // Tự động cuộn thanh danh mục để hiển thị mục đang hoạt động
+  const scrollCatBarToActive = React.useCallback((catId: number | 'all') => {
+    const idx = allCats.findIndex(c => c.id === catId);
+    if (idx >= 0) {
+      categoryListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
+    }
+  }, [allCats]);
+
   const sections = React.useMemo(() => {
     const searchLower = debouncedSearch.toLowerCase();
     return categories
@@ -149,6 +117,21 @@ const MenuScreen = () => {
     }
   };
 
+  // Phát hiện phần hiển thị khi cuộn để cập nhật danh mục hoạt động
+  const onViewableItemsChanged = React.useCallback(({ viewableItems }: any) => {
+    if (isScrollingFromPress.current || debouncedSearch) return;
+    if (viewableItems.length > 0) {
+      const topItem = viewableItems[0];
+      const catId = topItem.section?.catId;
+      if (catId && catId !== activeCategory) {
+        setActiveCategory(catId);
+        scrollCatBarToActive(catId);
+      }
+    }
+  }, [activeCategory, debouncedSearch, scrollCatBarToActive]);
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
+
   const renderCategory = ({ item }: { item: any }) => {
     const isActive = item.id === activeCategory || (item.id === 'all' && activeCategory === 'all');
     return (
@@ -161,7 +144,21 @@ const MenuScreen = () => {
 
   const handleAddToCart = (item: any) => {
     addToCart(item);
-    setToast({ visible: true, title: 'Đã thêm vào giỏ! 🎉', message: item.name });
+    setToast({
+      visible: true,
+      title: t('added_to_cart'),
+      message: `${item.name}. ${t('tap_to_view_cart')}`
+    });
+  };
+
+  const handlePrintProduct = (item: any) => {
+    setReceiptOrder({
+      id: 'DRAFT-' + Math.floor(Math.random() * 1000),
+      items: [{ ...item, quantity: 1, price: item.basePrice || item.price }],
+      totalPrice: item.basePrice || item.price,
+      customerName: 'Khách xem mẫu',
+    });
+    setIsReceiptVisible(true);
   };
 
   const handleProductPress = (product: any) => {
@@ -174,7 +171,7 @@ const MenuScreen = () => {
       <SafeAreaView style={s.container}>
         <View style={s.loadingWrap}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={s.loadingText}>Đang tải thực đơn...</Text>
+          <Text style={s.loadingText}>{t('loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -183,15 +180,20 @@ const MenuScreen = () => {
   return (
     <SafeAreaView style={s.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
-      <Toast visible={toast.visible} type="success" title={toast.title} message={toast.message} onHide={() => setToast(t => ({ ...t, visible: false }))} />
+      <Toast 
+        visible={toast.visible} type="success" title={toast.title} message={toast.message} 
+        onHide={() => setToast(t => ({ ...t, visible: false }))} 
+        onPress={() => {
+          setToast(t => ({ ...t, visible: false }));
+          navigation.navigate('Cart');
+        }}
+      />
 
       <View style={s.header}>
-        <View>
-          <Text style={s.headerTitle}>Thực đơn</Text>
-          <Text style={s.headerSub}>{allProducts.length} món</Text>
-        </View>
-        <TouchableOpacity style={s.cartBtn} onPress={() => navigation.navigate('Cart')}>
-          <ShoppingBag size={20} color="#fff" />
+        <View style={s.headerLeft} />
+        <Text style={s.headerTitle}>{t('menu_title')}</Text>
+        <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
+          <ShoppingBag size={20} color={COLORS.primary} />
           {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText}>{totalItems}</Text></View>}
         </TouchableOpacity>
       </View>
@@ -203,7 +205,7 @@ const MenuScreen = () => {
             style={s.searchInput}
             value={searchText}
             onChangeText={setSearchText}
-            placeholder="Tìm kiếm đồ uống..."
+            placeholder={t('search_placeholder')}
             placeholderTextColor="#9CA3AF"
           />
           {searchText.length > 0 && (
@@ -215,7 +217,7 @@ const MenuScreen = () => {
       <View style={s.catBar}>
         <FlatList
           ref={categoryListRef}
-          data={[{ id: 'all', name: 'Tất cả', imageUrl: null }, ...categories]}
+          data={[{ id: 'all', name: t('all'), imageUrl: null }, ...categories]}
           renderItem={renderCategory}
           keyExtractor={(item) => item.id.toString()}
           horizontal
@@ -227,23 +229,48 @@ const MenuScreen = () => {
       {sections.length === 0 ? (
         <View style={s.emptyWrap}>
           <CoffeeIcon size={52} color="#E5E7EB" />
-          <Text style={s.emptyTitle}>Không tìm thấy sản phẩm</Text>
+          <Text style={s.emptyTitle}>{t('no_products_found')}</Text>
         </View>
       ) : (
         <SectionList
           ref={sectionListRef}
           sections={sections}
           keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
-          renderItem={({ item }) => <ProductRow item={item} onPress={() => handleProductPress(item)} onAddCart={() => handleProductPress(item)} />}
+          renderItem={({ item }) => {
+            const cartQty = items
+              .filter(cartItem => Number(cartItem.id) === Number(item.id))
+              .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+
+            return (
+              <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
+                <ProductCardHorizontal 
+                  product={item} 
+                  onPress={() => handleProductPress(item)} 
+                  onAddPress={() => handleAddToCart(item)} 
+                  onPrintPress={() => handlePrintProduct(item)}
+                  searchText={debouncedSearch} 
+                  cartQuantity={cartQty}
+                />
+              </View>
+            );
+          }}
           renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
           stickySectionHeadersEnabled
           showsVerticalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig.current}
           contentContainerStyle={{ paddingBottom: 100 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />}
         />
       )}
 
       <ProductModal visible={isModalVisible} product={selectedProduct} onClose={() => setIsModalVisible(false)} onAddToCart={handleAddToCart} />
+      <ReceiptModal 
+        visible={isReceiptVisible} 
+        onClose={() => setIsReceiptVisible(false)} 
+        order={receiptOrder}
+        title="PHIẾU XEM TRƯỚC MÓN"
+      />
     </SafeAreaView>
   );
 };
@@ -255,18 +282,25 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingBottom: 14,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
-    backgroundColor: '#1A1A2E',
+    paddingHorizontal: 20, 
+    paddingVertical: Platform.OS === 'android' ? 10 : 15, 
+    backgroundColor: COLORS.white,
   },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 24, color: '#fff' },
-  headerSub: { fontFamily: FONTS.regular, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
-  cartBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-  badge: { position: 'absolute', top: -2, right: -2, backgroundColor: COLORS.primary, borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#1A1A2E' },
-  badgeText: { fontFamily: FONTS.bold, fontSize: 9, color: '#fff' },
+  headerLeft: { width: 44 },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary, flex: 1, textAlign: 'center' },
+  headerBtn: { 
+    width: 44, height: 44, justifyContent: 'center', alignItems: 'center', 
+    backgroundColor: '#F9FAFB', borderRadius: 14,
+    elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
+  },
+  badge: { 
+    position: 'absolute', top: -4, right: -4, backgroundColor: COLORS.primary, borderRadius: 10, 
+    minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.white 
+  },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 9, color: COLORS.white },
 
-  searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 14 },
-  searchInputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 14, height: 46 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, paddingHorizontal: 16, paddingBottom: 14 },
+  searchInputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F9FAFB', borderRadius: 14, paddingHorizontal: 14, height: 46, borderWidth: 1, borderColor: '#F3F4F6' },
   searchInput: { flex: 1, fontFamily: FONTS.medium, fontSize: 14, color: '#374151' },
 
   catBar: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },

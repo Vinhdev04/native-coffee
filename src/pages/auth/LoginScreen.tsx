@@ -1,46 +1,65 @@
-/**
- * @file LoginScreen.tsx
- * @desc Màn hình đăng nhập — xử lý form xác thực, mã hóa mật khẩu RSA
- *       và điều hướng vào ứng dụng sau khi login thành công.
- * @layer pages/auth
- */
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, Image,
   KeyboardAvoidingView, Platform, ScrollView,
-  ImageBackground, StatusBar,
+  StatusBar, Animated, Dimensions,
 } from 'react-native';
-import { useTranslation }  from 'react-i18next';
-import { useNavigation }   from '@react-navigation/native';
-import { useAuth }         from '@/context/AuthContext';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '@/styles/theme';
-import { encryptWithRSA }  from '@/utils/encryption';
-import { loginApi }      from '@/services/authService';
-import Toast               from 'react-native-toast-message';
-import LinearGradient     from 'react-native-linear-gradient';
-import { 
-  User, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Coffee as CoffeeIcon, 
-  ChevronRight,
-  Fingerprint
+import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '@/context/AuthContext';
+import { COLORS, FONTS, SPACING } from '@/styles/theme';
+import { encryptWithRSA } from '@/utils/encryption';
+import { loginApi } from '@/services/authService';
+import Toast from 'react-native-toast-message';
+import LinearGradient from 'react-native-linear-gradient';
+import {
+  User, Lock, Eye, EyeOff, ChevronRight,
+  ShieldCheck, Users, Coffee,
 } from 'lucide-react-native';
 
-const BG_IMAGE = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1000&auto=format&fit=crop';
+const { width } = Dimensions.get('window');
 
 const LoginScreen = () => {
-  const { t }    = useTranslation();
   const { login } = useAuth();
   const navigation = useNavigation<any>();
 
-  const [userName,  setUserName]  = useState('');
-  const [password,  setPassword]  = useState('');
+  const [userName, setUserName] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showPass,  setShowPass]  = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'ADMIN' | 'STAFF' | null>(null);
+
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const animateToForm = (role: 'ADMIN' | 'STAFF') => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      setSelectedRole(role);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  const handleBack = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      setSelectedRole(null);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
 
   const handleLogin = async () => {
     if (!userName.trim() || !password.trim()) {
@@ -50,9 +69,10 @@ const LoginScreen = () => {
 
     setIsLoading(true);
     try {
-      let encryptedPassword = password;
-      try { 
-        encryptedPassword = await encryptWithRSA(password); 
+      const cleanPassword = password.trim();
+      let encryptedPassword = cleanPassword;
+      try {
+        encryptedPassword = await encryptWithRSA(cleanPassword);
       } catch (_) {
         console.warn('Mã hóa RSA thất bại');
       }
@@ -71,128 +91,193 @@ const LoginScreen = () => {
       if ((response?.res_code === 0 || token) && finalUserData) {
         if (token) {
           await login(token, finalUserData);
-          Toast.show({ type: 'success', text1: '☕ Chào mừng đến Native Coffee!', position: 'bottom' });
+          Toast.show({ type: 'success', text1: '🍟 Chào mừng đến Chips Bill!', position: 'bottom' });
         } else {
           Toast.show({ type: 'error', text1: 'Không tìm thấy Token xác thực', position: 'bottom' });
         }
       } else {
         const errorMsg = response?.data?.message || response?.error_cont || 'Đăng nhập không thành công';
         const errorCode = response?.error_code ? `[${response.error_code}] ` : '';
-        Toast.show({ 
-          type: 'error', 
-          text1: 'Đăng nhập thất bại', 
+        Toast.show({
+          type: 'error',
+          text1: 'Đăng nhập thất bại',
           text2: `${errorCode}${errorMsg}`,
-          position: 'bottom' 
+          position: 'bottom',
         });
       }
     } catch (error: any) {
       console.error('Lỗi đăng nhập:', error);
-      Toast.show({ 
-        type: 'error', 
-        text1: 'Lỗi kết nối', 
+      Toast.show({
+        type: 'error',
+        text1: 'Lỗi kết nối',
         text2: error.message || 'Vui lòng thử lại sau',
-        position: 'bottom' 
+        position: 'bottom',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const renderRoleSelection = () => (
+    <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
+      <View style={styles.header}>
+        <Image
+          source={require('@/public/logo.png')}
+          style={styles.mainLogo}
+          resizeMode="contain"
+        />
+        <Text style={styles.tagline}>Chọn vai trò để bắt đầu làm việc</Text>
+      </View>
+
+      <View style={styles.cardsWrapper}>
+        <TouchableOpacity
+          style={styles.roleCard}
+          activeOpacity={0.7}
+          onPress={() => animateToForm('ADMIN')}
+        >
+          <View style={styles.roleCardContent}>
+            <View style={[styles.roleIconWrapper, { backgroundColor: '#E65100' }]}>
+              <ShieldCheck size={24} color={COLORS.white} />
+            </View>
+            <View style={styles.roleTextWrapper}>
+              <Text style={styles.roleTitle}>Quản Lý (Admin)</Text>
+              <Text style={styles.roleDesc}>Dashboard, thống kê, quản lý thực đơn</Text>
+            </View>
+          </View>
+          <View style={styles.roleArrow}>
+            <ChevronRight size={18} color={COLORS.primary} />
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.roleCard}
+          activeOpacity={0.7}
+          onPress={() => animateToForm('STAFF')}
+        >
+          <View style={styles.roleCardContent}>
+            <View style={[styles.roleIconWrapper, { backgroundColor: '#E06B22' }]}>
+              <Users size={24} color={COLORS.white} />
+            </View>
+            <View style={styles.roleTextWrapper}>
+              <Text style={styles.roleTitle}>Nhân Viên</Text>
+              <Text style={styles.roleDesc}>Đặt hàng, theo dõi đơn, thanh toán</Text>
+            </View>
+          </View>
+          <View style={styles.roleArrow}>
+            <ChevronRight size={18} color={COLORS.primary} />
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.footerBranding}>Chips Bill v1.0  •  Made with love</Text>
+    </Animated.View>
+  );
+
+  const renderLoginForm = () => (
+    <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
+      <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.7}>
+        <View style={styles.backBtnInner}>
+          <ChevronRight size={20} color={COLORS.textPrimary} style={{ transform: [{ rotate: '180deg' }] }} />
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.formCard}>
+        <View style={styles.formIconRow}>
+          <View style={styles.formIcon}>
+            <Image
+              source={require('@/public/logo.png')}
+              style={{ width: 32, height: 32 }}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.formRole}>
+            {selectedRole === 'ADMIN' ? 'Quản lý' : 'Nhân viên'}
+          </Text>
+        </View>
+
+        <Text style={styles.formTitle}>Đăng nhập</Text>
+        <Text style={styles.formSubtitle}>Nhập thông tin tài khoản của bạn</Text>
+
+        <View style={styles.inputGroup}>
+          <View style={styles.inputContainer}>
+            <User size={18} color="#9CA3AF" />
+            <TextInput
+              style={styles.input}
+              placeholder="Tên đăng nhập"
+              placeholderTextColor="#9CA3AF"
+              value={userName}
+              onChangeText={setUserName}
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Lock size={18} color="#9CA3AF" />
+            <TextInput
+              style={styles.input}
+              placeholder="Mật khẩu"
+              placeholderTextColor="#9CA3AF"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPass}
+            />
+            <TouchableOpacity onPress={() => setShowPass(!showPass)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              {showPass ? (
+                <EyeOff size={18} color="#9CA3AF" />
+              ) : (
+                <Eye size={18} color="#9CA3AF" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.forgotPass}
+          onPress={() => navigation.navigate('ForgotPassword')}
+          hitSlop={{ top: 8, bottom: 8 }}
+        >
+          <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.loginBtn, isLoading && styles.btnDisabled]}
+          onPress={handleLogin}
+          disabled={isLoading}
+          activeOpacity={0.85}
+        >
+          {isLoading ? (
+            <ActivityIndicator color={COLORS.white} />
+          ) : (
+            <View style={styles.loginBtnInner}>
+              <Text style={styles.loginBtnText}>Đăng nhập</Text>
+              <ChevronRight size={20} color={COLORS.white} />
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  );
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" transparent backgroundColor="transparent" />
-      <ImageBackground source={{ uri: BG_IMAGE }} style={styles.bgImage}>
-        <LinearGradient
-          colors={['transparent', 'rgba(17, 9, 5, 0.8)', COLORS.primary]}
-          style={styles.gradient}
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <LinearGradient
+        colors={['#FEF9F5', '#FFF0E5']}
+        style={styles.gradient}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.flex}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.keyboardView}
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <ScrollView 
-              contentContainerStyle={styles.scrollContent} 
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Tiêu đề và biểu tượng */}
-              <View style={styles.header}>
-                <View style={styles.logoBadge}>
-                  <CoffeeIcon size={40} color={COLORS.white} />
-                </View>
-                <Text style={styles.brandName}>NATIVE{'\n'}COFFEE</Text>
-                <View style={styles.divider} />
-                <Text style={styles.tagline}>Premium Coffee Experience</Text>
-              </View>
-
-              {/* Phần biểu mẫu */}
-              <View style={styles.formContainer}>
-                <Text style={styles.welcomeText}>Chào mừng trở lại!</Text>
-                
-                {/* Ô nhập tên đăng nhập */}
-                <View style={styles.inputContainer}>
-                  <User size={20} color={COLORS.textMuted} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Tên đăng nhập"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={userName}
-                    onChangeText={setUserName}
-                    autoCapitalize="none"
-                  />
-                </View>
-
-                {/* Ô nhập mật khẩu */}
-                <View style={styles.inputContainer}>
-                  <Lock size={20} color={COLORS.textMuted} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Mật khẩu"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPass}
-                  />
-                  <TouchableOpacity onPress={() => setShowPass(!showPass)}>
-                    {showPass ? <EyeOff size={20} color={COLORS.textMuted} /> : <Eye size={20} color={COLORS.textMuted} />}
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity style={styles.forgotPass}>
-                  <Text style={styles.forgotPassText}>Quên mật khẩu?</Text>
-                </TouchableOpacity>
-
-                {/* Nút đăng nhập */}
-                <TouchableOpacity
-                  style={[styles.loginBtn, isLoading && styles.btnDisabled]}
-                  onPress={handleLogin}
-                  disabled={isLoading}
-                  activeOpacity={0.85}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator color={COLORS.white} />
-                  ) : (
-                    <Text style={styles.loginBtnText}>Đăng nhập</Text>
-                  )}
-                </TouchableOpacity>
-
-                <View style={styles.footerRow}>
-                  <Text style={styles.footerText}>Chưa có tài khoản? </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                    <Text style={styles.registerText}>Đăng ký ngay</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Phần đăng nhập bằng vân tay */}
-                <TouchableOpacity style={styles.bioBtn}>
-                  <Fingerprint size={32} color={COLORS.accent} />
-                  <Text style={styles.bioText}>Sử dụng vân tay</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </LinearGradient>
-      </ImageBackground>
+            {!selectedRole ? renderRoleSelection() : renderLoginForm()}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
     </View>
   );
 };
@@ -200,153 +285,238 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#FEF9F5',
   },
-  bgImage: {
+  flex: {
     flex: 1,
-    width: '100%',
-    height: '100%',
   },
   gradient: {
     flex: 1,
     paddingHorizontal: 24,
   },
-  keyboardView: {
-    flex: 1,
-  },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-end',
-    paddingBottom: 40,
-    paddingTop: 80,
+    justifyContent: 'center',
+    paddingVertical: 48,
   },
+  animatedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+
+  // Role Selection
   header: {
     alignItems: 'center',
-    marginBottom: 60,
+    marginTop: 50,
+    marginBottom: 40,
   },
-  logoBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.accent,
+  logoContainer: {
+    width: 96,
+    height: 96,
+    backgroundColor: COLORS.white,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
     elevation: 10,
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+  },
+  mainLogo: {
+    width: width * 0.6,
+    height: 80,
+    marginBottom: 10,
+  },
+  logoImg: {
+    width: 32,
+    height: 32,
   },
   brandName: {
-    fontFamily: FONTS.bold,
-    fontSize: 40,
-    color: COLORS.white,
-    textAlign: 'center',
-    lineHeight: 45,
-    letterSpacing: 4,
-  },
-  divider: {
-    width: 50,
-    height: 3,
-    backgroundColor: COLORS.accent,
-    marginVertical: 15,
-    borderRadius: 2,
+    fontFamily: 'GreatVibes-Regular',
+    fontSize: 38,
+    fontWeight: '800',
+    color: '#F7941D', // Vibrant Chips Orange
+    marginBottom: 8,
+    textShadowColor: 'rgba(247, 148, 29, 0.2)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 10,
   },
   tagline: {
     fontFamily: FONTS.medium,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+    fontSize: 15,
+    color: '#8B7B71',
   },
-  formContainer: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 30,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-    backdropFilter: 'blur(10px)', // Lưu ý: Chỉ hoạt động trên một số nền tảng hoặc thư viện
+  cardsWrapper: {
+    width: '100%',
+    gap: 14,
   },
-  welcomeText: {
+  roleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.white,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderRadius: 22,
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  roleCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  roleIconWrapper: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  roleTextWrapper: {
+    flex: 1,
+    paddingHorizontal: 14,
+  },
+  roleTitle: {
     fontFamily: FONTS.bold,
-    fontSize: 22,
-    color: COLORS.white,
-    marginBottom: 25,
+    fontSize: 17,
+    color: COLORS.textPrimary,
+    marginBottom: 3,
+  },
+  roleDesc: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
+  roleArrow: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#FFF0E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerBranding: {
+    textAlign: 'center',
+    marginTop: 48,
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: '#B0A299',
+  },
+
+  // Login Form
+  backBtn: {
+    marginBottom: 20,
+  },
+  backBtnInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  formCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 28,
+    padding: 28,
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  formIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  formIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  formRole: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 15,
+    color: COLORS.textSecondary,
+  },
+  formTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 26,
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  formSubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: COLORS.textMuted,
+    marginBottom: 28,
+  },
+  inputGroup: {
+    gap: 14,
+    marginBottom: 4,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 18,
     paddingHorizontal: 16,
     height: 56,
-    marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: '#F3F4F6',
   },
   input: {
     flex: 1,
     marginLeft: 12,
     fontFamily: FONTS.regular,
     fontSize: 16,
-    color: COLORS.white,
-
+    color: COLORS.textPrimary,
+    height: '100%',
   },
   forgotPass: {
     alignSelf: 'flex-end',
-    marginBottom: 25,
+    marginTop: 14,
+    marginBottom: 28,
   },
-
   forgotPassText: {
-    fontFamily: FONTS.medium,
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
-    color: COLORS.accentLight,
+    color: COLORS.primary,
   },
   loginBtn: {
-    backgroundColor: COLORS.accent,
-    height: 56,
-    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    height: 58,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
   },
   btnDisabled: {
     opacity: 0.6,
+  },
+  loginBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   loginBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 18,
     color: COLORS.white,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 25,
-  },
-  footerText: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  registerText: {
-    fontFamily: FONTS.bold,
-    fontSize: 14,
-    color: COLORS.accent,
-  },
-  bioBtn: {
-    marginTop: 30,
-    alignItems: 'center',
-    gap: 8,
-  },
-  bioText: {
-    fontFamily: FONTS.medium,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
   },
 });
 

@@ -18,7 +18,8 @@ import {
 } from 'react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { Minus, Plus, ShoppingBag, X } from 'lucide-react-native';
-import { formatPrice, products } from '@/constants/products';
+import { formatCurrency } from '@/utils';
+import { mockProducts } from '@/data/mockData';
 import { useCart } from '@/context/CartContext';
 import { ButtonLoadingContent } from '@/components/AppLoading';
 
@@ -40,7 +41,7 @@ interface QRModalProps {
 
 export function QRModal({ productId, isOpen, onClose }: QRModalProps) {
   const { dispatch } = useCart();
-  const product = products.find((p) => p.id === productId) || products[0];
+  const product = mockProducts.find((p: any) => p.id === productId) || mockProducts[0];
 
   const [selectedSize, setSelectedSize] = useState('M');
   const [selectedSweetness, setSelectedSweetness] = useState('50%');
@@ -107,9 +108,9 @@ export function QRModal({ productId, isOpen, onClose }: QRModalProps) {
               <View style={styles.header}>
                 <View style={styles.headerInfo}>
                   <Text style={styles.productName}>{product.name}</Text>
-                  <Text style={styles.productMeta}>100+ đã bán | {product.categoryLabel}</Text>
+                  <Text style={styles.productMeta}>100+ đã bán | {product.category || 'Đồ uống'}</Text>
                 </View>
-                <Text style={styles.productPrice}>{formatPrice(product.price)}</Text>
+                <Text style={styles.productPrice}>{formatCurrency(product.price)}</Text>
               </View>
 
               <View style={styles.optionGroup}>
@@ -125,7 +126,7 @@ export function QRModal({ productId, isOpen, onClose }: QRModalProps) {
                       >
                         <Text style={[styles.sizeLabel, isActive && styles.activeText]}>{size.label}</Text>
                         <Text style={[styles.sizeAdd, isActive && styles.activeSubtext]}>
-                          {size.priceAdd !== 0 ? (size.priceAdd > 0 ? `+${formatPrice(size.priceAdd)}` : formatPrice(size.priceAdd)) : ' '}
+                          {size.priceAdd !== 0 ? (size.priceAdd > 0 ? `+${formatCurrency(size.priceAdd)}` : formatCurrency(size.priceAdd)) : ' '}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -185,7 +186,7 @@ export function QRModal({ productId, isOpen, onClose }: QRModalProps) {
             </View>
             <TouchableOpacity style={styles.addBtn} onPress={handleAddToCart}>
               <ButtonLoadingContent loading={isAdding} loadingText="Đang thêm...">
-                Thêm - {formatPrice(totalPrice)}
+                Thêm - {formatCurrency(totalPrice)}
               </ButtonLoadingContent>
             </TouchableOpacity>
           </View>

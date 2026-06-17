@@ -7,6 +7,7 @@ import {
 import { X, Minus, Plus, Check } from 'lucide-react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
+import { useTranslation } from 'react-i18next';
 import { fetchProductById } from '@/services/productService';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -16,23 +17,31 @@ interface ProductModalProps {
   product: any;
   onClose: () => void;
   onAddToCart: (item: any) => void;
+  initialData?: any;
 }
 
-const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalProps) => {
+const ProductModal = ({ visible, product, onClose, onAddToCart, initialData }: ProductModalProps) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedAttributes, setSelectedAttributes] = useState<any[]>([]);
   const [note, setNote] = useState('');
+  const { t } = useTranslation();
   const [fullProduct, setFullProduct] = useState<any>(product);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (visible && product?.id) {
-      setQuantity(1);
-      setSelectedAttributes([]);
-      setNote('');
+      if (initialData) {
+        setQuantity(initialData.quantity || 1);
+        setSelectedAttributes(initialData.selectedAttributes || []);
+        setNote(initialData.note || '');
+      } else {
+        setQuantity(1);
+        setSelectedAttributes([]);
+        setNote('');
+      }
       loadProductDetails();
     }
-  }, [visible, product?.id]);
+  }, [visible, product?.id, initialData]);
 
   const loadProductDetails = async () => {
     try {
@@ -52,7 +61,7 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
   const groupedAttributes = React.useMemo(() => {
     const groups: Record<string, any[]> = {};
     attributes.forEach((attr: any) => {
-      const gid = attr.attributeName || attr.attributeId || 'Tùy chọn';
+      const gid = attr.attributeName || attr.attributeId || t('options');
       if (!groups[gid]) groups[gid] = [];
       groups[gid].push(attr);
     });
@@ -132,7 +141,7 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
               />
               <View style={s.summaryInfo}>
                 <Text style={s.desc} numberOfLines={3}>
-                  {product.description || 'Sản phẩm truyền thống với hương vị đậm đà, thơm ngon.'}
+                  {product.description || t('product_description_fallback')}
                 </Text>
                 <Text style={s.price}>{formatCurrency(basePrice)}</Text>
               </View>
@@ -175,11 +184,11 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
             <View style={[s.section, s.sectionAlt]}>
               <View style={s.sectionHeader}>
                 <View style={s.sectionAccent} />
-                <Text style={s.sectionTitle}>GHI CHÚ</Text>
+                <Text style={s.sectionTitle}>{t('add_note').toUpperCase()}</Text>
               </View>
               <TextInput
                 style={s.noteInput}
-                placeholder="Ví dụ: Ít đường, nhiều đá..."
+                placeholder={t('note_placeholder')}
                 placeholderTextColor="#D1D5DB"
                 value={note}
                 onChangeText={setNote}
@@ -202,13 +211,13 @@ const ProductModal = ({ visible, product, onClose, onAddToCart }: ProductModalPr
                 </TouchableOpacity>
               </View>
               <View style={s.totalContainer}>
-                <Text style={s.totalLabel}>Tổng</Text>
+                <Text style={s.totalLabel}>{t('total')}</Text>
                 <Text style={s.totalPrice}>{formatCurrency(totalPrice)}</Text>
               </View>
             </View>
 
             <TouchableOpacity style={s.confirmBtn} onPress={handleConfirm}>
-              <Text style={s.confirmBtnText}>Thêm vào giỏ hàng</Text>
+              <Text style={s.confirmBtnText}>{initialData ? t('update_cart') : t('add_to_cart')}</Text>
             </TouchableOpacity>
           </View>
         </View>

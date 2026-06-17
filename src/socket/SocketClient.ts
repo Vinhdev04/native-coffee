@@ -40,6 +40,23 @@ class SocketClient {
       console.log('[Socket đã ngắt kết nối]:', reason);
     });
 
+    this.socket.onAny((event, ...args) => {
+      console.log(`🔔 [Socket Event] ${event}:`, args);
+      // Hiển thị thông báo UI cho các sự kiện đơn hàng
+      const keywords = ['order', 'payment', 'success', 'cancel', 'done', 'new'];
+      const eventLower = event.toLowerCase();
+      
+      if (keywords.some(k => eventLower.includes(k))) {
+        Toast.show({
+          type: 'info',
+          text1: '🔔 Thông báo hệ thống',
+          text2: `Có cập nhật mới về đơn hàng (${event})`,
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      }
+    });
+
     this.socket.on('connect_error', (error) => {
       console.error('[Lỗi kết nối Socket]:', error);
     });

@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { Animated, Text, View, StyleSheet } from 'react-native';
+import { Animated, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS } from '@/styles/theme';
 import { CheckCircle, AlertCircle, Info } from 'lucide-react-native';
 
@@ -18,6 +18,7 @@ interface ToastProps {
   title: string;
   message?: string;
   onHide: () => void;
+  onPress?: () => void;
   duration?: number;
 }
 
@@ -41,6 +42,7 @@ const Toast = ({
   title,
   message,
   onHide,
+  onPress,
   duration = 3000,
 }: ToastProps) => {
   const translateY = useRef(new Animated.Value(-120)).current;
@@ -112,19 +114,28 @@ const Toast = ({
         },
       ]}
     >
-      <View style={s.iconWrap}>
-        <ToastIcon type={type} />
-      </View>
-      <View style={s.textGroup}>
-        <Text style={[s.title, { color: cfg.titleColor }]} numberOfLines={2}>
-          {title}
-        </Text>
-        {!!message && (
-          <Text style={s.message} numberOfLines={2}>
-            {message}
-          </Text>
-        )}
-      </View>
+      <TouchableOpacity 
+        style={s.pressable} 
+        activeOpacity={0.8} 
+        onPress={onPress}
+        disabled={!onPress}
+      >
+        <View style={s.content}>
+          <View style={s.iconWrap}>
+            <ToastIcon type={type} />
+          </View>
+          <View style={s.textGroup}>
+            <Text style={[s.title, { color: cfg.titleColor }]} numberOfLines={2}>
+              {title}
+            </Text>
+            {!!message && (
+              <Text style={s.message} numberOfLines={2}>
+                {message}
+              </Text>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
     </Animated.View>
   );
 };
@@ -152,6 +163,8 @@ const s = StyleSheet.create({
   textGroup: { flex: 1 },
   title:   { fontFamily: FONTS.semiBold, fontSize: 14, lineHeight: 20 },
   message: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  pressable: { width: '100%' },
+  content: { flexDirection: 'row', alignItems: 'center' },
 });
 
 export default Toast;

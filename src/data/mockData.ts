@@ -6,7 +6,7 @@
  */
 
 /**
- * Mock data - Native Coffee App
+ * Mock data - Chips Bill App
  * Dùng khi chưa kết nối API thật
  */
 

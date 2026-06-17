@@ -23,9 +23,38 @@ const axiosClient = axios.create({
 axiosClient.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("@token");
+    const userStr = await AsyncStorage.getItem("@user");
+    
+    let screenCode = "APP"; // Fallback
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        if (userObj?.permissions && Array.isArray(userObj.permissions)) {
+          for (const p of userObj.permissions) {
+            if (p.permissions && Array.isArray(p.permissions) && p.permissions.length > 0) {
+               // Thường API trả về [{ roleCode: 'ADMIN', permissions: ['MENU_VIEW', ...] }]
+                const firstPerm = p.permissions[0];
+                if (typeof firstPerm === 'string') {
+                  screenCode = firstPerm;
+                } else if (firstPerm.screenCode || firstPerm.router_screen || firstPerm.code) {
+                  screenCode = String(firstPerm.screenCode || firstPerm.router_screen || firstPerm.code);
+                }
+                break;
+            } else if (typeof p === 'string') {
+               screenCode = p;
+               break;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore parse error
+      }
+    }
+
     const isPublic = config.url?.includes("/auth/login") || config.url?.includes("/auth/forgot_password") || config.url?.startsWith("/public/");
     if (token && !isPublic) {
       config.headers.Authorization = `Bearer ${token}`;
+      config.headers["x-screen-code"] = screenCode;
       console.log(`[Đính kèm Token] cho ${config.url}`);
     } else if (isPublic) {
       console.log(`[Yêu cầu Công khai] ${config.url} - Không đính kèm token`);
@@ -53,11 +82,13 @@ axiosClient.interceptors.response.use(
       "AUTHEN001",
       "AUTHEN002",
       "AUTHEN003",
+      "SYS010", // Session expired error code
     ];
 
     // Chỉ coi là lỗi nếu có res_code và res_code khác 0
     if (res && res.hasOwnProperty('res_code') && res.res_code !== 0) {
-      if (AUTH_ERROR_CODES.includes(res.error_code)) {
+      const isAuthError = AUTH_ERROR_CODES.includes(res.error_code) || res.data?.message === "AUTHEN000";
+      if (isAuthError) {
         Toast.show({
           type: "error",
           text1: "Phiên đăng nhập hết hạn",

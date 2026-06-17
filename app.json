@@ -1,32 +1,32 @@
 {
   "expo": {
-    "name": "Native Coffee",
-    "slug": "native-coffee",
+    "name": "Chips Bill",
+    "slug": "chips-bill",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/images/logo.png",
+    "icon": "./src/public/logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./src/assets/images/logo.png",
+      "image": "./src/public/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#3D1C02"
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vinhdev04.nativecoffee"
+      "bundleIdentifier": "com.vinhdev04.chipsbill"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./src/assets/images/logo.png",
-        "backgroundColor": "#3D1C02"
+        "foregroundImage": "./src/public/logo.png",
+        "backgroundColor": "#FFFFFF"
       },
-      "package": "com.vinhdev04.nativecoffee"
+      "package": "com.vinhdev04.chipsbill"
     },
     "web": {
-      "favicon": "./src/assets/images/logo.png"
+      "favicon": "./src/public/logo.png"
     },
     "plugins": [
       "@react-native-community/datetimepicker"

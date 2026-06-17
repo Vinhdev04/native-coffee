@@ -5,7 +5,7 @@
  * @layer services
  */
 
-import axiosClient from '@/api/axiosClient';
+import axiosClient from "@/api/axiosClient";
 
 // Định nghĩa kiểu dữ liệu
 
@@ -18,7 +18,7 @@ export interface CreateOrderItem {
 
 export interface CreateOrderPayload {
   branchId: number;
-  shiftSessionId: number;
+  shiftSessionId?: number;
   customerName?: string;
   customerPhone?: string;
   note?: string;
@@ -47,12 +47,23 @@ export const fetchActiveShiftSession = async (branchId = 1) => {
  * POST /orders (tự sinh idempotency-key để tránh trùng lặp đơn)
  */
 export const createOrder = async (payload: CreateOrderPayload) => {
-  const idempotencyKey = `order-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  console.log(`[Dịch vụ Đơn hàng] Dữ liệu tạo đơn hàng:`, JSON.stringify(payload, null, 2));
+  const idempotencyKey = `order-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+  const requestPayload = {
+    branchId: payload.branchId,
+    ...(payload.shiftSessionId ? { shiftSessionId: payload.shiftSessionId } : {}),
+    ...(payload.customerName ? { customerName: payload.customerName } : {}),
+    ...(payload.customerPhone ? { customerPhone: payload.customerPhone } : {}),
+    ...(payload.note ? { note: payload.note } : {}),
+    items: payload.items,
+  };
+
+  console.log(`[Dịch vụ Đơn hàng] Dữ liệu tạo đơn hàng:`, JSON.stringify(requestPayload, null, 2));
   console.log(`[Dịch vụ Đơn hàng] Khóa chống trùng lặp dữ liệu: ${idempotencyKey}`);
 
-  const response = await axiosClient.post('/orders', payload, {
-    headers: { 'idempotency-key': idempotencyKey },
+  const response = await axiosClient.post("/orders", requestPayload, {
+    headers: { "idempotency-key": idempotencyKey },
   });
   console.log(`[Dịch vụ Đơn hàng] Phản hồi tạo đơn hàng:`, response);
   return response;
@@ -81,8 +92,11 @@ export const fetchOrders = async (params?: {
  * GET /orders/{id}
  */
 export const fetchOrderById = async (id: number | string) => {
-  console.log(`[Dịch vụ Đơn hàng] Lấy chi tiết đơn hàng -> mã đơn = ${id}`);
-  const response = await axiosClient.get(`/orders/${id}`);
+  const safeId = String(id);
+  console.log(`[Dịch vụ Đơn hàng] Lấy chi tiết đơn hàng -> mã đơn = ${safeId}`);
+  const response = await axiosClient.get(`/orders/${safeId}`, {
+    params: { branchId: 1 }
+  });
   console.log(`[Dịch vụ Đơn hàng] Phản hồi chi tiết đơn hàng:`, response);
   return response;
 };
@@ -93,10 +107,13 @@ export const fetchOrderById = async (id: number | string) => {
  */
 export const updateOrderStatus = async (
   id: number | string,
-  orderStatus: 'PENDING_PAYMENT' | 'PAID' | 'COMPLETED' | 'CANCELLED',
+  orderStatus: "PENDING_PAYMENT" | "PAID" | "COMPLETED" | "CANCELLED",
 ) => {
-  console.log(`[Dịch vụ Đơn hàng] Cập nhật trạng thái đơn hàng -> mã đơn = ${id}, trạng thái = ${orderStatus}`);
-  const response = await axiosClient.put(`/orders/${id}/status`, { orderStatus });
+  const safeId = String(id);
+  console.log(`[Dịch vụ Đơn hàng] Cập nhật trạng thái đơn hàng -> mã đơn = ${safeId}, trạng thái = ${orderStatus}`);
+  const response = await axiosClient.put(`/orders/${safeId}/status`, {
+    orderStatus,
+  });
   console.log(`[Dịch vụ Đơn hàng] Phản hồi cập nhật trạng thái đơn hàng:`, response);
   return response;
 };
@@ -105,5 +122,5 @@ export const updateOrderStatus = async (
  * Hủy đơn hàng (cập nhật trạng thái thành CANCELLED)
  */
 export const cancelOrder = async (id: number | string) => {
-  return updateOrderStatus(id, 'CANCELLED');
+  return updateOrderStatus(id, "CANCELLED");
 };

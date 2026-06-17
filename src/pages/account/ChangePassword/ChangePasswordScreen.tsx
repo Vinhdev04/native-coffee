@@ -1,256 +1,282 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-} from "react-native";
-import MaterialIcon from "react-native-vector-icons/MaterialCommunityIcons";
-import { Colors } from "~/constants/Colors";
-import { Layout } from "~/constants/Constants";
-import { Typography } from "~/constants/Typography";
-import { useNavigation } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
-import Toast from "react-native-toast-message";
-import { useAuth } from "~/context/AuthContext";
-import { ActivityIndicator } from "react-native";
-import { AccountSocket } from "~/socket/modules/AccountSocket";
+  View, Text, StyleSheet, TouchableOpacity,
+  TextInput, ScrollView, ActivityIndicator, Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { ArrowLeft, ShieldCheck, Lock, EyeOff, Eye, Save } from 'lucide-react-native';
+import { COLORS, FONTS } from '@/styles/theme';
+import Toast from '@/components/common/Toast';
+import { useAuth } from '@/context/AuthContext';
+import { changePasswordApi } from '@/services/authService';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+
+const validationSchema = Yup.object().shape({
+  oldPassword: Yup.string()
+    .required('Vui lòng nhập mật khẩu hiện tại'),
+  newPassword: Yup.string()
+    .min(8, 'Mật khẩu mới phải có ít nhất 8 ký tự')
+    .required('Vui lòng nhập mật khẩu mới'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('newPassword'), null as any], 'Xác nhận mật khẩu không khớp')
+    .required('Vui lòng xác nhận mật khẩu'),
+});
 
 const ChangePasswordScreen = () => {
   const navigation = useNavigation();
-  const { t } = useTranslation();
+  const { user } = useAuth();
 
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
-
-  const { user } = useAuth();
+  const [showConfirm, setShowConfirm] = useState(false);
+  
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ visible: boolean; type: 'success' | 'error' | 'info'; title: string; message: string }>({ 
+    visible: false, type: 'success', title: '', message: '' 
+  });
 
-  const handleChangePassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Mật khẩu mới phải có ít nhất 6 ký tự",
-      });
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Mật khẩu xác nhận không khớp",
-      });
-      return;
-    }
-
+  const handleSubmit = async (values: any, { resetForm }: any) => {
     try {
       setLoading(true);
-      const response: any = await AccountSocket.changePassword({
-        id: user?.id || 0,
-        new_password: newPassword,
+      
+      const response: any = await changePasswordApi({
+        oldPassword: values.oldPassword.trim(),
+        newPassword: values.newPassword.trim(),
+        confirmPassword: values.confirmPassword.trim(),
       });
 
       if (response && (response.res_code === 0 || response.status === 200)) {
-        Toast.show({
-          type: "success",
-          text1: t("success"),
-          text2: "Đã đổi mật khẩu thành công",
-        });
-        navigation.goBack();
+        setToast({ visible: true, type: 'success', title: 'Thành công', message: 'Đã đổi mật khẩu thành công' });
+        setTimeout(() => navigation.goBack(), 1500);
       } else {
-        Toast.show({
-          type: "error",
-          text1: t("failed"),
-          text2: response?.message || "Không thể đổi mật khẩu",
-        });
+        setToast({ visible: true, type: 'error', title: 'Thất bại', message: response?.message || response?.error_cont || 'Không thể đổi mật khẩu' });
       }
     } catch (error) {
       console.error("Lỗi đổi mật khẩu:", error);
-      Toast.show({
-        type: "error",
-        text1: t("error"),
-        text2: t("conn_error_msg"),
-      });
+      setToast({ visible: true, type: 'error', title: 'Lỗi', message: 'Lỗi kết nối máy chủ' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialIcon name="arrow-left" size={28} color={Colors.primary} />
+    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
+      <Toast
+        visible={toast.visible}
+        type={toast.type}
+        title={toast.title}
+        message={toast.message}
+        onHide={() => setToast(t => ({ ...t, visible: false }))}
+      />
+
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+          <ArrowLeft size={24} color="#374151" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t("change_password")}</Text>
-        <View style={{ width: 28 }} />
+        <Text style={s.headerTitle}>Đổi Mật Khẩu</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.infoBox}>
-          <MaterialIcon
-            name="shield-lock-outline"
-            size={40}
-            color={Colors.primary}
-          />
-          <Text style={styles.infoText}>
-            Mật khẩu mới phải có ít nhất 6 ký tự để đảm bảo bảo mật.
-          </Text>
+      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Banner Info */}
+        <View style={s.banner}>
+          <View style={s.bannerIconBox}>
+            <ShieldCheck size={24} color="#EA580C" />
+          </View>
+          <View style={s.bannerTextWrap}>
+            <Text style={s.bannerTitle}>Bảo mật tài khoản</Text>
+            <Text style={s.bannerDesc}>Đổi mật khẩu định kỳ giúp bảo vệ dữ liệu của bạn</Text>
+          </View>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Mật khẩu cũ</Text>
-            <View style={styles.inputBox}>
-              <MaterialIcon
-                name="lock-outline"
-                size={20}
-                color={Colors.secondary}
-              />
-              <TextInput
-                style={styles.input}
-                value={oldPassword}
-                onChangeText={setOldPassword}
-                secureTextEntry={!showOld}
-                placeholder="Nhập mật khẩu hiện tại"
-              />
-              <TouchableOpacity onPress={() => setShowOld(!showOld)}>
-                <MaterialIcon
-                  name={showOld ? "eye-off" : "eye"}
-                  size={20}
-                  color={Colors.gray}
-                />
+        <Formik
+          initialValues={{ oldPassword: '', newPassword: '', confirmPassword: '' }}
+          validationSchema={validationSchema}
+          onSubmit={handleSubmit}
+        >
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+            <View style={s.form}>
+              {/* Old Password */}
+              <View style={s.inputGroup}>
+                <Text style={s.label}>MẬT KHẨU HIỆN TẠI</Text>
+                <View style={[s.inputBox, touched.oldPassword && errors.oldPassword ? s.inputError : null]}>
+                  <Lock size={20} color={touched.oldPassword && errors.oldPassword ? "#EF4444" : "#9CA3AF"} />
+                  <TextInput
+                    style={s.input}
+                    value={values.oldPassword}
+                    onChangeText={handleChange('oldPassword')}
+                    onBlur={handleBlur('oldPassword')}
+                    secureTextEntry={!showOld}
+                    placeholder="Nhập mật khẩu hiện tại"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity onPress={() => setShowOld(!showOld)} style={s.eyeBtn}>
+                    {showOld ? <Eye size={20} color="#9CA3AF" /> : <EyeOff size={20} color="#9CA3AF" />}
+                  </TouchableOpacity>
+                </View>
+                {touched.oldPassword && errors.oldPassword && (
+                  <Text style={s.errorText}>{errors.oldPassword as string}</Text>
+                )}
+              </View>
+
+              {/* New Password */}
+              <View style={s.inputGroup}>
+                <Text style={s.label}>MẬT KHẨU MỚI</Text>
+                <View style={[s.inputBox, touched.newPassword && errors.newPassword ? s.inputError : null]}>
+                  <Lock size={20} color={touched.newPassword && errors.newPassword ? "#EF4444" : "#9CA3AF"} />
+                  <TextInput
+                    style={s.input}
+                    value={values.newPassword}
+                    onChangeText={handleChange('newPassword')}
+                    onBlur={handleBlur('newPassword')}
+                    secureTextEntry={!showNew}
+                    placeholder="Tối thiểu 8 ký tự"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity onPress={() => setShowNew(!showNew)} style={s.eyeBtn}>
+                    {showNew ? <Eye size={20} color="#9CA3AF" /> : <EyeOff size={20} color="#9CA3AF" />}
+                  </TouchableOpacity>
+                </View>
+                {touched.newPassword && errors.newPassword && (
+                  <Text style={s.errorText}>{errors.newPassword as string}</Text>
+                )}
+              </View>
+
+              {/* Confirm Password */}
+              <View style={s.inputGroup}>
+                <Text style={s.label}>XÁC NHẬN MẬT KHẨU</Text>
+                <View style={[s.inputBox, touched.confirmPassword && errors.confirmPassword ? s.inputError : null]}>
+                  <ShieldCheck size={20} color={touched.confirmPassword && errors.confirmPassword ? "#EF4444" : "#9CA3AF"} />
+                  <TextInput
+                    style={s.input}
+                    value={values.confirmPassword}
+                    onChangeText={handleChange('confirmPassword')}
+                    onBlur={handleBlur('confirmPassword')}
+                    secureTextEntry={!showConfirm}
+                    placeholder="Nhập lại mật khẩu mới"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} style={s.eyeBtn}>
+                    {showConfirm ? <Eye size={20} color="#9CA3AF" /> : <EyeOff size={20} color="#9CA3AF" />}
+                  </TouchableOpacity>
+                </View>
+                {touched.confirmPassword && errors.confirmPassword && (
+                  <Text style={s.errorText}>{errors.confirmPassword as string}</Text>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={s.saveBtn}
+                onPress={() => handleSubmit()}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Save size={20} color="#fff" />
+                    <Text style={s.saveBtnText}>Lưu thay đổi</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Mật khẩu mới</Text>
-            <View style={styles.inputBox}>
-              <MaterialIcon
-                name="lock-reset"
-                size={20}
-                color={Colors.secondary}
-              />
-              <TextInput
-                style={styles.input}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry={!showNew}
-                placeholder="Nhập mật khẩu mới"
-              />
-              <TouchableOpacity onPress={() => setShowNew(!showNew)}>
-                <MaterialIcon
-                  name={showNew ? "eye-off" : "eye"}
-                  size={20}
-                  color={Colors.gray}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Xác nhận mật khẩu</Text>
-            <View style={styles.inputBox}>
-              <MaterialIcon
-                name="lock-check-outline"
-                size={20}
-                color={Colors.secondary}
-              />
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showNew}
-                placeholder="Nhập lại mật khẩu mới"
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.saveBtn, loading && { opacity: 0.7 }]}
-            onPress={handleChangePassword}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.saveBtnText}>Cập nhật mật khẩu</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+          )}
+        </Formik>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#FEF9F6' },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Layout.headerPaddingHorizontal,
-    paddingTop: Layout.headerPaddingTop,
-    paddingBottom: Layout.headerPaddingBottom,
-    backgroundColor: Colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'android' ? 12 : 0,
+    paddingBottom: 16,
   },
-  headerTitle: {
-    fontFamily: Typography.fontFamily.bold,
-    fontSize: 18,
-    color: Colors.primary,
+  backBtn: {
+    width: 40, height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
-  content: { padding: 20 },
-  infoBox: {
-    backgroundColor: Colors.primary + "10",
-    padding: 20,
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: '#111827' },
+  
+  content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 10 },
+  
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFEDD5',
+    padding: 16,
     borderRadius: 16,
-    alignItems: "center",
-    marginBottom: 30,
-    gap: 10,
+    marginBottom: 32,
   },
-  infoText: {
-    fontFamily: Typography.fontFamily.medium,
-    fontSize: 13,
-    color: Colors.primary,
-    textAlign: "center",
+  bannerIconBox: {
+    width: 48, height: 48,
+    borderRadius: 16,
+    backgroundColor: '#FFF',
+    justifyContent: 'center', alignItems: 'center',
+    marginRight: 16,
   },
+  bannerTextWrap: { flex: 1 },
+  bannerTitle: { fontFamily: FONTS.bold, fontSize: 15, color: '#9A3412', marginBottom: 4 },
+  bannerDesc: { fontFamily: FONTS.regular, fontSize: 12, color: '#C2410C', lineHeight: 18 },
+
   form: { gap: 20 },
   inputGroup: { gap: 8 },
-  label: { fontFamily: Typography.fontFamily.bold, fontSize: 14, color: Colors.onSurface },
+  label: { fontFamily: FONTS.bold, fontSize: 11, color: '#6B7280', letterSpacing: 0.5 },
   inputBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 50,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    paddingLeft: 16,
+    height: 56,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02, shadowRadius: 4, elevation: 1,
   },
   input: {
     flex: 1,
-    marginLeft: 10,
-    fontFamily: Typography.fontFamily.medium,
+    marginLeft: 12,
+    fontFamily: FONTS.medium,
     fontSize: 15,
-    color: Colors.onSurface,
+    color: '#111827',
   },
+  inputError: {
+    borderColor: '#EF4444',
+    borderWidth: 1,
+  },
+  errorText: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 6,
+    marginLeft: 16,
+  },
+  eyeBtn: { padding: 16 },
+  
   saveBtn: {
-    backgroundColor: Colors.primary,
+    flexDirection: 'row',
+    backgroundColor: '#F97316',
     height: 56,
     borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+    shadowColor: '#F97316', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
   },
-  saveBtnText: { fontFamily: Typography.fontFamily.bold, fontSize: 16, color: Colors.white },
+  saveBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#FFF' },
 });
 
 export default ChangePasswordScreen;

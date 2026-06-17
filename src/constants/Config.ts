@@ -5,14 +5,18 @@
  * @layer constants
  */
 
-
 export const APP_CONFIG = {
-  appName: process.env.EXPO_PUBLIC_APP_NAME || 'Native Coffee',
-  appVersion: process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0',
-  version: process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0',
-  apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://api.nativecoffee.com.vn',
-  socketUrl: process.env.EXPO_PUBLIC_SOCKET_URL || `${process.env.EXPO_PUBLIC_API_URL}/socket.io`,
-  publicKey: process.env.EXPO_PUBLIC_PUBLIC_KEY ? process.env.EXPO_PUBLIC_PUBLIC_KEY.replace(/\\n/g, '\n').replace(/"/g, '') : '',
+  appName: process.env.EXPO_PUBLIC_APP_NAME || "Chips Bill",
+  appVersion: process.env.EXPO_PUBLIC_APP_VERSION || "1.0.0",
+  version: process.env.EXPO_PUBLIC_APP_VERSION || "1.0.0",
+  apiUrl:
+    process.env.EXPO_PUBLIC_API_URL || "https://bill-dev.chips.com.vn/api",
+  socketUrl:
+    process.env.EXPO_PUBLIC_SOCKET_URL ||
+    `${process.env.EXPO_PUBLIC_API_URL}/socket.io`,
+  publicKey: process.env.EXPO_PUBLIC_PUBLIC_KEY
+    ? process.env.EXPO_PUBLIC_PUBLIC_KEY.replace(/\\n/g, "\n").replace(/"/g, "")
+    : "",
 };
 
 console.log('--- CẤU HÌNH Chips Bill ---');
@@ -21,7 +25,7 @@ console.log('Đường dẫn đăng nhập đầy đủ:', `${APP_CONFIG.apiUrl}
 console.log('Tìm thấy khóa công khai:', !!APP_CONFIG.publicKey);
 
 export const APP_ASSETS = {
-  logo: require('@/assets/images/logo.png'),
-  splashBg: require('@/assets/images/splash_bg.png'),
-  coffeePattern: require('@/assets/images/coffee_pattern.png'),
+  logo: require("@/public/logo.png"),
+  splashBg: require("@/assets/images/splash_bg.png"),
+  coffeePattern: require("@/assets/images/coffee_pattern.png"),
 };

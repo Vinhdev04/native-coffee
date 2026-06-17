@@ -113,7 +113,7 @@ const ProductOptionsBottomSheet = ({ visible, onClose, product }: Props) => {
                     {selectedExtras.includes(opt.id) ? (
                       <CheckCircle size={24} color={COLORS.primary} />
                     ) : (
-                      <Square size={24} color={COLORS.border} borderRadius={4} />
+                      <Square size={24} color={COLORS.border} />
                     )}
                   </View>
                   <Text style={s.optionName}>{opt.name}</Text>

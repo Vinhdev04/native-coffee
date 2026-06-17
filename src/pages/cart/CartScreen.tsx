@@ -1,24 +1,72 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, Image, SafeAreaView, ActivityIndicator,
-  Platform, StatusBar,
+  Platform, StatusBar, ScrollView, Modal, TextInput, Alert
 } from 'react-native';
-import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useCart } from '@/context/CartContext';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS, FONTS, BORDER_RADIUS } from '@/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
-import { ChevronLeft, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react-native';
+import { ChevronLeft, Trash2, Plus, Minus, Ticket, ChevronRight, FileText, ShoppingBag, X, CheckCircle2 } from 'lucide-react-native';
 import { createOrder, fetchActiveShiftSession } from '@/services/orderService';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '@/context/AuthContext';
+import { orderCache } from '@/utils/orderCache';
+import { useTranslation } from 'react-i18next';
+import ProductModal from '@/components/menu/ProductModal';
+import ReceiptModal from '@/components/common/ReceiptModal';
+import { Printer, QrCode } from 'lucide-react-native';
+import QRCode from 'react-native-qrcode-svg';
+
+const VOUCHERS = [
+  { id: '1', code: 'COFFEE5', value: 5000, desc: 'Giảm ngay 5.000đ cho đơn hàng' },
+  { id: '2', code: 'COFFEE10', value: 10000, desc: 'Giảm ngay 10.000đ cho đơn hàng' },
+];
 
 const CartScreen = () => {
   const navigation = useNavigation<any>();
-  const { items, totalPrice, updateQuantity, removeItem, clearCart } = useCart();
+  const { t } = useTranslation();
+  const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart, updateNote, updateItem } = useCart();
   const { user } = useAuth();
-  const [isCheckingOut, setIsCheckingOut] = React.useState(false);
+  
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
+  
+  // VAT State
+  const [vatType, setVatType] = useState<'exclusive' | 'inclusive' | 'none'>('inclusive');
+  const [vatRate, setVatRate] = useState<string>('8');
+  
+  // Note Modal State
+  const [noteModalVisible, setNoteModalVisible] = useState(false);
+  const [currentEditingItem, setCurrentEditingItem] = useState<any>(null);
+  const [tempNote, setTempNote] = useState('');
+
+  // Voucher Modal State
+  const [voucherModalVisible, setVoucherModalVisible] = useState(false);
+
+  // Edit Modal State
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+
+  // Receipt Modal State
+  const [isReceiptVisible, setIsReceiptVisible] = useState(false);
+
+  const discount = selectedVoucher ? selectedVoucher.value : 0;
+  const subtotalAfterDiscount = Math.max(0, totalPrice - discount);
+  
+  const vatRateNumber = parseFloat(vatRate) || 0;
+  let vatAmount = 0;
+  let grandTotal = subtotalAfterDiscount;
+
+  if (vatType === 'exclusive') {
+    vatAmount = subtotalAfterDiscount * (vatRateNumber / 100);
+    grandTotal = subtotalAfterDiscount + vatAmount;
+  } else if (vatType === 'inclusive') {
+    vatAmount = subtotalAfterDiscount * (vatRateNumber / (100 + vatRateNumber));
+    grandTotal = subtotalAfterDiscount;
+  }
 
   const handleCheckout = async () => {
     if (items.length === 0) {
@@ -32,7 +80,6 @@ const CartScreen = () => {
       // ── Bước 1: Lấy phiên ca làm việc đang hoạt động ─────────────────────────────────
       console.log('[CartScreen] Đang lấy phiên ca làm việc đang hoạt động...');
       let shiftSessionId: number | null = null;
-
       try {
         const shiftRes = await fetchActiveShiftSession(1);
         console.log('[CartScreen] Phản hồi thô của shiftSession:', JSON.stringify(shiftRes, null, 2));
@@ -68,22 +115,20 @@ const CartScreen = () => {
         || user?.username || (user as any)?.name
         || 'Khách vãng lai';
       console.log(`[CartScreen] Tên khách hàng từ xác thực: "${customerName}"`);
-
       const payload: any = {
         branchId: 1,
         ...(shiftSessionId ? { shiftSessionId } : {}),
         customerName,
+        note: selectedVoucher ? `Voucher: ${selectedVoucher.code} (-${formatCurrency(selectedVoucher.value)})` : '',
         items: items.map(item => ({
           productId: Number(item.id),
-          selectedProductAttributeIds: item.selectedAttributes
-            ?.map((a: any) => Number(a.id))
-            .filter((id: number) => !isNaN(id)) || [],
+          selectedProductAttributeIds: item.selectedAttributes?.map((a: any) => Number(a.id)).filter((id: number) => !isNaN(id)) || [],
           qty: item.quantity,
           note: item.note || '',
         })),
       };
 
-      console.log('📦 [CartScreen] createOrder payload:', JSON.stringify(payload, null, 2));
+      console.log('[CartScreen] Dữ liệu gửi đi tạo đơn hàng (payload):', JSON.stringify(payload, null, 2));
 
       // ── Bước 3: Tạo đơn hàng ───────────────────────────────────────────────
       const res = await createOrder(payload);
@@ -95,17 +140,10 @@ const CartScreen = () => {
         || (res as any)?.data?.orderId;
 
       console.log(`[CartScreen] Đã tạo đơn hàng — orderId=${newOrderId}`);
-
-      Toast.show({
-        type: 'success',
-        text1: '🎉 Đặt hàng thành công!',
-        text2: `Đơn #${newOrderId} đang được xử lý.`,
-      });
-
-      clearCart();
-
-      // Navigate đến OrderDetail nếu có ID, ngược lại về tab Orders
       if (newOrderId) {
+        orderCache.setCount(newOrderId, items.length);
+        Toast.show({ type: 'success', text1: t('order_success_title'), text2: t('order_success_desc', { id: newOrderId }) });
+        clearCart();
         navigation.navigate('OrderDetail', { orderId: newOrderId });
       } else {
         console.warn('[CartScreen] Không có orderId trong phản hồi, đang chuyển hướng đến OrdersTab');
@@ -124,88 +162,194 @@ const CartScreen = () => {
     }
   };
 
-  const renderRightActions = (progress: any, dragX: any, cartId: string) => {
-    return (
-      <TouchableOpacity 
-        style={s.deleteAction} 
-        onPress={() => removeItem(cartId)}
-        activeOpacity={0.7}
-      >
-        <Trash2 size={24} color={COLORS.white} />
-      </TouchableOpacity>
-    );
+  const openNoteModal = (item: any) => {
+    setCurrentEditingItem(item);
+    setTempNote(item.note || '');
+    setNoteModalVisible(true);
   };
 
-  const renderItem = ({ item }: { item: any }) => (
-    <Swipeable
-      renderRightActions={(p, d) => renderRightActions(p, d, item.cartId)}
-      friction={2}
-      rightThreshold={40}
+  const saveNote = () => {
+    if (currentEditingItem) {
+      updateNote(currentEditingItem.cartId, tempNote);
+    }
+    setNoteModalVisible(false);
+  };
+
+  const handleEditItem = (item: any) => {
+    setEditingItem(item);
+    setEditModalVisible(true);
+  };
+
+  const onUpdateItem = (updatedItem: any) => {
+    if (editingItem) {
+      updateItem(editingItem.cartId, {
+        ...editingItem,
+        ...updatedItem,
+        cartId: `${updatedItem.id}-${updatedItem.selectedAttributes?.map((a: any) => a.id).join('-') || 'default'}`,
+      });
+    }
+  };
+
+  const renderItem = (item: any, isLast: boolean) => (
+    <TouchableOpacity 
+      key={item.cartId} 
+      style={[s.cartItem, isLast && { borderBottomWidth: 0 }]}
+      onPress={() => handleEditItem(item)}
+      activeOpacity={0.7}
     >
-      <View style={s.cartItem}>
-        <Image 
-          source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
-          style={s.image} 
-        />
-        <View style={s.itemInfo}>
-          <View style={s.titleRow}>
-            <Text style={s.itemName} numberOfLines={1}>{item.name}</Text>
+      <Image 
+        source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop' }} 
+        style={s.image} 
+      />
+      <View style={s.itemInfo}>
+        <View style={s.titleRow}>
+          <Text style={s.itemName} numberOfLines={1}>{item.name}</Text>
+          <Text style={s.itemPrice}>{formatCurrency(item.price)}</Text>
+        </View>
+        
+        <Text style={s.itemAttributes} numberOfLines={1}>
+          {item.selectedAttributes?.map((a: any) => a.name).join(', ') || 'Mặc định'}
+        </Text>
+        
+        <View style={s.itemActions}>
+          <TouchableOpacity 
+            style={[s.noteBtn, item.note ? s.noteBtnActive : {}]} 
+            onPress={() => openNoteModal(item)}
+          >
+            <FileText size={12} color={item.note ? COLORS.primary : COLORS.textMuted} />
+            <Text style={[s.noteBtnText, item.note ? { color: COLORS.primary } : {}]} numberOfLines={1}>
+              {item.note || t('add_note')}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={s.qtyControls}>
+            <TouchableOpacity style={s.qtyBtn} onPress={() => updateQuantity(item.cartId, Math.max(0, item.quantity - 1))}>
+              <Minus size={14} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+            <Text style={s.qtyText}>{item.quantity}</Text>
+            <TouchableOpacity style={s.qtyBtn} onPress={() => updateQuantity(item.cartId, item.quantity + 1)}>
+              <Plus size={14} color={COLORS.textPrimary} />
+            </TouchableOpacity>
           </View>
-          <Text style={s.itemOptions} numberOfLines={2}>
-            {[
-              item.selectedAttributes?.map((a: any) => a.name).join(' • '),
-              item.note ? `📝 ${item.note}` : null
-            ].filter(Boolean).join(' • ') || 'Không có tùy chọn'}
-          </Text>
-          <View style={s.priceQtyRow}>
-            <Text style={s.itemPrice}>{formatCurrency(item.totalPrice || item.price)}</Text>
-            <View style={s.quantityControl}>
-              <TouchableOpacity 
-                style={s.qtyBtn} 
-                onPress={() => updateQuantity(item.cartId, Math.max(0, item.quantity - 1))}
-              >
-                <Minus size={14} color={COLORS.textPrimary} />
-              </TouchableOpacity>
-              <Text style={s.qtyText}>{item.quantity}</Text>
-              <TouchableOpacity 
-                style={s.qtyBtn} 
-                onPress={() => updateQuantity(item.cartId, item.quantity + 1)}
-              >
-                <Plus size={14} color={COLORS.textPrimary} />
-              </TouchableOpacity>
-            </View>
-          </View>
+
+          <TouchableOpacity onPress={() => removeItem(item.cartId)} style={s.deleteBtn}>
+            <Trash2 size={16} color="#EF4444" />
+          </TouchableOpacity>
         </View>
       </View>
-    </Swipeable>
+    </TouchableOpacity>
   );
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={s.container}>
+      <SafeAreaView style={s.safeArea}>
+        <StatusBar barStyle="dark-content" />
+        
+        {/* Header */}
         <View style={s.header}>
-          <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={s.headerBtn} onPress={() => navigation.goBack()}>
             <ChevronLeft size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>Giỏ hàng</Text>
-          <TouchableOpacity onPress={clearCart}>
-            <Text style={s.clearText}>Xóa hết</Text>
-          </TouchableOpacity>
+          <Text style={s.headerTitle}>{t('cart_title')}</Text>
+          <View style={s.headerRight}>
+            <TouchableOpacity 
+              style={s.headerBtn} 
+              onPress={() => setIsReceiptVisible(true)}
+            >
+              <Printer size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {items.length > 0 ? (
           <>
-            <FlatList
-              data={items}
-              renderItem={renderItem}
-              keyExtractor={(item) => item.cartId}
-              contentContainerStyle={s.listContent}
-              showsVerticalScrollIndicator={false}
-            />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
+              <View style={s.mainContainer}>
+                {/* Items Section */}
+                <View style={s.itemsSection}>
+                  {items.map((item, index) => renderItem(item, index === items.length - 1))}
+                </View>
+
+
+                {/* Voucher section */}
+                <TouchableOpacity style={s.voucherCard} onPress={() => setVoucherModalVisible(true)}>
+                  <View style={s.voucherIconContainer}>
+                    <Ticket size={20} color={COLORS.primary} />
+                  </View>
+                  <View style={s.voucherTextContainer}>
+                    <Text style={s.voucherTitle}>
+                      {selectedVoucher ? `Mã: ${selectedVoucher.code}` : t('voucher_title')}
+                    </Text>
+                    <Text style={s.voucherSubtitle}>
+                      {selectedVoucher ? `Tiết kiệm ${formatCurrency(selectedVoucher.value)}` : t('select_voucher')}
+                    </Text>
+                  </View>
+                  <ChevronRight size={20} color={COLORS.textMuted} />
+                </TouchableOpacity>
+
+                {/* VAT section */}
+                <View style={s.vatCard}>
+                  <View style={s.vatHeader}>
+                    <FileText size={18} color={COLORS.primary} />
+                    <Text style={s.vatTitle}>{t('vat_title')}</Text>
+                  </View>
+                  <View style={s.vatOptions}>
+                    <TouchableOpacity
+                      style={[s.vatOptionBtn, vatType === 'inclusive' && s.vatOptionActive]}
+                      onPress={() => setVatType('inclusive')}
+                    >
+                      <Text style={[s.vatOptionText, vatType === 'inclusive' && s.vatOptionTextActive]}>{t('vat_inclusive')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[s.vatOptionBtn, vatType === 'exclusive' && s.vatOptionActive]}
+                      onPress={() => setVatType('exclusive')}
+                    >
+                      <Text style={[s.vatOptionText, vatType === 'exclusive' && s.vatOptionTextActive]}>{t('vat_exclusive')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[s.vatOptionBtn, vatType === 'none' && s.vatOptionActive]}
+                      onPress={() => setVatType('none')}
+                    >
+                      <Text style={[s.vatOptionText, vatType === 'none' && s.vatOptionTextActive]}>{t('vat_none')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {vatType === 'exclusive' && (
+                    <View style={s.vatInputRow}>
+                      <Text style={s.vatInputLabel}>Nhập phần trăm (%) Thuế suất:</Text>
+                      <View style={s.vatInputWrapper}>
+                        <TextInput
+                          style={s.vatInput}
+                          keyboardType="numeric"
+                          value={vatRate}
+                          onChangeText={setVatRate}
+                          maxLength={2}
+                        />
+                        <Text style={s.vatPercentIcon}>%</Text>
+                      </View>
+                    </View>
+                  )}
+                  {vatType === 'inclusive' && (
+                    <View style={s.vatInputRow}>
+                      <Text style={s.vatInputLabel}>Thuế suất hệ thống đang áp dụng:</Text>
+                      <Text style={s.vatFixedText}>{vatRate}%</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+              
+              <View style={{ height: 120 }} />
+            </ScrollView>
+
+            {/* Sticky Bottom Footer */}
             <View style={s.footer}>
-              <View style={s.totalRow}>
-                <Text style={s.totalLabel}>Tổng cộng</Text>
-                <Text style={s.totalValue}>{formatCurrency(totalPrice)}</Text>
+              <View style={s.footerTop}>
+                <View>
+                  <Text style={s.footerTotalLabel}>{t('payment_total')}</Text>
+                  <Text style={s.footerTotalValue}>{formatCurrency(grandTotal)}</Text>
+                </View>
+                <View style={s.footerItemCount}>
+                   <Text style={s.footerItemCountText}>{t('item_count', { count: totalItems })}</Text>
+                </View>
               </View>
               <TouchableOpacity 
                 style={[s.checkoutBtn, isCheckingOut && { opacity: 0.7 }]} 
@@ -215,83 +359,272 @@ const CartScreen = () => {
                 {isCheckingOut ? (
                   <ActivityIndicator color={COLORS.white} />
                 ) : (
-                  <Text style={s.checkoutText}>Đặt hàng ngay</Text>
+                  <Text style={s.checkoutText}>{t('checkout_now')}</Text>
                 )}
               </TouchableOpacity>
             </View>
           </>
         ) : (
           <View style={s.emptyContainer}>
-            <ShoppingBag size={80} color={COLORS.borderLight} />
-            <Text style={s.emptyTitle}>Giỏ hàng trống</Text>
-            <Text style={s.emptySubtitle}>Hãy chọn những món cà phê thơm ngon nhất nhé!</Text>
+            <View style={s.emptyIconCircle}>
+              <ShoppingBag size={50} color={COLORS.primary} />
+            </View>
+            <Text style={s.emptyTitle}>{t('empty_cart_title')}</Text>
+            <Text style={s.emptySubtitle}>{t('empty_cart_subtitle')}</Text>
             <TouchableOpacity 
               style={s.shopBtn} 
               onPress={() => navigation.navigate('Main')}
             >
-              <Text style={s.shopBtnText}>Quay lại thực đơn</Text>
+              <Text style={s.shopBtnText}>{t('continue_shopping')}</Text>
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Note Modal */}
+        <Modal
+          visible={noteModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setNoteModalVisible(false)}
+        >
+          <View style={s.modalOverlay}>
+            <View style={s.noteModalContent}>
+              <View style={s.modalHeader}>
+                <Text style={s.modalTitle}>{t('add_note')}</Text>
+                <TouchableOpacity onPress={() => setNoteModalVisible(false)}>
+                  <X size={24} color={COLORS.textPrimary} />
+                </TouchableOpacity>
+              </View>
+              
+              <Text style={s.modalProductName}>{currentEditingItem?.name}</Text>
+              
+              <TextInput
+                style={s.noteInput}
+                placeholder={t('note_placeholder')}
+                multiline
+                numberOfLines={4}
+                value={tempNote}
+                onChangeText={setTempNote}
+                textAlignVertical="top"
+                autoFocus
+              />
+              
+              <TouchableOpacity style={s.saveNoteBtn} onPress={saveNote}>
+                <Text style={s.saveNoteText}>{t('confirm')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Voucher Modal */}
+        <Modal
+          visible={voucherModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setVoucherModalVisible(false)}
+        >
+          <View style={s.modalOverlay}>
+            <View style={s.voucherModalContent}>
+              <View style={s.modalHeader}>
+                <Text style={s.modalTitle}>Chọn Voucher</Text>
+                <TouchableOpacity onPress={() => setVoucherModalVisible(false)}>
+                  <X size={24} color={COLORS.textPrimary} />
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView style={s.voucherList}>
+                {VOUCHERS.map((v) => (
+                  <TouchableOpacity 
+                    key={v.id} 
+                    style={[s.voucherOption, selectedVoucher?.id === v.id && s.voucherOptionActive]}
+                    onPress={() => {
+                      setSelectedVoucher(v);
+                      setVoucherModalVisible(false);
+                    }}
+                  >
+                    <View style={s.voucherOptionInfo}>
+                      <View style={s.voucherBadge}>
+                        <Text style={s.voucherBadgeText}>{v.code}</Text>
+                      </View>
+                      <View style={{ marginLeft: 12, flex: 1 }}>
+                        <Text style={s.voucherOptionTitle}>{v.desc}</Text>
+                        <Text style={s.voucherOptionValue}>Giảm {formatCurrency(v.value)}</Text>
+                      </View>
+                    </View>
+                    {selectedVoucher?.id === v.id && (
+                      <CheckCircle2 size={24} color={COLORS.primary} fill="#FFF0E6" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              
+              {selectedVoucher && (
+                <TouchableOpacity 
+                  style={s.removeVoucherBtn} 
+                  onPress={() => {
+                    setSelectedVoucher(null);
+                    setVoucherModalVisible(false);
+                  }}
+                >
+                  <Text style={s.removeVoucherText}>Hủy áp dụng</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </Modal>
+
+        {/* Product Edit Modal */}
+        <ProductModal 
+          visible={editModalVisible}
+          product={editingItem}
+          initialData={editingItem}
+          onClose={() => setEditModalVisible(false)}
+          onAddToCart={onUpdateItem}
+        />
+
+        <ReceiptModal
+          visible={isReceiptVisible}
+          onClose={() => setIsReceiptVisible(false)}
+          order={{ 
+            items, 
+            totalPrice, 
+            discount,
+            vatAmount,
+            vatRate: vatRateNumber,
+            vatType,
+            grandTotal,
+            customerName: user?.fullName || 'Khách vãng lai' 
+          }}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );
-
 };
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
+  safeArea: { flex: 1, backgroundColor: '#F7F7F8' },
+  itemsSection: { backgroundColor: COLORS.white },
+  cartItem: {
+    flexDirection: 'row', padding: 10, backgroundColor: COLORS.white,
+    borderBottomWidth: 1, borderBottomColor: '#F3F4F6', alignItems: 'center',
+  },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
+    paddingHorizontal: 20, 
+    paddingVertical: Platform.OS === 'android' ? 10 : 15,
+    backgroundColor: COLORS.white,
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.backgroundSecondary, borderRadius: 12 },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary },
-  clearText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.error },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary, flex: 1, textAlign: 'center' },
+  headerBtn: { 
+    width: 38, height: 38, justifyContent: 'center', alignItems: 'center', 
+    backgroundColor: '#F9FAFB', borderRadius: 12,
+  },
+  headerRight: { minWidth: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
+  image: { width: 60, height: 60, borderRadius: 12, backgroundColor: '#F9FAFB' },
+  itemInfo: { flex: 1, marginLeft: 12 },
+  itemName: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
+  itemPrice: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary },
+  itemAttributes: { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted },
+  itemActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  qtyControls: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 8, padding: 2 },
+  qtyBtn: { width: 28, height: 28, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 8 },
+  qtyText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary, paddingHorizontal: 10 },
+  noteBtn: { 
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F9FAFB', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
+    flex: 1, marginRight: 10, borderStyle: 'dashed', borderWidth: 1, borderColor: '#E5E7EB'
+  },
+  noteBtnActive: { backgroundColor: '#FFF0E6', borderColor: COLORS.primary, borderStyle: 'solid' },
+  noteBtnText: { marginLeft: 4, fontFamily: FONTS.medium, fontSize: 11, color: COLORS.textMuted },
 
-  listContent: { padding: 16 },
-  cartItem: {
-    flexDirection: 'row', padding: 16, marginBottom: 16,
-    backgroundColor: COLORS.white, borderRadius: 16,
-    borderWidth: 1, borderColor: '#F3F4F6',
+  voucherCard: {
+    flexDirection: 'row', alignItems: 'center', padding: 12,
+    backgroundColor: COLORS.white, marginTop: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#F3F4F6'
   },
-  image: { width: 80, height: 80, borderRadius: 12, backgroundColor: COLORS.backgroundSecondary },
-  itemInfo: { flex: 1, marginLeft: 14, justifyContent: 'space-between' },
-  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  itemName: { flex: 1, fontFamily: FONTS.bold, fontSize: 15, color: '#111827', marginRight: 8 },
-  deleteAction: {
-    backgroundColor: COLORS.error,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-    height: 110, // Khớp với chiều cao xấp xỉ của mục
-    borderRadius: 16,
-    marginBottom: 16,
-    marginLeft: 10,
+  voucherIconContainer: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center' },
+  voucherTextContainer: { flex: 1, marginLeft: 12 },
+  voucherTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
+  voucherSubtitle: { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textMuted },
+  
+  vatCard: {
+    backgroundColor: COLORS.white, padding: 16, marginTop: 8,
+    borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#F3F4F6'
   },
-  itemOptions: { fontFamily: FONTS.regular, fontSize: 12, color: '#6B7280', marginTop: 4, marginBottom: 8 },
-  priceQtyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  itemPrice: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
-  quantityControl: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
-    borderRadius: 8, borderWidth: 1, borderColor: '#F3F4F6',
+  vatHeader: { marginBottom: 12, flexDirection: 'row', alignItems: 'center' },
+  vatTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary, marginLeft: 8 },
+  vatOptions: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  vatOptionBtn: {
+    flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10,
+    borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB'
   },
-  qtyBtn: { width: 28, height: 28, justifyContent: 'center', alignItems: 'center' },
-  qtyText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary, paddingHorizontal: 6 },
+  vatOptionActive: { backgroundColor: '#FFF0E6', borderColor: COLORS.primary },
+  vatOptionText: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.textMuted },
+  vatOptionTextActive: { color: COLORS.primary, fontFamily: FONTS.bold },
+  vatInputRow: { 
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
+    marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderColor: '#E5E7EB', borderStyle: 'dashed' 
+  },
+  vatInputLabel: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textPrimary },
+  vatInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 12 },
+  vatInput: {
+    width: 40, height: 40,
+    textAlign: 'center', fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary
+  },
+  vatPercentIcon: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textMuted },
+  vatFixedText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#FFF0E6', borderRadius: 8 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  deleteBtn: { padding: 8, borderRadius: 12, backgroundColor: '#F3F4F6' },
+  scrollContent: { paddingBottom: 200 },
+  mainContainer: { flex: 1, paddingHorizontal: 20 },
+  modalProductName: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary, marginBottom: 15 },
+  voucherList: { marginTop: 10 },
+  voucherBadge: { backgroundColor: '#E0F2FE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+  voucherBadgeText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.primary },
 
-  footer: { padding: 20, borderTopWidth: 1, borderTopColor: COLORS.borderLight, backgroundColor: COLORS.white },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  totalLabel: { fontFamily: FONTS.medium, fontSize: 16, color: COLORS.textMuted },
-  totalValue: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.textPrimary },
-  checkoutBtn: { backgroundColor: COLORS.primary, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', elevation: 4 },
+  footer: { 
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    padding: 20, backgroundColor: COLORS.white, 
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.1, shadowRadius: 10,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+  },
+  footerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  footerTotalLabel: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.textMuted },
+  footerTotalValue: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.primary },
+  footerItemCount: { backgroundColor: '#F9FAFB', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+  footerItemCountText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.textPrimary },
+  checkoutBtn: { backgroundColor: COLORS.primary, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   checkoutText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
 
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
-  emptyTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.textPrimary, marginTop: 20 },
-  emptySubtitle: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textMuted, textAlign: 'center', marginTop: 10 },
-  shopBtn: { marginTop: 30, backgroundColor: COLORS.accent, paddingHorizontal: 30, paddingVertical: 12, borderRadius: 12 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  emptyIconCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  emptyTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary },
+  emptySubtitle: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textMuted, textAlign: 'center', marginTop: 10 },
+  shopBtn: { marginTop: 30, backgroundColor: COLORS.primary, paddingHorizontal: 30, paddingVertical: 12, borderRadius: 14 },
   shopBtnText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.white },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  noteModalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  modalTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary },
+  noteInput: { 
+    backgroundColor: '#F9FAFB', borderRadius: 16, padding: 12, height: 100, 
+    fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textPrimary, textAlignVertical: 'top',
+    borderWidth: 1, borderColor: '#F3F4F6'
+  },
+  saveNoteBtn: { backgroundColor: COLORS.primary, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+  saveNoteText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
+
+  voucherModalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '70%' },
+  voucherOption: { 
+    flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: '#F9FAFB', borderRadius: 16, marginBottom: 10, borderWidth: 1, borderColor: '#F3F4F6'
+  },
+  voucherOptionActive: { backgroundColor: '#FFF0E6', borderColor: COLORS.primary },
+  voucherOptionInfo: { flex: 1 },
+  voucherOptionTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.textPrimary },
+  voucherOptionValue: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.primary },
+  removeVoucherBtn: { paddingVertical: 10, alignItems: 'center' },
+  removeVoucherText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.error },
 });
 
 export default CartScreen;

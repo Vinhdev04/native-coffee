@@ -41,6 +41,7 @@ const TabIcon = ({ focused, icon: Icon, label, badgeCount }: { focused: boolean,
 
 const MainNavigator = () => {
   const { totalItems } = useCart();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
@@ -54,28 +55,28 @@ const MainNavigator = () => {
         name="HomeTab"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Home} label="Trang chủ" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Home} label={t('home')} />,
         }}
       />
       <Tab.Screen
         name="MenuTab"
         component={MenuScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label="Đặt hàng" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label={t('order_menu')} />,
         }}
       />
       <Tab.Screen
         name="OrdersTab"
         component={OrderScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Package} label="Đơn hàng" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Package} label={t('orders')} />,
         }}
       />
       <Tab.Screen
         name="AccountTab"
         component={AccountScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={User} label="Hồ sơ" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={User} label={t('profile')} />,
         }}
       />
     </Tab.Navigator>
@@ -85,7 +86,7 @@ const MainNavigator = () => {
 const s = StyleSheet.create({
   tabBar: {
     backgroundColor: COLORS.white,
-    height: Platform.OS === 'ios' ? 88 : 68,
+    height: Platform.OS === 'ios' ? 92 : 75,
     borderTopWidth: 1,
     borderTopColor: '#F3F4F6',
     elevation: 0,
@@ -93,7 +94,7 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    paddingBottom: Platform.OS === 'ios' ? 25 : 8,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 15,
     paddingTop: 0,
   },
   tabItem: {

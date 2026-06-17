@@ -12,11 +12,14 @@ import { NavigationContainer } from '@react-navigation/native';
 import { View, ActivityIndicator, StatusBar } from 'react-native';
 
 import LoginScreen          from '@/pages/auth/LoginScreen';
-import RegisterScreen       from '@/pages/auth/RegisterScreen';
+import ForgotPasswordScreen from '@/pages/auth/ForgotPasswordScreen';
 import ProductDetailScreen  from '@/pages/menu/ProductDetailScreen';
 import CartScreen           from '@/pages/cart/CartScreen';
 import OrderDetailScreen    from '@/pages/orders/OrderDetailScreen';
 import PaymentScreen        from '@/pages/orders/PaymentScreen';
+import ScanQRScreen         from '@/pages/orders/ScanQRScreen';
+import AccountInfoScreen    from '@/pages/account/UpdateProfile/UpdateProfileScreen';
+import ChangePasswordScreen from '@/pages/account/ChangePassword/ChangePasswordScreen';
 import MainNavigator        from '@/navigation/MainNavigator';
 import { useAuth, AuthProvider } from '@/context/AuthContext';
 import { CartProvider }          from '@/context/CartContext';
@@ -42,8 +45,8 @@ const NavigationContent = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
-            <Stack.Screen name="Login"    component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="Login"          component={LoginScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </>
         ) : (
           <>
@@ -52,6 +55,9 @@ const NavigationContent = () => {
             <Stack.Screen name="Cart"          component={CartScreen} />
             <Stack.Screen name="OrderDetail"   component={OrderDetailScreen} />
             <Stack.Screen name="Payment"       component={PaymentScreen} />
+            <Stack.Screen name="ScanQR"        component={ScanQRScreen} />
+            <Stack.Screen name="UpdateProfile" component={AccountInfoScreen} />
+            <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
           </>
         )}
       </Stack.Navigator>

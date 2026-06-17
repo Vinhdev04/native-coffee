@@ -11,6 +11,7 @@ import { APP_CONFIG } from '@/constants/Config';
 import { UserDetail, LoginResponse } from '@/pages/auth/types';
 import { BaseResponse } from '@/pages/types';
 import { getMeApi, logoutApi } from '@/services/authService';
+import socketClient from '@/socket/SocketClient';
 
 interface AuthContextData {
   isAuthenticated: boolean;
@@ -22,7 +23,7 @@ interface AuthContextData {
   userRole: string | null;
 }
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextData | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -41,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {
         ...data.user,
         permissions: data.permissions || [],
-        role: data.role_name || data.user.role || null,
+        role: data.permissions?.[0]?.roleName || data.role_name || data.user.role || null,
       };
     }
     return data;
@@ -61,6 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const parsedUser = JSON.parse(storedUser);
         setUser(flattenUser(parsedUser));
         setIsAuthenticated(true);
+        
+        socketClient.initialize(APP_CONFIG.socketUrl, storedToken);
 
         getMeApi()
           .then((res) => {
@@ -91,6 +94,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(newToken);
       setUser(flattened);
       setIsAuthenticated(true);
+      
+      socketClient.initialize(APP_CONFIG.socketUrl, newToken);
 
       getMeApi()
         .then((response) => {
@@ -123,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(null);
       setUser(null);
       setIsAuthenticated(false);
+      socketClient.disconnect();
       
       console.log('[Đăng xuất thành công] trạng thái local đã được xóa');
     } catch (error) {
@@ -139,7 +145,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 /** Helper để lấy token bên ngoài component (dùng cho axios/socket) */
 export const getStoredToken = async () => {

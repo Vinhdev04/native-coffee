@@ -1,6 +1,6 @@
 /**
  * @file Colors.ts
- * @desc Bảng màu thương hiệu Native Coffee — espresso, caramel,
+ * @desc Bảng màu thương hiệu Chips Bill — espresso, caramel,
  *       nền kem ấm và semantic colors (success, error, …).
  * @layer constants
  */

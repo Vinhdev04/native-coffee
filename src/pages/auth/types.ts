@@ -6,13 +6,14 @@
  */
 
 /**
- * Auth types - Native Coffee App
+ * Auth types - Chips Bill App
  */
 
 export interface UserDetail {
   id:          string;
   username:    string;
   fullName?:   string;
+  name?:       string;
   email?:      string;
   phone?:      string;
   avatar?:     string;
@@ -28,25 +29,23 @@ export interface LoginPayload {
 
 export interface LoginResponse {
   res_code: number;
-  rows: ({
+  token?: string;
+  user?: UserDetail;
+  data?: any;
+  rows?: ({
     token: string;
   } & UserDetail)[];
   error_code?: string;
   error_cont?: string;
 }
 
-export interface RegisterPayload {
-  userName:    string;
-  password:    string;
-  fullName:    string;
-  email?:      string;
-  phone?:      string;
-  inviterCode?: string;
+export interface ForgotPasswordPayload {
+  email: string;
 }
 
-export interface RegisterResponse {
+export interface ForgotPasswordResponse {
   res_code: number;
   error_code?: string;
   error_cont?: string;
-  rows?: any[];
+  message?: string;
 }
