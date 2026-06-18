@@ -7,7 +7,8 @@
  */
 
 import React, { forwardRef } from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, Platform } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import { FONTS } from "@/styles/theme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -15,7 +16,7 @@ export interface BillItem {
   name: string;
   quantity: number;
   unitPrice: number;
-  attributes?: { name: string; price: number }[];
+  attributes?: { name: string; price: number; groupName?: string }[];
 }
 
 export interface BillData {
@@ -34,15 +35,53 @@ export interface BillData {
   paymentMethod?: string;
   cashReceived?: number;
   cashChange?: number;
+  cashierName?: string;
+  branchName?: string;
+  branchAddress?: string;
+  hotline?: string;
+  taxCode?: string;
+  qrValue?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}`;
+const RECEIPT_BRANCH_NAME = "CHI NHANH QUAN 12";
+const RECEIPT_BRANCH_ADDRESS = "456 Le Loi, Q.1, TP.HCM";
+const RECEIPT_HOTLINE = "0909999999";
+const RECEIPT_TAX_CODE = "9999999999";
+
+const normalizeReceiptText = (value?: string | null) =>
+  String(value ?? "")
+    .normalize("NFC")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const formatReceiptDate = (value?: string) => {
+  if (!value) return "";
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return normalizeReceiptText(value);
+  }
+
+  return parsed
+    .toLocaleString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+    .replace(", ", " - ");
+};
+
 const hasBillVat = (data: BillData) =>
   Boolean(data.vatType && data.vatType !== "none") ||
   Number(data.vatAmount ?? 0) > 0;
 const vatLabel = (data: BillData) =>
   data.vatRate && data.vatRate > 0 ? `VAT (${data.vatRate}%)` : "VAT";
+const getReceiptQrValue = (data: BillData) =>
+  normalizeReceiptText(data.qrValue) || `https://bill.chips.vn/pay/${data.orderId}`;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 const Divider = ({ thick = false }: { thick?: boolean }) => (
@@ -60,7 +99,7 @@ const InfoRow = ({
 }) => (
   <View style={s.infoRow}>
     <Text style={s.infoLabel}>{label}</Text>
-    <Text style={[s.infoValue, valueStyle]} numberOfLines={1} ellipsizeMode="tail">
+    <Text style={[s.infoValue, valueStyle]}>
       {value}
     </Text>
   </View>
@@ -72,24 +111,22 @@ const ItemRow = ({
   name,
   qty,
   price,
-  isAttr = false,
 }: {
   name: string;
   qty: number;
   price: string;
-  isAttr?: boolean;
 }) => (
   <View style={s.itemRow}>
     {/* Cột tên — flex:1 cho phép wrap nhiều dòng */}
     <View style={s.itemNameWrap}>
-      <Text style={isAttr ? s.itemAttrName : s.itemName}>{name}</Text>
+      <Text style={s.itemName}>{name}</Text>
     </View>
     {/* SL — width cố định, alignSelf:flex-start → luôn dòng 1 */}
-    <Text style={[s.itemQty, isAttr && s.itemAttrMuted]} numberOfLines={1}>
+    <Text style={s.itemQty} numberOfLines={1}>
       {qty}
     </Text>
     {/* Giá — width cố định, alignSelf:flex-start → luôn dòng 1 */}
-    <Text style={[s.itemPrice, isAttr && s.itemAttrMuted]} numberOfLines={1}>
+    <Text style={s.itemPrice} numberOfLines={1}>
       {price}
     </Text>
   </View>
@@ -100,10 +137,18 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
   ({ data }, _ref) => {
     const payMethodLabel =
       data.paymentMethod === "VNPAY" ? "VNPay" : "Tiền mặt";
+    const receiptDate = formatReceiptDate(data.createdAt);
+    const branchName = normalizeReceiptText(data.branchName) || RECEIPT_BRANCH_NAME;
+    const branchAddress =
+      normalizeReceiptText(data.branchAddress) || RECEIPT_BRANCH_ADDRESS;
+    const hotline = normalizeReceiptText(data.hotline) || RECEIPT_HOTLINE;
+    const taxCode = normalizeReceiptText(data.taxCode) || RECEIPT_TAX_CODE;
+    const cashierName = normalizeReceiptText(data.cashierName) || "admin";
 
     return (
       <View style={s.wrapper} ref={_ref as any} collapsable={false}>
         {/* ── HEADER ── */}
+        <Divider />
         <View style={s.header}>
           <View style={s.logoBox}>
             <Image
@@ -112,22 +157,22 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
               resizeMode="contain"
             />
           </View>
-          <Text style={s.shopName}>CHIPS BILL</Text>
-          <Text style={s.shopTagline}>chips.vn  •  0966 966 247</Text>
+          <Text style={s.branchName}>{branchName}</Text>
+          <Text style={s.branchText}>{branchAddress}</Text>
+          <Text style={s.branchText}>Hotline: {hotline}</Text>
+          <Text style={s.branchText}>Ma so thue: {taxCode}</Text>
         </View>
 
-        <Divider thick />
         <Text style={s.billTitle}>HÓA ĐƠN BÁN HÀNG</Text>
-        <Divider thick />
+        <Divider />
 
         {/* ── THÔNG TIN ĐƠN ── */}
         <View style={s.section}>
-          <InfoRow label="Mã đơn" value={data.orderCode ? `#${data.orderCode}` : `#${data.orderId}`} />
+          <InfoRow label="Mã đơn:" value={normalizeReceiptText(data.orderCode || String(data.orderId))} />
           {!!data.createdAt && (
-            <InfoRow label="Ngày" value={data.createdAt} />
+            <InfoRow label="Ngày:" value={receiptDate} />
           )}
-          <InfoRow label="Khách" value={data.customerName || "Khách vãng lai"} />
-          <InfoRow label="Hình thức" value={payMethodLabel} />
+          <InfoRow label="Thu ngân:" value={cashierName} />
         </View>
 
         <Divider />
@@ -148,21 +193,10 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
           return (
             <View key={idx}>
               <ItemRow
-                name={item.name}
+                name={normalizeReceiptText(item.name) || "Mon"}
                 qty={item.quantity}
                 price={vnd(lineTotal)}
               />
-              {item.attributes?.map((attr, ai) =>
-                attr.price > 0 ? (
-                  <ItemRow
-                    key={ai}
-                    name={`+ ${attr.name}`}
-                    qty={item.quantity}
-                    price={vnd(attr.price * item.quantity)}
-                    isAttr
-                  />
-                ) : null,
-              )}
               {idx < data.items.length - 1 && (
                 <View style={s.itemSeparator} />
               )}
@@ -197,14 +231,12 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
         {/* VAT */}
         {hasBillVat(data) ? (
           <View style={s.vatBox}>
-            <Text style={s.vatNote}>
-              {data.vatType === "inclusive" ? "(Đã bao gồm)" : "(Chưa bao gồm)"}
-            </Text>
             <InfoRow
-              label={vatLabel(data)}
+              label="Tổng tiền thuế VAT (đã gồm):"
               value={`${vnd(data.vatAmount || 0)}đ`}
-              valueStyle={{ color: "#6B7280" }}
+              valueStyle={s.vatValue}
             />
+            <Text style={s.vatNote}>(Giá bán toàn bộ đã bao gồm thuế VAT)</Text>
           </View>
         ) : (
           <Text style={s.vatNote}>Không tính VAT</Text>
@@ -230,9 +262,18 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
 
         {/* ── FOOTER ── */}
         <View style={s.footer}>
-          <Text style={s.footerThanks}>Cảm ơn Quý khách! Hẹn gặp lại 🙏</Text>
-          <Text style={s.footerPowered}>Phần mềm: Chips Bill POS</Text>
+          <View style={s.qrWrap}>
+            <QRCode
+              value={getReceiptQrValue(data)}
+              size={76}
+              color="#111827"
+              backgroundColor="#FFFFFF"
+            />
+          </View>
+          <Text style={s.footerThanks}>Hẹn gặp lại quý khách!</Text>
+          <Text style={s.footerPowered}>Phần mềm được viết bởi ChipsBill Pos</Text>
         </View>
+        <Divider />
       </View>
     );
   },
@@ -244,54 +285,60 @@ export default BillReceiptComponent;
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const COL_QTY_W  = 26;
 const COL_PRICE_W = 82;
+const RECEIPT_TEXT_FIX = Platform.OS === "android"
+  ? { includeFontPadding: false as const, textAlignVertical: "top" as const }
+  : {};
 
 const s = StyleSheet.create({
   wrapper: {
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 18,
-    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingTop: 10,
     paddingBottom: 32,
-    width: 320,
+    width: 332,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
   },
 
   // ── Header
-  header: { alignItems: "center", marginBottom: 10 },
+  header: { alignItems: "center", marginBottom: 12 },
   logoBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#FFF7F0",
+    width: 140,
+    height: 70,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 10,
   },
-  logoImage: { width: 52, height: 52 },
-  shopName: {
+  logoImage: { width: 120, height: 60 },
+  branchName: {
     fontFamily: FONTS.bold,
-    fontSize: 20,
+    fontSize: 14,
     color: "#111827",
-    letterSpacing: 1.5,
+    textAlign: "center",
+    marginBottom: 6,
+    ...RECEIPT_TEXT_FIX,
   },
-  shopTagline: {
+  branchText: {
     fontFamily: FONTS.regular,
-    fontSize: 10,
-    color: "#FF7A00",
-    marginTop: 3,
+    fontSize: 11,
+    color: "#111827",
+    textAlign: "center",
+    marginTop: 2,
+    ...RECEIPT_TEXT_FIX,
   },
   billTitle: {
     fontFamily: FONTS.bold,
-    fontSize: 13,
+    fontSize: 15,
     color: "#111827",
     textAlign: "center",
-    marginVertical: 7,
-    letterSpacing: 1,
+    marginVertical: 9,
   },
 
   // ── Dividers
   divider: {
     height: 1,
     backgroundColor: "#D1D5DB",
-    marginVertical: 7,
+    marginVertical: 9,
   },
   dividerThick: {
     height: 2,
@@ -306,21 +353,24 @@ const s = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 2,
+    alignItems: "flex-start",
+    paddingVertical: 3,
+    gap: 12,
   },
   infoLabel: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: "#6B7280",
+    color: "#111827",
     flex: 1,
+    ...RECEIPT_TEXT_FIX,
   },
   infoValue: {
     fontFamily: FONTS.medium,
     fontSize: 11,
     color: "#111827",
-    maxWidth: "60%",
-    textAlign: "right",
+    flex: 1.5,
+    textAlign: "left",
+    ...RECEIPT_TEXT_FIX,
   },
 
   // ── Table header
@@ -347,19 +397,20 @@ const s = StyleSheet.create({
   itemRow: {
     flexDirection: "row",
     alignItems: "flex-start",   // ← Căn tất cả cột theo đỉnh
-    paddingVertical: 3,
+    paddingVertical: 4,
   },
   // Bọc tên để flex-start không conflict
   itemNameWrap: {
     flex: 1,
-    paddingRight: 6,
+    minWidth: 0,
+    paddingRight: 8,
   },
   itemName: {
     fontFamily: FONTS.medium,
     fontSize: 12,
     color: "#111827",
     lineHeight: 17,
-    // KHÔNG có numberOfLines — cho phép wrap tự nhiên
+    ...RECEIPT_TEXT_FIX,
   },
   // SL: width cố định, alignSelf flex-start → luôn ở dòng 1
   itemQty: {
@@ -371,6 +422,7 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: "#111827",
     lineHeight: 17,
+    ...RECEIPT_TEXT_FIX,
   },
   // Giá: width cố định, alignSelf flex-start → luôn ở dòng 1
   itemPrice: {
@@ -382,19 +434,7 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: "#111827",
     lineHeight: 17,
-  },
-
-  // Attribute (topping)
-  itemAttrName: {
-    fontFamily: FONTS.regular,
-    fontSize: 10,
-    color: "#9CA3AF",
-    lineHeight: 15,
-  },
-  itemAttrMuted: {
-    fontSize: 10,
-    color: "#9CA3AF",
-    lineHeight: 15,
+    ...RECEIPT_TEXT_FIX,
   },
 
   // Separator between items
@@ -402,6 +442,18 @@ const s = StyleSheet.create({
     height: 1,
     backgroundColor: "#F3F4F6",
     marginVertical: 1,
+  },
+  // Attributes
+  attributesContainer: {
+    paddingLeft: 0,
+    paddingTop: 2,
+  },
+  attributeText: {
+    fontFamily: FONTS.regular,
+    fontSize: 10,
+    color: "#4B5563",
+    lineHeight: 14,
+    ...RECEIPT_TEXT_FIX,
   },
 
   // ── Total
@@ -419,12 +471,21 @@ const s = StyleSheet.create({
   vatNote: {
     fontFamily: FONTS.regular,
     fontSize: 10,
-    color: "#9CA3AF",
-    marginBottom: 2,
+    color: "#6B7280",
+    marginTop: 6,
+    textAlign: "center",
+    ...RECEIPT_TEXT_FIX,
   },
+  vatValue: { fontFamily: FONTS.bold, color: "#111827" },
 
   // ── Footer
-  footer: { alignItems: "center", marginTop: 14, gap: 4 },
+  footer: { alignItems: "center", marginTop: 14, gap: 8 },
+  qrWrap: {
+    borderWidth: 1,
+    borderColor: "#94A3B8",
+    padding: 8,
+    backgroundColor: "#FFFFFF",
+  },
   footerThanks: {
     fontFamily: FONTS.semiBold,
     fontSize: 12,
@@ -433,7 +494,8 @@ const s = StyleSheet.create({
   },
   footerPowered: {
     fontFamily: FONTS.regular,
-    fontSize: 9,
-    color: "#9CA3AF",
+    fontSize: 10,
+    color: "#6B7280",
+    textAlign: "center",
   },
 });

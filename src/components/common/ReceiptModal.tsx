@@ -33,6 +33,9 @@ const numberFrom = (...values: any[]) => {
   return 0;
 };
 
+// Hàm format tiền Việt Nam
+const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}đ`;
+
 // TODO: Suy đoán loại VAT (đã bao gồm hay chưa bao gồm) dựa trên số tiền
 const inferVatType = (
   rawVatType: any,
@@ -102,14 +105,34 @@ const ReceiptModal = ({
       const qty = item.qty || item.quantity || 1;
       const totalItemPrice = parseFloat(item.lineTotal || item.unitPriceSnapshot || "0");
       const unitPrice = totalItemPrice > 0 ? (totalItemPrice / qty) : parseFloat(item.unitPrice || "0");
+      
+      // Extract attributes from item (customize based on your actual data structure)
+      const attributes: any[] = [];
+      
+      // Use selectedOptionsSnapshot or selectedAttributes (from OrderDetailScreen.tsx)
+      const selectedOptions = item.selectedOptionsSnapshot || item.selectedAttributes || [];
+      selectedOptions.forEach((opt: any) => {
+        attributes.push({ 
+          name: opt.name || opt.value, 
+          price: opt.price || opt.priceAmount || 0 
+        });
+      });
+      
+      // Also add item-level VAT if available
+      if (item.vatAmount || item.taxAmount) {
+        const vatAmt = item.vatAmount || item.taxAmount;
+        const vatRate = item.vatRate || item.taxRate || 0;
+        attributes.push({ 
+          name: `Thuế VAT (${vatRate}% đã gồm: ${vnd(vatAmt)})`, 
+          price: 0 
+        });
+      }
+      
       return {
         name: item.productNameSnapshot || item.productName || item.name || "Món",
         quantity: qty,
         unitPrice: unitPrice,
-        attributes: (item.selectedOptionsSnapshot || item.selectedAttributes || []).map((attr: any) => ({
-          name: attr.name || attr.attributeName || "",
-          price: parseFloat(attr.price || "0"),
-        })),
+        attributes,
       };
     });
 
@@ -129,6 +152,12 @@ const ReceiptModal = ({
       paymentMethod: order.paymentMethod || "CASH",
       cashReceived: order.cashReceived,
       cashChange: order.cashChange,
+      cashierName: order.cashierName || order.createdByName || order.createdBy || "admin",
+      branchName: order.branchName,
+      branchAddress: order.branchAddress,
+      hotline: order.branchPhone || order.hotline,
+      taxCode: order.taxCode || order.branchTaxCode,
+      qrValue: `https://bill.chips.vn/pay/${order.id || order.orderId}`,
     };
   }, [order]);
 

@@ -19,14 +19,41 @@ import { createVNPayUrl } from "@/services/paymentService";
 const hasVat = (data: BillData) =>
   Boolean(data.vatType && data.vatType !== "none") ||
   Number(data.vatAmount ?? 0) > 0;
-const vatLabel = (data: BillData) =>
-  data.vatRate && data.vatRate > 0 ? `  VAT (${data.vatRate}%):` : "  VAT:";
 
 const SunmiPrinter = NativeModules.SunmiPrinter;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}đ`;
+const RECEIPT_BRANCH_NAME = "CHI NHANH QUAN 1 (UPDATED)";
+const RECEIPT_BRANCH_ADDRESS = "456 Le Loi, Q.1, TP.HCM";
+const RECEIPT_HOTLINE = "0909999999";
+const RECEIPT_TAX_CODE = "9999999999";
+
+const normalizeReceiptText = (value?: string | null) =>
+  String(value ?? "")
+    .normalize("NFC")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const formatReceiptDate = (value?: string) => {
+  if (!value) return "";
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return normalizeReceiptText(value);
+  }
+
+  return parsed
+    .toLocaleString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+    .replace(", ", " - ");
+};
 
 /**
  * Tạo dòng căn phải trên máy in nhiệt (32 ký tự).
@@ -310,14 +337,34 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
       const qty = item.qty || item.quantity || 1;
       const totalItemPrice = parseFloat(item.lineTotal || item.unitPriceSnapshot || "0");
       const unitPrice = totalItemPrice > 0 ? (totalItemPrice / qty) : parseFloat(item.unitPrice || "0");
+      
+      // Extract attributes from item (customize based on your actual data structure)
+      const attributes: any[] = [];
+      
+      // Use selectedOptionsSnapshot or selectedAttributes (from OrderDetailScreen.tsx)
+      const selectedOptions = item.selectedOptionsSnapshot || item.selectedAttributes || [];
+      selectedOptions.forEach((opt: any) => {
+        attributes.push({ 
+          name: opt.name || opt.value, 
+          price: opt.price || opt.priceAmount || 0 
+        });
+      });
+      
+      // Also add item-level VAT if available
+      if (item.vatAmount || item.taxAmount) {
+        const vatAmt = item.vatAmount || item.taxAmount;
+        const vatRate = item.vatRate || item.taxRate || 0;
+        attributes.push({ 
+          name: `Thuế VAT (${vatRate}% đã gồm: ${vnd(vatAmt)})`, 
+          price: 0 
+        });
+      }
+      
       return {
         name: item.productNameSnapshot || item.productName || item.name || "Món",
         quantity: qty,
         unitPrice: unitPrice,
-        attributes: (item.selectedOptionsSnapshot || item.selectedAttributes || []).map((attr: any) => ({
-          name: attr.name || attr.attributeName || "",
-          price: parseFloat(attr.price || "0"),
-        })),
+        attributes,
       };
     });
 
@@ -337,6 +384,12 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
       paymentMethod: latestOrder.paymentMethod || "CASH",
       cashReceived: latestOrder.cashReceived,
       cashChange: latestOrder.cashChange,
+      cashierName: latestOrder.cashierName || latestOrder.createdByName || latestOrder.createdBy || "admin",
+      branchName: latestOrder.branchName || RECEIPT_BRANCH_NAME,
+      branchAddress: latestOrder.branchAddress || RECEIPT_BRANCH_ADDRESS,
+      hotline: latestOrder.branchPhone || latestOrder.hotline || RECEIPT_HOTLINE,
+      taxCode: latestOrder.taxCode || latestOrder.branchTaxCode || RECEIPT_TAX_CODE,
+      qrValue: `https://bill.chips.vn/pay/${latestOrder.id || latestOrder.orderId}`,
     };
 
     // Use updatedData for printing
@@ -347,6 +400,7 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
 
     // ── HEADER ──
     SunmiPrinter.setAlignment(1); // center
+    SunmiPrinter.printerText(SEP);
 
     // In Logo Base64 (width: 250px)
     if (SunmiPrinter.printBitmap) {
@@ -369,25 +423,26 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
 
     SunmiPrinter.setFontSize(24);
     SunmiPrinter.setFontWeight(true);
+    SunmiPrinter.printerText(`${normalizeReceiptText(billData.branchName) || RECEIPT_BRANCH_NAME}\n`);
+    SunmiPrinter.setFontWeight(false);
+    SunmiPrinter.setFontSize(20);
+    SunmiPrinter.printerText(`${normalizeReceiptText(billData.branchAddress) || RECEIPT_BRANCH_ADDRESS}\n`);
+    SunmiPrinter.printerText(`Hotline: ${normalizeReceiptText(billData.hotline) || RECEIPT_HOTLINE}\n`);
+    SunmiPrinter.printerText(`Ma so thue: ${normalizeReceiptText(billData.taxCode) || RECEIPT_TAX_CODE}\n`);
+    SunmiPrinter.printerText("\n");
+    SunmiPrinter.setFontSize(24);
+    SunmiPrinter.setFontWeight(true);
     SunmiPrinter.printerText("HÓA ĐƠN BÁN HÀNG\n");
     SunmiPrinter.setFontWeight(false);
     SunmiPrinter.printerText(SEP);
 
     // ── THÔNG TIN ĐƠN ──
     SunmiPrinter.setAlignment(0); // left
-    SunmiPrinter.printerText(`Mã đơn: #${billData.orderCode || billData.orderId}\n`);
-    const dateStr = new Date().toLocaleString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      day: "2-digit",
-      month: "2-digit",
-    });
+    SunmiPrinter.printerText(`Mã đơn: ${normalizeReceiptText(billData.orderCode || String(billData.orderId))}\n`);
+    const dateStr = formatReceiptDate(billData.createdAt) || formatReceiptDate(new Date().toISOString());
     SunmiPrinter.printerText(`Ngày:   ${dateStr}\n`);
     SunmiPrinter.printerText(
-      `NV:  ${billData.customerName || "Khách vãng lai"}\n`,
-    );
-    SunmiPrinter.printerText(
-      `Hình thức: ${billData.paymentMethod === "VNPAY" ? "VNPay" : "Tiền mặt"}\n`,
+      `Thu ngan: ${normalizeReceiptText(billData.cashierName) || "admin"}\n`,
     );
     SunmiPrinter.printerText(SEP);
 
@@ -400,17 +455,8 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     billData.items.forEach((item) => {
       const qty = item.quantity;
       const price = vnd(item.unitPrice * qty);
-      thermalItemRows(item.name, qty, price).forEach((row) => {
+      thermalItemRows(normalizeReceiptText(item.name) || "Mon", qty, price).forEach((row) => {
         SunmiPrinter.printerText(row + "\n");
-      });
-
-      item.attributes?.forEach((attr) => {
-        if (attr.price > 0) {
-          const attrPrice = vnd(attr.price * qty);
-          thermalItemRows(`+ ${attr.name}`, qty, attrPrice).forEach((row) => {
-            SunmiPrinter.printerText(row + "\n");
-          });
-        }
       });
     });
 
@@ -431,11 +477,9 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     SunmiPrinter.setFontWeight(false);
     if (hasVat(billData)) {
       SunmiPrinter.printerText(
-        billData.vatType === "inclusive" ? "Da bao gom:\n" : "Chua bao gom:\n",
+        thermalRow("Tong tien thue VAT:", vnd(billData.vatAmount ?? 0)) + "\n",
       );
-      SunmiPrinter.printerText(
-        thermalRow(vatLabel(billData), vnd(billData.vatAmount ?? 0)) + "\n",
-      );
+      SunmiPrinter.printerText("Gia ban da bao gom thue VAT\n");
     } else {
       SunmiPrinter.printerText("Khong tinh VAT\n");
     }
@@ -456,7 +500,7 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     SunmiPrinter.setAlignment(1);
     if (SunmiPrinter.printQRCode) {
       try {
-        let qrCodeUrl = `https://bill-dev.chips.com.vn/pay/${billData.orderId}?method=vnpay`;
+        let qrCodeUrl = normalizeReceiptText(billData.qrValue) || `https://bill.chips.vn/pay/${billData.orderId}`;
         
         try {
           console.log(`📡 [BillService] Đang lấy VNPay payment URL để in QR thanh toán...`);
@@ -486,11 +530,10 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
 
     // ── FOOTER ──
     SunmiPrinter.setFontWeight(true);
-    SunmiPrinter.printerText("Cảm ơn Quý khách! Hẹn gặp lại!\n");
-    SunmiPrinter.printerText("Chips.vn - 0966 966 247\n");
+    SunmiPrinter.printerText("Hen gap lai quy khach!\n");
     SunmiPrinter.setFontWeight(false);
     SunmiPrinter.setFontSize(20);
-    SunmiPrinter.printerText("Phần mềm Chips Bill POS\n");
+    SunmiPrinter.printerText("Phan mem duoc viet boi ChipsBill Pos\n");
 
     // Đẩy giấy ra đủ để xé
     if (SunmiPrinter.lineWrap) {

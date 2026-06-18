@@ -118,6 +118,26 @@ const formatDateTime = (raw: string) => {
   }
 };
 
+const reportPaymentDebug = (
+  hypothesisId: string,
+  msg: string,
+  data: Record<string, unknown> = {},
+) => {
+  fetch("http://127.0.0.1:7777/event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId: "payment-app-crash",
+      runId: "pre-fix",
+      hypothesisId,
+      location: "PaymentScreen",
+      msg: `[DEBUG] ${msg}`,
+      data,
+      ts: Date.now(),
+    }),
+  }).catch(() => {});
+};
+
 // ─── Hợp phần (Component) ─────────────────────────────────────────────────────────────────
 const PaymentScreen = () => {
   const { width } = useWindowDimensions();
@@ -196,21 +216,26 @@ const PaymentScreen = () => {
         const detail = (res as any)?.data ?? res;
         setOrderDetail(detail);
         const items = (detail?.items || detail?.orderItems || []).map(
-          (i: any) => ({
-            name: i.productNameSnapshot || i.productName || i.name || "Món",
-            quantity: i.qty || i.quantity || 1,
-            unitPrice:
-              parseFloat(i.lineTotal || i.unitPriceSnapshot || "0") /
-              (i.qty || i.quantity || 1),
-            attributes: (
-              i.selectedOptionsSnapshot ||
-              i.selectedAttributes ||
-              []
-            ).map((a: any) => ({
-              name: a.name || a.attributeName || "",
-              price: 0,
-            })),
-          }),
+          (i: any) => {
+            // Extract attributes from item
+            const attributes: any[] = [];
+            const selectedOptions = i.selectedOptionsSnapshot || i.selectedAttributes || [];
+            selectedOptions.forEach((opt: any) => {
+              attributes.push({ 
+                name: opt.name || opt.value, 
+                price: opt.price || opt.priceAmount || 0 
+              });
+            });
+            
+            return {
+              name: i.productNameSnapshot || i.productName || i.name || "Món",
+              quantity: i.qty || i.quantity || 1,
+              unitPrice:
+                parseFloat(i.lineTotal || i.unitPriceSnapshot || "0") /
+                (i.qty || i.quantity || 1),
+              attributes,
+            };
+          },
         );
         setOrderItems(items);
         setOrderDiscount(
@@ -248,8 +273,9 @@ const PaymentScreen = () => {
     return {
       id: orderId,
       orderId,
+      orderCode: orderDetail?.orderCode,
       customerName: customerName || "Khách vãng lai",
-      createdAt: new Date().toLocaleString("vi-VN"),
+      createdAt: orderDetail?.createdAt || new Date().toLocaleString("vi-VN"),
       items: orderItems,
       totalPrice: total,
       discount: orderDiscount,
@@ -262,6 +288,12 @@ const PaymentScreen = () => {
       totalAmount: total,
       cashReceived: selectedMethod === "CASH" ? Number(cashInput) : undefined,
       cashChange: selectedMethod === "CASH" ? cashChange : undefined,
+      cashierName: orderDetail?.cashierName || orderDetail?.createdByName || "admin",
+      branchName: orderDetail?.branchName,
+      branchAddress: orderDetail?.branchAddress,
+      hotline: orderDetail?.branchPhone || orderDetail?.hotline,
+      taxCode: orderDetail?.taxCode || orderDetail?.branchTaxCode,
+      qrValue: `https://bill.chips.vn/pay/${orderId}`,
     };
   }, [
     orderId,
@@ -297,6 +329,15 @@ const PaymentScreen = () => {
       );
       if (successRecord) {
         const paid = parseFloat(successRecord.amount || totalAmount);
+          // #region debug-point D:load-history-success
+          reportPaymentDebug("D", "loadHistory detected paid order", {
+            orderId,
+            paymentDone,
+            orderAlreadyPaid,
+            status: successRecord.status,
+            amount: successRecord.amount || totalAmount,
+          });
+          // #endregion
         console.log(
           `[PaymentScreen] Đơn hàng ${orderId} đã được thanh toán: số tiền=${paid}`,
         );
@@ -339,6 +380,16 @@ const PaymentScreen = () => {
             (p: any) => p.status === "SUCCESS" || p.status === "PAID",
           );
           if (successRecord) {
+            // #region debug-point A:polling-success
+            reportPaymentDebug("A", "polling branch hit success", {
+              orderId,
+              vnpayOpened,
+              paymentDone,
+              hasVnpayUrl: !!vnpayUrl,
+              status: successRecord.status,
+              amount: successRecord.amount || totalAmount,
+            });
+            // #endregion
             const paidAmount = parseFloat(successRecord.amount || totalAmount);
             console.log(
               `[PaymentScreen] Tự động phát hiện VNPay thành công! Số tiền API=${paidAmount}`,
@@ -363,6 +414,12 @@ const PaymentScreen = () => {
 
             // Redirect về OrdersTab tab Đang chờ
             setTimeout(() => {
+              // #region debug-point A:polling-navigate
+              reportPaymentDebug("A", "polling branch navigating to main", {
+                orderId,
+                paidAmount,
+              });
+              // #endregion
               navigation.navigate("Main", {
                 screen: "OrdersTab",
                 params: { initialTab: "pending" },
@@ -408,6 +465,18 @@ const PaymentScreen = () => {
             (p: any) => p.status === "SUCCESS" || p.status === "PAID",
           );
           if (successRecord) {
+            // #region debug-point B:appstate-success
+            reportPaymentDebug("B", "appstate branch hit success", {
+              orderId,
+              prevState: prev,
+              nextState,
+              vnpayOpened,
+              paymentDone,
+              hasVnpayUrl: !!vnpayUrl,
+              status: successRecord.status,
+              amount: successRecord.amount || totalAmount,
+            });
+            // #endregion
             const paidAmount = parseFloat(successRecord.amount || totalAmount);
             console.log(
               `[PaymentScreen] Trạng thái ứng dụng: Phát hiện VNPay thành công! Số tiền=${paidAmount}`,
@@ -430,6 +499,12 @@ const PaymentScreen = () => {
 
             // Redirect về OrdersTab tab Đang chờ
             setTimeout(() => {
+              // #region debug-point B:appstate-navigate
+              reportPaymentDebug("B", "appstate branch navigating to main", {
+                orderId,
+                paidAmount,
+              });
+              // #endregion
               navigation.navigate("Main", {
                 screen: "OrdersTab",
                 params: { initialTab: "pending" },
@@ -508,6 +583,15 @@ const PaymentScreen = () => {
         return;
       }
 
+      // #region debug-point C:cash-success
+      reportPaymentDebug("C", "cash branch hit success", {
+        orderId,
+        paymentDone,
+        orderAlreadyPaid,
+        cashReceived,
+        totalAmount: Number(totalAmount),
+      });
+      // #endregion
       setConfirmedAmount(Number(totalAmount));
       setOrderAlreadyPaid(true);
       setPaymentDone(true);
@@ -526,6 +610,13 @@ const PaymentScreen = () => {
 
       // Redirect về tab Đang chờ
       setTimeout(() => {
+        // #region debug-point C:cash-navigate
+        reportPaymentDebug("C", "cash branch navigating to main", {
+          orderId,
+          cashReceived,
+          totalAmount: Number(totalAmount),
+        });
+        // #endregion
         navigation.navigate("Main", {
           screen: "OrdersTab",
           params: { initialTab: "pending" },
@@ -901,6 +992,16 @@ const PaymentScreen = () => {
                 );
 
                 if (successRecord) {
+                  // #region debug-point A:manual-success
+                  reportPaymentDebug("A", "manual confirm branch hit success", {
+                    orderId,
+                    vnpayOpened,
+                    paymentDone,
+                    hasVnpayUrl: !!vnpayUrl,
+                    status: successRecord.status,
+                    amount: successRecord.amount || totalAmount,
+                  });
+                  // #endregion
                   console.log('[PaymentScreen] VNPay được xác nhận bởi BE → đang phát TTS');
                   const paidAmount = parseFloat(
                     successRecord.amount || totalAmount,
@@ -920,6 +1021,12 @@ const PaymentScreen = () => {
                   loadHistory();
 
                   setTimeout(() => {
+                    // #region debug-point A:manual-navigate
+                    reportPaymentDebug("A", "manual confirm branch navigating to main", {
+                      orderId,
+                      paidAmount,
+                    });
+                    // #endregion
                     navigation.navigate("Main", {
                       screen: "OrdersTab",
                       params: { initialTab: "pending" },
