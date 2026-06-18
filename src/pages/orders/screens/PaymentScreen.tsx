@@ -19,7 +19,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   ScrollView,
   Platform,
@@ -30,6 +29,7 @@ import {
   Modal,
   useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -44,7 +44,9 @@ import {
   Printer,
   Share2,
   X,
+  QrCode,
 } from "lucide-react-native";
+import QRCode from "react-native-qrcode-svg";
 import { COLORS, FONTS } from "@/styles/theme";
 import { formatCurrency } from "@/utils";
 import {
@@ -132,6 +134,42 @@ const PaymentScreen = () => {
   const [orderAlreadyPaid, setOrderAlreadyPaid] = useState(false);
   const [vnpayOpened, setVnpayOpened] = useState(false);
   const [vnpayUrl, setVnpayUrl] = useState<string | null>(null); // State cho WebView URL
+  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes countdown in seconds
+
+  // Hiệu ứng đếm ngược thời gian hiệu lực cho mã QR
+  useEffect(() => {
+    let timerInterval: any = null;
+    if (vnpayOpened && vnpayUrl && !paymentDone) {
+      setTimeLeft(300); // Reset về 5 phút khi có URL mới
+      timerInterval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerInterval);
+            // Hết giờ -> Tự động đóng modal QR
+            setVnpayUrl(null);
+            setVnpayOpened(false);
+            Toast.show({
+              type: "error",
+              text1: "Mã QR hết hiệu lực",
+              text2: "Giao dịch thanh toán VNPay đã hết hạn.",
+            });
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timerInterval) clearInterval(timerInterval);
+    };
+  }, [vnpayOpened, vnpayUrl, paymentDone]);
+
+  // Hàm định dạng giây thành dạng MM:SS
+  const formatTimeLeft = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `Còn ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   // todo: Tiền khách đưa (mặc định = tổng đơn)
@@ -938,58 +976,195 @@ const PaymentScreen = () => {
           </TouchableOpacity>
         </View>
       )}
-      {/* Modal hiển thị WebView VNPay */}
+      {/* Modal hiển thị QR Code thanh toán VNPay */}
       {vnpayUrl && (
         <Modal
           visible={!!vnpayUrl}
-          animationType="slide"
-          onRequestClose={() => setVnpayUrl(null)}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setVnpayUrl(null);
+            setVnpayOpened(false);
+          }}
         >
-          <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                padding: 16,
-                borderBottomWidth: 1,
-                borderBottomColor: "#eee",
-              }}
-            >
+          <View style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          }}>
+            <View style={{
+              width: '100%',
+              maxWidth: 380,
+              backgroundColor: '#1E233D',
+              borderRadius: 24,
+              padding: 20,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+              elevation: 10,
+            }}>
+              {/* Header */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    backgroundColor: '#1565C0',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                    <QrCode size={20} color="#fff" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 16, fontFamily: FONTS.bold, color: '#fff' }}>Thanh toán VNPAY</Text>
+                    <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: FONTS.regular }} numberOfLines={1}>
+                      Mã đơn: {orderDetail?.orderCode || `#${orderId}`}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setVnpayUrl(null);
+                    setVnpayOpened(false);
+                  }}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <X size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Order Info Row */}
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                borderRadius: 16,
+                padding: 12,
+                marginBottom: 20,
+              }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: FONTS.medium }}>Mã đơn</Text>
+                  <Text style={{ fontSize: 14, fontFamily: FONTS.bold, color: '#fff', marginTop: 2 }} numberOfLines={1}>
+                    {orderDetail?.orderCode || `ORD-${orderId}`}
+                  </Text>
+                </View>
+                <View style={{
+                  backgroundColor: '#FFF5EB',
+                  borderRadius: 12,
+                  paddingVertical: 8,
+                  paddingHorizontal: 16,
+                  alignItems: 'flex-end',
+                }}>
+                  <Text style={{ fontSize: 10, color: '#FF7300', fontFamily: FONTS.medium }}>Số tiền</Text>
+                  <Text style={{ fontSize: 16, color: '#FF7300', fontFamily: FONTS.bold, marginTop: 2 }}>
+                    {formatCurrency(totalAmount)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* QR Code Container */}
+              <View style={{
+                backgroundColor: '#fff',
+                borderRadius: 20,
+                padding: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 20,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+              }}>
+                <QRCode
+                  value={vnpayUrl}
+                  size={200}
+                  color="#000"
+                  backgroundColor="#fff"
+                />
+              </View>
+
+              {/* Countdown Timer */}
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                backgroundColor: '#E8F0FE',
+                borderRadius: 20,
+                paddingVertical: 8,
+                paddingHorizontal: 16,
+                alignSelf: 'center',
+                marginBottom: 16,
+              }}>
+                <Clock size={16} color="#1A73E8" />
+                <Text style={{
+                  fontSize: 14,
+                  fontFamily: FONTS.bold,
+                  color: '#1A73E8',
+                }}>
+                  {formatTimeLeft(timeLeft)}
+                </Text>
+              </View>
+
+              <Text style={{
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.4)',
+                textAlign: 'center',
+                fontFamily: FONTS.regular,
+                marginBottom: 16,
+              }}>
+                Mã giao dịch: {orderId}
+              </Text>
+
+              <Text style={{
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.6)',
+                textAlign: 'center',
+                fontFamily: FONTS.medium,
+                lineHeight: 18,
+                marginBottom: 20,
+                paddingHorizontal: 10,
+              }}>
+                Khách quét mã bằng app ngân hàng hoặc ví VNPAY để thanh toán.
+              </Text>
+
+              {/* Action Buttons */}
               <TouchableOpacity
-                onPress={() => setVnpayUrl(null)}
-                style={{ padding: 8, marginRight: 8 }}
-              >
-                <ChevronLeft size={24} color={COLORS.textPrimary} />
-              </TouchableOpacity>
-              <Text
                 style={{
-                  fontFamily: FONTS.semiBold,
-                  fontSize: 16,
-                  color: COLORS.textPrimary,
+                  borderWidth: 1,
+                  borderColor: '#EF4444',
+                  borderRadius: 14,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                }}
+                onPress={() => {
+                  setVnpayUrl(null);
+                  setVnpayOpened(false);
+                  Toast.show({
+                    type: "info",
+                    text1: "Đã hủy giao dịch",
+                    text2: "Yêu cầu thanh toán VNPay đã bị hủy.",
+                  });
                 }}
               >
-                Thanh toán VNPay
-              </Text>
+                <Text style={{ color: '#EF4444', fontFamily: FONTS.bold, fontSize: 15 }}>Hủy giao dịch</Text>
+              </TouchableOpacity>
             </View>
-            <WebView
-              source={{ uri: vnpayUrl }}
-              style={{ flex: 1 }}
-              startInLoadingState={true}
-              renderLoading={() => (
-                <ActivityIndicator
-                  size="large"
-                  color={COLORS.primary}
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    marginLeft: -18,
-                    marginTop: -18,
-                  }}
-                />
-              )}
-            />
-          </SafeAreaView>
+          </View>
         </Modal>
       )}
     </SafeAreaView>

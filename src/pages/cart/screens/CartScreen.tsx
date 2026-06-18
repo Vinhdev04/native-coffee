@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import {
   View, Text, FlatList,
-  TouchableOpacity, Image, SafeAreaView, ActivityIndicator,
+  TouchableOpacity, Image, ActivityIndicator,
   Platform, StatusBar, ScrollView, Modal, TextInput, useWindowDimensions
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useCart } from '@/context/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
-import { ChevronLeft, Trash2, Plus, Minus, Ticket, ChevronRight, FileText, ShoppingBag, X, CheckCircle2 } from 'lucide-react-native';
-import { createOrder, fetchActiveShiftSession } from '@/services/orderService';
+import { ChevronLeft, Trash2, Plus, Minus, Ticket, ChevronRight, FileText, ShoppingBag, X, CheckCircle2, QrCode } from 'lucide-react-native';
+import { createOrder, fetchActiveShiftSession, fetchTables, createQrOrder } from '@/services/orderService';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '@/context/AuthContext';
 import { orderCache } from '@/utils/orderCache';
@@ -34,11 +35,31 @@ const CartScreen = () => {
 
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
-  const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart, updateNote, updateItem } = useCart();
+  const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart, updateNote, updateItem, activeTable, setActiveTable, clearActiveTable } = useCart();
   const { user } = useAuth();
+  const branchId = user?.branchId || (user as any)?.branchId || (user as any)?.branch_id || 1;
   
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
+  const [tables, setTables] = useState<any[]>([]);
+  const [tablesLoading, setTablesLoading] = useState(false);
+  const [tablesModalVisible, setTablesModalVisible] = useState(false);
+
+  // todo: Lấy danh sách bàn từ API
+  const handleOpenTablesModal = async () => {
+    setTablesModalVisible(true);
+    setTablesLoading(true);
+    try {
+      const res = await fetchTables(branchId);
+      const rows = (res as any)?.data?.rows || (res as any)?.data || (res as any)?.rows || res || [];
+      setTables(rows.filter((t: any) => t.isActive === '1' || t.isActive === 1 || t.isActive === undefined));
+    } catch (err) {
+      console.error('Lỗi khi lấy danh sách bàn:', err);
+      Toast.show({ type: 'error', text1: 'Lỗi', text2: 'Không thể tải danh sách bàn ăn' });
+    } finally {
+      setTablesLoading(false);
+    }
+  };
   
   // todo: Trạng thái và loại thuế suất áp dụng
   const [vatType, setVatType] = useState<'exclusive' | 'inclusive' | 'none'>('inclusive');
@@ -85,58 +106,65 @@ const CartScreen = () => {
     try {
       setIsCheckingOut(true);
 
-      // todo: Lấy thông tin ca làm việc hiện tại đang chạy
-      console.log('[CartScreen] Đang lấy phiên ca làm việc đang hoạt động...');
-      let shiftSessionId: number | null = null;
-      try {
-        const shiftRes = await fetchActiveShiftSession(1);
-        console.log('[CartScreen] Phản hồi thô của shiftSession:', JSON.stringify(shiftRes, null, 2));
-
-        const shifts: any[] = (shiftRes as any)?.data?.rows
-          || (shiftRes as any)?.data
-          || (shiftRes as any)?.rows
-          || shiftRes
-          || [];
-
-        const shiftArr = Array.isArray(shifts) ? shifts : [shifts];
-        const activeShift = shiftArr.find((s: any) => s.status === 'OPEN' || s.isActive) || shiftArr[0];
-
-        if (activeShift) {
-          shiftSessionId = activeShift.id;
-          console.log(`[CartScreen] Ca làm việc hoạt động id=${shiftSessionId}`, JSON.stringify(activeShift));
-        } else {
-          console.warn('[CartScreen] Không tìm thấy ca làm việc hoạt động, phản hồi:', JSON.stringify(shifts));
-        }
-      } catch (shiftErr) {
-        console.error('[CartScreen] Lỗi fetchActiveShiftSession:', shiftErr);
-      }
-
-      if (!shiftSessionId) {
-        console.warn('[CartScreen] Không có shiftSessionId — đơn hàng có thể thất bại nếu API yêu cầu');
-      }
-
-      // todo: Khởi tạo thông tin khách hàng và dữ liệu gửi lên server
       const customerName = user?.fullName || (user as any)?.full_name
         || user?.username || (user as any)?.name
         || 'Khách vãng lai';
-      console.log(`[CartScreen] Tên khách hàng từ xác thực: "${customerName}"`);
-      const payload: any = {
-        branchId: 1,
-        ...(shiftSessionId ? { shiftSessionId } : {}),
-        customerName,
-        note: selectedVoucher ? `Voucher: ${selectedVoucher.code} (-${formatCurrency(selectedVoucher.value)})` : '',
-        items: items.map(item => ({
-          productId: Number(item.id),
-          selectedProductAttributeIds: item.selectedAttributes?.map((a: any) => Number(a.id)).filter((id: number) => !isNaN(id)) || [],
-          qty: item.quantity,
-          note: item.note || '',
-        })),
-      };
+      
+      let res: any = null;
 
-      console.log('[CartScreen] Dữ liệu gửi đi tạo đơn hàng (payload):', JSON.stringify(payload, null, 2));
+      // Phân biệt luồng: Nếu chọn bàn bằng QR Token (Luồng khách hàng)
+      if (activeTable?.qrToken && !activeTable.id) {
+        const qrPayload = {
+          qrToken: activeTable.qrToken,
+          items: items.map(item => ({
+            productId: Number(item.id),
+            selectedProductAttributeIds: item.selectedAttributes?.map((a: any) => Number(a.id)).filter((id: number) => !isNaN(id)) || [],
+            qty: item.quantity,
+            note: item.note || '',
+          })),
+          note: selectedVoucher ? `Voucher: ${selectedVoucher.code} (-${formatCurrency(selectedVoucher.value)})` : '',
+        };
+        console.log('[CartScreen] Gửi đơn hàng qua QR Token:', JSON.stringify(qrPayload, null, 2));
+        res = await createQrOrder(qrPayload);
 
-      // todo: Gọi API gửi tạo đơn hàng mới
-      const res = await createOrder(payload);
+      } else {
+        // Luồng nhân viên/mặc định (có hoặc không có tableId)
+        let shiftSessionId: number | null = null;
+        try {
+          const shiftRes = await fetchActiveShiftSession(branchId);
+          const shifts: any[] = (shiftRes as any)?.data?.rows
+            || (shiftRes as any)?.data
+            || (shiftRes as any)?.rows
+            || shiftRes
+            || [];
+
+          const shiftArr = Array.isArray(shifts) ? shifts : [shifts];
+          const activeShift = shiftArr.find((s: any) => s.status === 'OPEN' || s.isActive) || shiftArr[0];
+
+          if (activeShift) {
+            shiftSessionId = activeShift.id;
+          }
+        } catch (shiftErr) {
+          console.error('[CartScreen] Lỗi fetchActiveShiftSession:', shiftErr);
+        }
+
+        const payload: any = {
+          branchId,
+          ...(shiftSessionId ? { shiftSessionId } : {}),
+          ...(activeTable?.id ? { tableId: activeTable.id } : {}),
+          customerName,
+          note: selectedVoucher ? `Voucher: ${selectedVoucher.code} (-${formatCurrency(selectedVoucher.value)})` : '',
+          items: items.map(item => ({
+            productId: Number(item.id),
+            selectedProductAttributeIds: item.selectedAttributes?.map((a: any) => Number(a.id)).filter((id: number) => !isNaN(id)) || [],
+            qty: item.quantity,
+            note: item.note || '',
+          })),
+        };
+        console.log('[CartScreen] Gửi tạo đơn hàng tiêu chuẩn:', JSON.stringify(payload, null, 2));
+        res = await createOrder(payload);
+      }
+
       console.log('[CartScreen] Phản hồi tạo đơn hàng:', JSON.stringify(res, null, 2));
 
       const newOrderId = (res as any)?.data?.id
@@ -148,14 +176,16 @@ const CartScreen = () => {
         orderCache.setCount(newOrderId, items.length);
         Toast.show({ type: 'success', text1: t('order_success_title'), text2: t('order_success_desc', { id: newOrderId }) });
         clearCart();
+        clearActiveTable();
         navigation.navigate('OrderDetail', { orderId: newOrderId });
       } else {
         console.warn('[CartScreen] Không có orderId trong phản hồi, đang chuyển hướng đến OrdersTab');
+        clearCart();
+        clearActiveTable();
         navigation.navigate('Main', { screen: 'OrdersTab' });
       }
     } catch (error: any) {
       console.error('[CartScreen] Lỗi handleCheckout:', error);
-      console.error('[CartScreen] Phản hồi lỗi:', JSON.stringify(error?.response?.data, null, 2));
       Toast.show({
         type: 'error',
         text1: 'Lỗi đặt hàng',
@@ -259,7 +289,7 @@ const CartScreen = () => {
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.goBack()}>
             <ChevronLeft size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>{t('cart_title')}</Text>
+          <Text style={s.headerTitle}>{t('cart.title')}</Text>
           <View style={s.headerRight}>
             <TouchableOpacity 
               style={s.headerBtn} 
@@ -277,6 +307,101 @@ const CartScreen = () => {
                 {/* Items Section */}
                 <View style={s.itemsSection}>
                   {items.map((item, index) => renderItem(item, index === items.length - 1))}
+                </View>
+
+                {/* Table Section */}
+                <View style={{
+                  backgroundColor: '#fff',
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 12,
+                  borderWidth: 1,
+                  borderColor: '#E5E7EB',
+                }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <QrCode size={18} color={COLORS.primary} style={{ marginRight: 8 }} />
+                      <Text style={{ fontSize: 16, fontWeight: 'bold', color: COLORS.textPrimary }}>Thông tin Bàn ăn</Text>
+                    </View>
+                    {activeTable && (
+                      <TouchableOpacity onPress={clearActiveTable}>
+                        <Text style={{ fontSize: 13, color: '#EF4444', fontWeight: '500' }}>Xóa bàn</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {activeTable ? (
+                    <View style={{
+                      backgroundColor: '#FFF5F0',
+                      padding: 12,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: '#FFE0CC',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#D44A00' }}>
+                          {activeTable.name || 'Bàn quét QR'}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                          {activeTable.qrToken ? `Token: ${activeTable.qrToken.substring(0, 16)}...` : 'Gán trực tiếp bởi nhân viên'}
+                        </Text>
+                      </View>
+                      <TouchableOpacity 
+                        style={{
+                          backgroundColor: '#fff',
+                          paddingVertical: 6,
+                          paddingHorizontal: 12,
+                          borderRadius: 6,
+                          borderWidth: 1,
+                          borderColor: '#FFE0CC',
+                        }}
+                        onPress={handleOpenTablesModal}
+                      >
+                        <Text style={{ fontSize: 12, color: COLORS.primary, fontWeight: '600' }}>Đổi bàn</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <TouchableOpacity 
+                        style={{
+                          flex: 1,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: '#F3F4F6',
+                          borderRadius: 8,
+                          paddingVertical: 12,
+                          borderWidth: 1,
+                          borderColor: '#E5E7EB',
+                        }}
+                        onPress={handleOpenTablesModal}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.textPrimary }}>Chọn bàn</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={{
+                          flex: 1,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: COLORS.primary + '15',
+                          borderRadius: 8,
+                          paddingVertical: 12,
+                          borderWidth: 1,
+                          borderColor: COLORS.primary + '40',
+                        }}
+                        onPress={() => navigation.navigate('ScanQR', { scanType: 'table' })}
+                        activeOpacity={0.7}
+                      >
+                        <QrCode size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.primary }}>Quét QR bàn</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
 
                 {/* Voucher section */}
@@ -504,6 +629,116 @@ const CartScreen = () => {
             customerName: user?.fullName || 'Khách vãng lai' 
           }}
         />
+
+        {/* Table Selection Modal */}
+        <Modal
+          visible={tablesModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setTablesModalVisible(false)}
+        >
+          <View style={s.modalOverlay}>
+            <View style={s.voucherModalContent}>
+              <View style={s.modalHeader}>
+                <Text style={s.modalTitle}>Chọn bàn ăn</Text>
+                <TouchableOpacity onPress={() => setTablesModalVisible(false)}>
+                  <X size={24} color={COLORS.textPrimary} />
+                </TouchableOpacity>
+              </View>
+
+              {tablesLoading ? (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <ActivityIndicator size="large" color={COLORS.primary} />
+                  <Text style={{ marginTop: 12, color: COLORS.textSecondary }}>Đang tải danh sách bàn...</Text>
+                </View>
+              ) : tables.length === 0 ? (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <Text style={{ color: COLORS.textMuted }}>Không tìm thấy bàn nào hoạt động</Text>
+                </View>
+              ) : (
+                <ScrollView contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: 20 }}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: 10 }}>
+                    {tables.map((t: any) => {
+                      const isSelected = activeTable?.id === t.id;
+                      const isBusy = t.status === 'ORDERED';
+                      return (
+                        <TouchableOpacity
+                          key={t.id}
+                          style={{
+                            width: (width - 40 - 20) / 3,
+                            aspectRatio: 1,
+                            borderRadius: 16,
+                            backgroundColor: isSelected ? '#FFF0E6' : '#F9FAFB',
+                            borderWidth: 1.5,
+                            borderColor: isSelected ? COLORS.primary : isBusy ? '#FFE0CC' : '#E5E7EB',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            padding: 8,
+                            position: 'relative',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: isSelected ? 0.05 : 0.02,
+                            shadowRadius: 4,
+                            elevation: 2,
+                          }}
+                          onPress={() => {
+                            setActiveTable({
+                              id: t.id,
+                              name: t.name,
+                              qrToken: t.qrToken,
+                            });
+                            setTablesModalVisible(false);
+                          }}
+                        >
+                          {isSelected && (
+                            <View style={{
+                              position: 'absolute',
+                              top: 6,
+                              right: 6,
+                              backgroundColor: COLORS.primary,
+                              borderRadius: 10,
+                              width: 16,
+                              height: 16,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}>
+                              <CheckCircle2 size={12} color="#fff" />
+                            </View>
+                          )}
+                          
+                          <Text style={{
+                            fontSize: 14,
+                            fontWeight: 'bold',
+                            color: isSelected ? COLORS.primary : COLORS.textPrimary,
+                            textAlign: 'center',
+                            marginBottom: 6,
+                          }} numberOfLines={1}>
+                            {t.name}
+                          </Text>
+                          
+                          <View style={{
+                            backgroundColor: isBusy ? '#FFEAE0' : '#E6F4EA',
+                            borderRadius: 8,
+                            paddingVertical: 3,
+                            paddingHorizontal: 8,
+                          }}>
+                            <Text style={{
+                              fontSize: 10,
+                              fontWeight: '600',
+                              color: isBusy ? '#FF5500' : '#137333',
+                            }}>
+                              {isBusy ? 'Bận' : 'Trống'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              )}
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </GestureHandlerRootView>
   );

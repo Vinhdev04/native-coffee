@@ -14,6 +14,7 @@ import { captureRef } from "react-native-view-shot";
 
 import { LOGO_BASE64 } from "@/constants/logoBase64";
 import { fetchOrderById } from "@/services/orderService";
+import { createVNPayUrl } from "@/services/paymentService";
 
 const hasVat = (data: BillData) =>
   Boolean(data.vatType && data.vatType !== "none") ||
@@ -455,11 +456,26 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     SunmiPrinter.setAlignment(1);
     if (SunmiPrinter.printQRCode) {
       try {
-        SunmiPrinter.printQRCode(
-          `https://bill-dev.chips.com.vn/pay/${billData.orderId}?method=vnpay`,
-          4,
-          2,
-        );
+        let qrCodeUrl = `https://bill-dev.chips.com.vn/pay/${billData.orderId}?method=vnpay`;
+        
+        try {
+          console.log(`📡 [BillService] Đang lấy VNPay payment URL để in QR thanh toán...`);
+          const vnpayRes = await createVNPayUrl(billData.orderId);
+          const url =
+            (vnpayRes as any)?.data?.paymentUrl ||
+            (vnpayRes as any)?.paymentUrl ||
+            (vnpayRes as any)?.data?.url ||
+            (vnpayRes as any)?.url;
+          
+          if (url) {
+            qrCodeUrl = url;
+            console.log(`📡 [BillService] Đã lấy thành công VNPay payment URL để in QR: ${url}`);
+          }
+        } catch (vnpayError) {
+          console.warn("⚠️ [BillService] Lấy VNPay URL thất bại, dùng URL mặc định:", vnpayError);
+        }
+
+        SunmiPrinter.printQRCode(qrCodeUrl, 4, 2);
         SunmiPrinter.printerText("\n");
       } catch (qrError) {
         console.warn("⚠️ [BillService] In QR code thất bại:", qrError);

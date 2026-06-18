@@ -124,3 +124,39 @@ export const updateOrderStatus = async (
 export const cancelOrder = async (id: number | string) => {
   return updateOrderStatus(id, "CANCELLED");
 };
+
+/**
+ * Lấy danh sách bàn ăn theo chi nhánh
+ * GET /tables?branchId={branchId}
+ */
+export const fetchTables = async (branchId = 1) => {
+  console.log(`[Dịch vụ Đơn hàng] Lấy danh sách bàn ăn -> mã chi nhánh = ${branchId}`);
+  const response = await axiosClient.get('/tables', {
+    params: { branchId, limit: 100 }
+  });
+  console.log('[Dịch vụ Đơn hàng] Phản hồi danh sách bàn ăn:', response);
+  return response;
+};
+
+/**
+ * Tạo đơn hàng mới qua quét mã QR (Public, không yêu cầu Auth)
+ * POST /orders/qr-order
+ */
+export const createQrOrder = async (payload: {
+  qrToken: string;
+  items: any[];
+  note?: string;
+}) => {
+  const idempotencyKey = `qr-order-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+  
+  console.log('[Dịch vụ Đơn hàng] Dữ liệu tạo đơn QR:', JSON.stringify(payload, null, 2));
+  console.log(`[Dịch vụ Đơn hàng] Khóa chống trùng lặp QR order: ${idempotencyKey}`);
+
+  const response = await axiosClient.post("/orders/qr-order", payload, {
+    headers: { "idempotency-key": idempotencyKey },
+  });
+  console.log('[Dịch vụ Đơn hàng] Phản hồi tạo đơn QR:', response);
+  return response;
+};

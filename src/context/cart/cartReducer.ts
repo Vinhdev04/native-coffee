@@ -65,6 +65,10 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
     case 'OPEN_CART':   return { ...state, isOpen: true };
     case 'CLOSE_CART':  return { ...state, isOpen: false };
     case 'CLEAR_CART':  return { ...state, items: [] };
+    case 'SET_ACTIVE_TABLE':
+      return { ...state, activeTable: action.table };
+    case 'CLEAR_ACTIVE_TABLE':
+      return { ...state, activeTable: null };
     default:            return state;
   }
 }

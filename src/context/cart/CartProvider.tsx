@@ -1,11 +1,11 @@
 import React, { useContext, useReducer, ReactNode } from 'react';
 import { CartContext } from './CartContext';
 import { cartReducer } from './cartReducer';
-import { CartItem, CartState } from './types';
+import { CartItem, CartState, ActiveTable } from './types';
 
 // TODO: Thành phần Provider để bọc ứng dụng và chia sẻ trạng thái giỏ hàng
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, { items: [], isOpen: false });
+  const [state, dispatch] = useReducer(cartReducer, { items: [], isOpen: false, activeTable: null });
 
   // todo: tính toán thông tin tóm tắt tổng số lượng và tổng giá trị từ trạng thái
   const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -74,9 +74,20 @@ export function useCart() {
     dispatch({ type: 'UPDATE_ITEM', cartId, item: updatedItem });
   };
 
+  // TODO: Cập nhật bàn ăn đang hoạt động
+  const setActiveTable = (table: ActiveTable) => {
+    dispatch({ type: 'SET_ACTIVE_TABLE', table });
+  };
+
+  // TODO: Xóa bàn ăn đang hoạt động
+  const clearActiveTable = () => {
+    dispatch({ type: 'CLEAR_ACTIVE_TABLE' });
+  };
+
   return {
     items: state.items,
     isOpen: state.isOpen,
+    activeTable: state.activeTable,
     totalItems,
     totalPrice,
     addToCart,
@@ -85,6 +96,8 @@ export function useCart() {
     updateNote,
     updateItem,
     clearCart,
+    setActiveTable,
+    clearActiveTable,
     dispatch
   };
 }

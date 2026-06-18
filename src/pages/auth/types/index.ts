@@ -20,6 +20,7 @@ export interface UserDetail {
   role?:       string;
   permissions: any[];
   createdAt?:  string;
+  branchId?:   number;
 }
 
 export interface LoginPayload {

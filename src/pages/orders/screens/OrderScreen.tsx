@@ -10,7 +10,6 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   ActivityIndicator,
   RefreshControl,
@@ -19,6 +18,7 @@ import {
   Dimensions,
   useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
 import { COLORS } from "@/styles/theme";

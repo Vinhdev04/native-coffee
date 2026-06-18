@@ -54,4 +54,13 @@ i18n
     },
   });
 
+export const setLanguage = async (lang: string) => {
+  try {
+    await AsyncStorage.setItem(STORE_LANGUAGE_KEY, lang);
+    await i18n.changeLanguage(lang);
+  } catch (error) {
+    console.log('Error setting language', error);
+  }
+};
+
 export default i18n;

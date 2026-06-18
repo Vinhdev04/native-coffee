@@ -8,8 +8,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  SafeAreaView, ActivityIndicator, RefreshControl, Platform, StatusBar, useWindowDimensions
+  ActivityIndicator, RefreshControl, Platform, StatusBar, useWindowDimensions
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   ChevronLeft, Package, CreditCard, User, FileText, Calendar

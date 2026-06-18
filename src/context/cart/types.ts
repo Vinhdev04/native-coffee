@@ -1,3 +1,10 @@
+// todo: giao diện ActiveTable đại diện cho bàn ăn đang gọi món
+export interface ActiveTable {
+  id?: number;
+  name?: string;
+  qrToken?: string;
+}
+
 // todo: giao diện CartItem đại diện cho một sản phẩm trong giỏ hàng
 export interface CartItem {
   cartId:    string;
@@ -18,6 +25,7 @@ export interface CartItem {
 export interface CartState {
   items:  CartItem[];
   isOpen: boolean;
+  activeTable?: ActiveTable | null;
 }
 
 // todo: kiểu dữ liệu hợp nhất CartAction cho các thao tác trong reducer
@@ -30,4 +38,6 @@ export type CartAction =
   | { type: 'TOGGLE_CART' }
   | { type: 'OPEN_CART' }
   | { type: 'CLOSE_CART' }
-  | { type: 'CLEAR_CART' };
+  | { type: 'CLEAR_CART' }
+  | { type: 'SET_ACTIVE_TABLE'; table: ActiveTable }
+  | { type: 'CLEAR_ACTIVE_TABLE' };

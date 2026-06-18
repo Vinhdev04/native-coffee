@@ -5,20 +5,7 @@
  * @layer services
  */
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-let Speech: any = null;
-
-const loadSpeech = async () => {
-  try {
-    Speech = require('expo-speech');
-    console.log('[TTS] Nạp expo-speech thành công');
-  } catch (e) {
-    console.warn('[TTS] Thư viện expo-speech không khả dụng, đã tắt tính năng TTS:', e);
-  }
-};
-
-// Tải khi khởi tạo mô-đun
-loadSpeech();
+import * as Speech from 'expo-speech';
 
 /**
  * Phát thông báo thanh toán thành công
@@ -38,24 +25,23 @@ export const speakPaymentSuccess = (amount: number, customerName?: string) => {
   }
 
   try {
-    try { Speech.stop(); } catch {}
-
-    Speech.speak(text, {
+    const speakOptions = {
       language: 'vi-VN',
       rate: 1.0,
       pitch: 1.0,
-      onStart: () => console.log('[TTS] Bắt đầu phát giọng nói'),
-      onDone: () => console.log('[TTS] Kết thúc phát giọng nói'),
-      onError: (err: any) => {
-        console.error('[TTS] Lỗi phát giọng nói (vi-VN):', err);
-        // Fallback sang giọng mặc định của hệ thống nếu vi-VN thất bại
-        Speech.speak(text, {
-          rate: 1.0,
-          onStart: () => console.log('[TTS] Bắt đầu phát giọng nói (dự phòng)'),
-          onError: (e: any) => console.error('[TTS] Lỗi phát giọng nói (dự phòng):', e),
-        });
-      },
-    });
+    };
+
+    // Gọi stop() trước, đợi nó hoàn thành hoặc thất bại rồi mới gọi speak() để tránh bị hủy giữa chừng.
+    // Không sử dụng callback trong options (onStart, onDone, onError) trên Android để tránh lỗi
+    // gọi luồng không đồng bộ gây crash native (lỗi tự thoát app sau khi thanh toán).
+    Speech.stop()
+      .then(() => {
+        Speech.speak(text, speakOptions);
+      })
+      .catch((err: any) => {
+        console.log('[TTS] Lỗi khi stop (hoặc chưa phát gì):', err);
+        Speech.speak(text, speakOptions);
+      });
   } catch (e) {
     console.error('[TTS] Không thể phát giọng nói:', e);
   }

@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import Toast from '@/components/common/Toast';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { setLanguage } from '@/i18n';
 import { s } from '../styles/AccountScreen.styles';
 
 const AccountScreen = () => {
@@ -41,7 +42,7 @@ const AccountScreen = () => {
 
   // TODO: Hàm changeLanguage thay đổi ngôn ngữ hiển thị của ứng dụng thông qua thư viện i18n
   const changeLanguage = (lang: string) => {
-    i18n.changeLanguage(lang);
+    setLanguage(lang);
     setLangModalVisible(false);
   };
 

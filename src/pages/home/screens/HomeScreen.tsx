@@ -9,9 +9,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '@/styles/theme';
 import { useTranslation } from 'react-i18next';
-import { Search, ShoppingBag, X } from 'lucide-react-native';
+import { Search, ShoppingBag, X, QrCode } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import Toast from '@/components/common/Toast';
 import ProductCardHorizontal from '@/components/home/ProductCardHorizontal';
 import ProductModal from '@/components/menu/ProductModal';
@@ -33,7 +34,10 @@ const HomeScreen = () => {
 
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
-  const { items, totalItems, addToCart, updateQuantity } = useCart();
+  const { items, totalItems, addToCart, updateQuantity, activeTable, clearActiveTable } = useCart();
+  const { user } = useAuth();
+  
+  const branchId = user?.branchId || (user as any)?.branchId || (user as any)?.branch_id || 1;
 
   // todo: Trạng thái lưu trữ danh mục và danh sách sản phẩm
   const [categories, setCategories] = useState<any[]>([]);
@@ -59,8 +63,8 @@ const HomeScreen = () => {
     try {
       setLoading(true);
       const [catRes, prodRes] = await Promise.all([
-        fetchCategories({ branchId: 1 }),
-        fetchProducts({ branchId: 1, limit: 100 }),
+        fetchCategories({ branchId }),
+        fetchProducts({ branchId, limit: 100 }),
       ]);
       setCategories(catRes.data?.rows || catRes.data || []);
       setAllProducts(prodRes.data?.rows || prodRes.data || []);
@@ -166,13 +170,58 @@ const HomeScreen = () => {
             resizeMode="contain"
           />
         </View>
-        <View style={s.headerRight}>
+        <View style={[s.headerRight, { width: 'auto', flexDirection: 'row', alignItems: 'center' }]}>
+          <TouchableOpacity 
+            style={[s.headerBtn, { marginRight: 12 }]} 
+            onPress={() => navigation.navigate('ScanQR', { scanType: 'table' })}
+          >
+            <QrCode size={20} color={COLORS.primary} />
+          </TouchableOpacity>
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
             <ShoppingBag size={20} color={COLORS.primary} />
             {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText} adjustsFontSizeToFit numberOfLines={1}>{totalItems > 9 ? '9+' : totalItems}</Text></View>}
           </TouchableOpacity>
         </View>
       </View>
+
+      {activeTable && (
+        <View style={{
+          backgroundColor: '#FFF0E6',
+          paddingVertical: 10,
+          paddingHorizontal: 16,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottomWidth: 1,
+          borderBottomColor: '#FFE0CC',
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+            <View style={{
+              backgroundColor: COLORS.primary,
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              marginRight: 8,
+            }} />
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#D44A00' }} numberOfLines={1}>
+              Đang gọi món tại: {activeTable.name || activeTable.qrToken}
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={{
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              borderRadius: 4,
+              backgroundColor: '#fff',
+              borderWidth: 1,
+              borderColor: '#FFE0CC',
+            }}
+            onPress={clearActiveTable}
+          >
+            <Text style={{ fontSize: 12, color: '#FF5500', fontWeight: '500' }}>Hủy chọn</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={[s.searchSection, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
         <View style={s.searchBar}>

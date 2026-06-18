@@ -62,14 +62,14 @@ const MainNavigator = () => {
         name="MenuTab"
         component={MenuScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label={t('order_menu')} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label={t('menu.title')} />,
         }}
       />
       <Tab.Screen
         name="OrdersTab"
         component={OrderScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Package} label={t('orders')} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Package} label={t('orders.title')} />,
         }}
       />
       <Tab.Screen
