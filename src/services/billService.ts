@@ -6,7 +6,7 @@
  * @layer services
  */
 
-import { Platform, NativeModules, Share } from "react-native";
+import { Platform, NativeModules, Share, InteractionManager } from "react-native";
 import type { RefObject } from "react";
 import Toast from "react-native-toast-message";
 import { BillData } from "@/components/BillReceiptComponent";
@@ -25,8 +25,8 @@ const SunmiPrinter = NativeModules.SunmiPrinter;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}đ`;
-const RECEIPT_BRANCH_NAME = "CHI NHANH QUAN 1 (UPDATED)";
-const RECEIPT_BRANCH_ADDRESS = "456 Le Loi, Q.1, TP.HCM";
+const RECEIPT_BRANCH_NAME = "CHI NHÁNH QUẬN 12";
+const RECEIPT_BRANCH_ADDRESS = "456 Lê Lợi, Q.12, TP.HCM";
 const RECEIPT_HOTLINE = "0909999999";
 const RECEIPT_TAX_CODE = "9999999999";
 
@@ -57,11 +57,10 @@ const formatReceiptDate = (value?: string) => {
 
 /**
  * Tạo dòng căn phải trên máy in nhiệt (32 ký tự).
- * Ký tự tiếng Việt Unicode > 127 chiếm 2 đơn vị.
+ * Ưu tiên căn theo độ rộng ký tự (1/2 cột) để tránh lệch cột khi có Unicode.
  */
 const thermalRow = (label: string, value: string, maxW = 32): string => {
-  const vLen = value.length + (value.endsWith("đ") ? 1 : 0);
-  const spaces = Math.max(1, maxW - label.length - vLen);
+  const spaces = Math.max(1, maxW - thermalTextWidth(label) - thermalTextWidth(value));
   return label + " ".repeat(spaces) + value;
 };
 
@@ -69,10 +68,20 @@ const thermalRow = (label: string, value: string, maxW = 32): string => {
  * Format 1 dòng item: [Tên 18] [SL 4] [Giá 10] = 32 ký tự
  */
 const thermalTextWidth = (value: string) =>
-  Array.from(value).reduce(
-    (sum, char) => sum + (char.charCodeAt(0) > 127 ? 2 : 1),
-    0,
-  );
+  Array.from(value).reduce((sum, char) => {
+    const code = char.codePointAt(0) ?? 0;
+    const isWide =
+      (code >= 0x1100 && code <= 0x115f) ||
+      (code >= 0x2329 && code <= 0x232a) ||
+      (code >= 0x2e80 && code <= 0xa4cf) ||
+      (code >= 0xac00 && code <= 0xd7a3) ||
+      (code >= 0xf900 && code <= 0xfaff) ||
+      (code >= 0xfe10 && code <= 0xfe19) ||
+      (code >= 0xfe30 && code <= 0xfe6f) ||
+      (code >= 0xff00 && code <= 0xff60) ||
+      (code >= 0xffe0 && code <= 0xffe6);
+    return sum + (isWide ? 2 : 1);
+  }, 0);
 
 const sliceByThermalWidth = (value: string, width: number): string[] => {
   const chunks: string[] = [];
@@ -80,7 +89,19 @@ const sliceByThermalWidth = (value: string, width: number): string[] => {
   let currentWidth = 0;
 
   Array.from(value).forEach((char) => {
-    const charWidth = char.charCodeAt(0) > 127 ? 2 : 1;
+    const code = char.codePointAt(0) ?? 0;
+    const charWidth =
+      (code >= 0x1100 && code <= 0x115f) ||
+      (code >= 0x2329 && code <= 0x232a) ||
+      (code >= 0x2e80 && code <= 0xa4cf) ||
+      (code >= 0xac00 && code <= 0xd7a3) ||
+      (code >= 0xf900 && code <= 0xfaff) ||
+      (code >= 0xfe10 && code <= 0xfe19) ||
+      (code >= 0xfe30 && code <= 0xfe6f) ||
+      (code >= 0xff00 && code <= 0xff60) ||
+      (code >= 0xffe0 && code <= 0xffe6)
+        ? 2
+        : 1;
     if (current && currentWidth + charWidth > width) {
       chunks.push(current);
       current = "";
@@ -153,6 +174,42 @@ const thermalItemRows = (name: string, qty: number, price: string): string[] => 
  */
 export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
   try {
+    const logPrefix = `[BillService][Print][orderId=${String(data?.orderId ?? "")}]`;
+    let lastPrinterMethod = "";
+    const callPrinter = async (method: string, ...args: any[]) => {
+      lastPrinterMethod = method;
+      const fn = (SunmiPrinter as any)?.[method];
+      if (typeof fn !== "function") {
+        console.log(`${logPrefix} SKIP ${method} (not a function)`);
+        return undefined;
+      }
+      try {
+        const argPreview = args
+          .map((a) => {
+            if (typeof a === "string") {
+              const trimmed = a.length > 120 ? `${a.slice(0, 120)}…` : a;
+              return `"${trimmed}"(len=${a.length})`;
+            }
+            if (typeof a === "number" || typeof a === "boolean") return String(a);
+            if (a == null) return String(a);
+            return Object.prototype.toString.call(a);
+          })
+          .join(", ");
+        console.log(`${logPrefix} CALL ${method}(${argPreview})`);
+        const res = fn(...args);
+        await Promise.resolve(res);
+        console.log(`${logPrefix} OK   ${method}`);
+        return res;
+      } catch (err: any) {
+        console.error(`${logPrefix} FAIL ${method}:`, err);
+        const message = err?.message ? String(err.message) : String(err);
+        const wrapped: any = new Error(`[SunmiPrinter.${method}] ${message}`);
+        wrapped.cause = err;
+        wrapped._sunmiMethod = method;
+        throw wrapped;
+      }
+    };
+
     if (Platform.OS !== "android") {
       Toast.show({ type: "info", text1: "Tính năng in chỉ hỗ trợ Android!" });
       return false;
@@ -191,7 +248,7 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     }
 
     if (SunmiPrinter.printerInit) {
-      SunmiPrinter.printerInit();
+      await callPrinter("printerInit");
     }
 
     if (typeof SunmiPrinter.printerText !== "function" || typeof SunmiPrinter.setAlignment !== "function") {
@@ -204,6 +261,9 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     }
 
     console.log("🖨️ [BillService] Bắt đầu in hóa đơn Sunmi...");
+    try {
+      await callPrinter("enterPrinterBuffer", true);
+    } catch {}
 
     // Fetch latest order data from backend for accurate VAT and details
     let latestOrder: any = null;
@@ -397,107 +457,145 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
 
     const SEP = "--------------------------------\n"; // 32 dashes
     const SEP2 = "================================\n"; // 32 equals
+    const MAX_W = 32;
+    const QTY_W = 4;
+    const PRICE_W = 10;
+    const NAME_W = MAX_W - QTY_W - PRICE_W;
 
     // ── HEADER ──
-    SunmiPrinter.setAlignment(1); // center
-    SunmiPrinter.printerText(SEP);
+    await callPrinter("setAlignment", 1);
+    await callPrinter("printerText", SEP);
 
     // In Logo Base64 (width: 250px)
     if (SunmiPrinter.printBitmap) {
       try {
-        SunmiPrinter.printBitmap(LOGO_BASE64, 250);
-        SunmiPrinter.printerText("\n");
+        const logo =
+          LOGO_BASE64.startsWith("data:image/")
+            ? LOGO_BASE64
+            : `data:image/png;base64,${LOGO_BASE64}`;
+        console.log(
+          `${logPrefix} LOGO base64Len=${LOGO_BASE64.length} hasDataPrefix=${LOGO_BASE64.startsWith("data:image/")}`,
+        );
+        await callPrinter("printBitmap", logo, 250);
+        await callPrinter("printerText", "\n");
       } catch (bitmapError) {
         console.warn("⚠️ [BillService] In logo thất bại:", bitmapError);
-        SunmiPrinter.setFontSize(28);
-        SunmiPrinter.setFontWeight(true);
-        SunmiPrinter.printerText("CHIPS BILL\n");
-        SunmiPrinter.setFontWeight(false);
+        try {
+          await callPrinter("setFontSize", 28);
+          await callPrinter("setFontWeight", true);
+          await callPrinter("printerText", "CHIPS BILL\n");
+          await callPrinter("setFontWeight", false);
+        } catch {}
       }
     } else {
-      SunmiPrinter.setFontSize(28);
-      SunmiPrinter.setFontWeight(true);
-      SunmiPrinter.printerText("CHIPS BILL\n");
-      SunmiPrinter.setFontWeight(false);
+      await callPrinter("setFontSize", 28);
+      await callPrinter("setFontWeight", true);
+      await callPrinter("printerText", "CHIPS BILL\n");
+      await callPrinter("setFontWeight", false);
     }
 
-    SunmiPrinter.setFontSize(24);
-    SunmiPrinter.setFontWeight(true);
-    SunmiPrinter.printerText(`${normalizeReceiptText(billData.branchName) || RECEIPT_BRANCH_NAME}\n`);
-    SunmiPrinter.setFontWeight(false);
-    SunmiPrinter.setFontSize(20);
-    SunmiPrinter.printerText(`${normalizeReceiptText(billData.branchAddress) || RECEIPT_BRANCH_ADDRESS}\n`);
-    SunmiPrinter.printerText(`Hotline: ${normalizeReceiptText(billData.hotline) || RECEIPT_HOTLINE}\n`);
-    SunmiPrinter.printerText(`Ma so thue: ${normalizeReceiptText(billData.taxCode) || RECEIPT_TAX_CODE}\n`);
-    SunmiPrinter.printerText("\n");
-    SunmiPrinter.setFontSize(24);
-    SunmiPrinter.setFontWeight(true);
-    SunmiPrinter.printerText("HÓA ĐƠN BÁN HÀNG\n");
-    SunmiPrinter.setFontWeight(false);
-    SunmiPrinter.printerText(SEP);
+    await callPrinter("setFontSize", 24);
+    await callPrinter("setFontWeight", true);
+    await callPrinter(
+      "printerText",
+      `${normalizeReceiptText(billData.branchName) || RECEIPT_BRANCH_NAME}\n`,
+    );
+    await callPrinter("setFontWeight", false);
+    await callPrinter("setFontSize", 20);
+    await callPrinter(
+      "printerText",
+      `${normalizeReceiptText(billData.branchAddress) || RECEIPT_BRANCH_ADDRESS}\n`,
+    );
+    await callPrinter(
+      "printerText",
+      `Hotline: ${normalizeReceiptText(billData.hotline) || RECEIPT_HOTLINE}\n`,
+    );
+    await callPrinter(
+      "printerText",
+      `Mã số thuế: ${normalizeReceiptText(billData.taxCode) || RECEIPT_TAX_CODE}\n`,
+    );
+    await callPrinter("printerText", "\n");
+    await callPrinter("setFontSize", 24);
+    await callPrinter("setFontWeight", true);
+    await callPrinter("printerText", "HÓA ĐƠN BÁN HÀNG\n");
+    await callPrinter("setFontWeight", false);
+    await callPrinter("printerText", SEP);
 
     // ── THÔNG TIN ĐƠN ──
-    SunmiPrinter.setAlignment(0); // left
-    SunmiPrinter.printerText(`Mã đơn: ${normalizeReceiptText(billData.orderCode || String(billData.orderId))}\n`);
-    const dateStr = formatReceiptDate(billData.createdAt) || formatReceiptDate(new Date().toISOString());
-    SunmiPrinter.printerText(`Ngày:   ${dateStr}\n`);
-    SunmiPrinter.printerText(
-      `Thu ngan: ${normalizeReceiptText(billData.cashierName) || "admin"}\n`,
+    await callPrinter("setAlignment", 0);
+    await callPrinter(
+      "printerText",
+      `Mã đơn: ${normalizeReceiptText(billData.orderCode || String(billData.orderId))}\n`,
     );
-    SunmiPrinter.printerText(SEP);
+    const dateStr = formatReceiptDate(billData.createdAt) || formatReceiptDate(new Date().toISOString());
+    await callPrinter("printerText", `Ngày:   ${dateStr}\n`);
+    await callPrinter(
+      "printerText",
+      `Thu ngân: ${normalizeReceiptText(billData.cashierName) || "admin"}\n`,
+    );
+    await callPrinter("printerText", SEP);
 
     // ── BẢNG MÓN ──
-    SunmiPrinter.setFontWeight(true);
-    SunmiPrinter.printerText("Tên món             SL    TTiền\n");
-    SunmiPrinter.setFontWeight(false);
-    SunmiPrinter.printerText(SEP);
+    await callPrinter("setFontWeight", true);
+    await callPrinter(
+      "printerText",
+      `${padRight("Tên món", NAME_W)}${padLeft("SL", QTY_W)}${padLeft("TTiền", PRICE_W)}\n`,
+    );
+    await callPrinter("setFontWeight", false);
+    await callPrinter("printerText", SEP);
 
     billData.items.forEach((item) => {
       const qty = item.quantity;
       const price = vnd(item.unitPrice * qty);
-      thermalItemRows(normalizeReceiptText(item.name) || "Mon", qty, price).forEach((row) => {
-        SunmiPrinter.printerText(row + "\n");
+      thermalItemRows(normalizeReceiptText(item.name) || "Món", qty, price).forEach((row) => {
+        callPrinter("printerText", row + "\n").catch(() => {});
       });
     });
 
     // ── TỔNG ──
-    SunmiPrinter.printerText(SEP);
-    SunmiPrinter.printerText(
+    await callPrinter("printerText", SEP);
+    await callPrinter(
+      "printerText",
       thermalRow("Tổng tiền:", vnd(billData.subTotal)) + "\n",
     );
-    SunmiPrinter.printerText(
+    await callPrinter(
+      "printerText",
       thermalRow("Khuyến mãi:", vnd(billData.discount ?? 0)) + "\n",
     );
 
-    SunmiPrinter.printerText(SEP2);
-    SunmiPrinter.setFontWeight(true);
-    SunmiPrinter.printerText(
+    await callPrinter("printerText", SEP2);
+    await callPrinter("setFontWeight", true);
+    await callPrinter(
+      "printerText",
       thermalRow("TỔNG CỘNG:", vnd(billData.totalAmount)) + "\n",
     );
-    SunmiPrinter.setFontWeight(false);
+    await callPrinter("setFontWeight", false);
     if (hasVat(billData)) {
-      SunmiPrinter.printerText(
-        thermalRow("Tong tien thue VAT:", vnd(billData.vatAmount ?? 0)) + "\n",
+      await callPrinter(
+        "printerText",
+        thermalRow("Tổng tiền thuế VAT:", vnd(billData.vatAmount ?? 0)) + "\n",
       );
-      SunmiPrinter.printerText("Gia ban da bao gom thue VAT\n");
+      await callPrinter("printerText", "Giá bán đã bao gồm thuế VAT\n");
     } else {
-      SunmiPrinter.printerText("Khong tinh VAT\n");
+      await callPrinter("printerText", "Không tính VAT\n");
     }
-    SunmiPrinter.printerText(SEP2);
+    await callPrinter("printerText", SEP2);
 
     // Tiền mặt: khách đưa & thừa
     if (billData.paymentMethod === "CASH" && billData.cashReceived != null) {
-      SunmiPrinter.printerText(
+      await callPrinter(
+        "printerText",
         thermalRow("Tiền khách đưa:", vnd(billData.cashReceived)) + "\n",
       );
-      SunmiPrinter.printerText(
+      await callPrinter(
+        "printerText",
         thermalRow("Tiền thừa:", vnd(billData.cashChange ?? 0)) + "\n",
       );
-      SunmiPrinter.printerText(SEP);
+      await callPrinter("printerText", SEP);
     }
 
     // ── QR ──
-    SunmiPrinter.setAlignment(1);
+    await callPrinter("setAlignment", 1);
     if (SunmiPrinter.printQRCode) {
       try {
         let qrCodeUrl = normalizeReceiptText(billData.qrValue) || `https://bill.chips.vn/pay/${billData.orderId}`;
@@ -519,8 +617,8 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
           console.warn("⚠️ [BillService] Lấy VNPay URL thất bại, dùng URL mặc định:", vnpayError);
         }
 
-        SunmiPrinter.printQRCode(qrCodeUrl, 4, 2);
-        SunmiPrinter.printerText("\n");
+        await callPrinter("printQRCode", qrCodeUrl, 4, 2);
+        await callPrinter("printerText", "\n");
       } catch (qrError) {
         console.warn("⚠️ [BillService] In QR code thất bại:", qrError);
       }
@@ -529,18 +627,27 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     }
 
     // ── FOOTER ──
-    SunmiPrinter.setFontWeight(true);
-    SunmiPrinter.printerText("Hen gap lai quy khach!\n");
-    SunmiPrinter.setFontWeight(false);
-    SunmiPrinter.setFontSize(20);
-    SunmiPrinter.printerText("Phan mem duoc viet boi ChipsBill Pos\n");
+    await callPrinter("setFontWeight", true);
+    await callPrinter("printerText", "Hẹn gặp lại quý khách!\n");
+    await callPrinter("setFontWeight", false);
+    await callPrinter("setFontSize", 20);
+    await callPrinter("printerText", "Phần mềm được viết bởi ChipsBill POS\n");
 
     // Đẩy giấy ra đủ để xé
     if (SunmiPrinter.lineWrap) {
-      SunmiPrinter.lineWrap(4);
+      await callPrinter("lineWrap", 6);
     } else {
-      SunmiPrinter.printerText("\n\n\n\n");
+      await callPrinter("printerText", "\n\n\n\n\n\n");
     }
+    try {
+      await callPrinter("commitPrinterBuffer");
+    } catch {}
+    try {
+      await callPrinter("exitPrinterBuffer", true);
+    } catch {}
+    try {
+      await callPrinter("cutPaper");
+    } catch {}
 
     Toast.show({
       type: "success",
@@ -550,10 +657,13 @@ export const printBillOnSunmi = async (data: BillData): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error("❌ [BillService] Lỗi in Sunmi:", error);
+    const errAny: any = error;
+    const message = errAny?.message ? String(errAny.message) : String(error);
+    const method = errAny?._sunmiMethod ? String(errAny._sunmiMethod) : "";
     Toast.show({
       type: "error",
       text1: "Lỗi máy in",
-      text2: "Kiểm tra kết nối hoặc giấy in",
+      text2: `${method ? `${method}: ` : ""}${message}`,
     });
     return false;
   }
@@ -569,17 +679,46 @@ export const shareBillImage = async (
   viewShotRef: RefObject<any>,
 ): Promise<boolean> => {
   try {
-    if (!viewShotRef.current) {
+    if (!viewShotRef?.current) {
       Toast.show({ type: "error", text1: "Không thể chụp ảnh hóa đơn" });
       return false;
     }
 
     console.log("📸 [BillService] Chụp ảnh bill...");
-    // todo: Dùng captureRef trực tiếp từ ref của View gốc để tránh lỗi layout đo đạc trên POS
-    const uri: string = await captureRef(viewShotRef, {
-      format: "jpg",
-      quality: 0.95,
-    });
+    await new Promise<void>((resolve) =>
+      InteractionManager.runAfterInteractions(() => resolve()),
+    );
+
+    const target = viewShotRef.current;
+    const tryCapture = async () =>
+      (await captureRef(target, {
+        format: "jpg",
+        quality: 0.95,
+      })) as string;
+
+    let uri = "";
+    let lastErr: any = null;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      try {
+        uri = await tryCapture();
+        if (uri) break;
+      } catch (err: any) {
+        lastErr = err;
+        await new Promise((r) => setTimeout(r, 120));
+      }
+    }
+    if (!uri) {
+      console.error("❌ [BillService] Capture bill failed:", lastErr);
+      Toast.show({
+        type: "error",
+        text1: "Không thể chụp ảnh hóa đơn",
+        text2:
+          lastErr?.message?.includes("width and height must be > 0")
+            ? "Hóa đơn chưa render xong, hãy thử lại sau 1 giây"
+            : "Vui lòng thử lại",
+      });
+      return false;
+    }
     console.log("📸 [BillService] captured URI:", uri);
 
     await Share.share({

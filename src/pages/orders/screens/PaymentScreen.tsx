@@ -216,26 +216,14 @@ const PaymentScreen = () => {
         const detail = (res as any)?.data ?? res;
         setOrderDetail(detail);
         const items = (detail?.items || detail?.orderItems || []).map(
-          (i: any) => {
-            // Extract attributes from item
-            const attributes: any[] = [];
-            const selectedOptions = i.selectedOptionsSnapshot || i.selectedAttributes || [];
-            selectedOptions.forEach((opt: any) => {
-              attributes.push({ 
-                name: opt.name || opt.value, 
-                price: opt.price || opt.priceAmount || 0 
-              });
-            });
-            
-            return {
-              name: i.productNameSnapshot || i.productName || i.name || "Món",
-              quantity: i.qty || i.quantity || 1,
-              unitPrice:
-                parseFloat(i.lineTotal || i.unitPriceSnapshot || "0") /
-                (i.qty || i.quantity || 1),
-              attributes,
-            };
-          },
+          (i: any) => ({
+            name: i.productNameSnapshot || i.productName || i.name || "Món",
+            quantity: i.qty || i.quantity || 1,
+            unitPrice:
+              parseFloat(i.lineTotal || i.unitPriceSnapshot || "0") /
+              (i.qty || i.quantity || 1),
+            attributes: [],
+          }),
         );
         setOrderItems(items);
         setOrderDiscount(

@@ -76,6 +76,7 @@ const ReceiptModal = ({
 }: ReceiptModalProps) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [receiptReady, setReceiptReady] = useState(false);
   const viewShotRef = useRef<any>(null);
 
   // todo: Ánh xạ dữ liệu đơn hàng thô thành cấu trúc BillData nhất quán của BillReceiptComponent
@@ -195,7 +196,7 @@ const ReceiptModal = ({
               <TouchableOpacity 
                 style={[s.actionBtn, isSharing && { opacity: 0.6 }]} 
                 onPress={handleShare}
-                disabled={isSharing}
+                disabled={isSharing || !receiptReady}
               >
                 {isSharing ? <ActivityIndicator size="small" color={COLORS.primary} /> : <Share2 size={20} color={COLORS.primary} />}
               </TouchableOpacity>
@@ -218,7 +219,14 @@ const ReceiptModal = ({
             contentContainerStyle={s.scrollContent}
           >
             {/* todo: truyền ref trực tiếp vào BillReceiptComponent để captureRef khi cần chia sẻ, tránh bọc bằng ViewShot gây lỗi kích thước 0 trên thiết bị POS */}
-            <BillReceiptComponent ref={viewShotRef} data={billData} />
+            <BillReceiptComponent
+              ref={viewShotRef}
+              data={billData}
+              onLayout={(e) => {
+                const { width, height } = e?.nativeEvent?.layout ?? {};
+                setReceiptReady(Boolean(width > 0 && height > 0));
+              }}
+            />
           </ScrollView>
 
           <TouchableOpacity style={s.bottomCta} onPress={onClose}>

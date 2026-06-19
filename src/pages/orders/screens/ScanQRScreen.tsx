@@ -150,7 +150,7 @@ const ScanQRScreen = () => {
         });
 
         setTimeout(() => {
-          navigation.goBack();
+          navigation.navigate('Main', { screen: 'MenuTab' });
         }, 1000);
 
       } catch (err: any) {

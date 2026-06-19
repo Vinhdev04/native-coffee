@@ -44,9 +44,9 @@ export interface BillData {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}`;
-const RECEIPT_BRANCH_NAME = "CHI NHANH QUAN 12";
-const RECEIPT_BRANCH_ADDRESS = "456 Le Loi, Q.1, TP.HCM";
+const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")}đ`;
+const RECEIPT_BRANCH_NAME = "CHI NHÁNH QUẬN 12";
+const RECEIPT_BRANCH_ADDRESS = "456 Lê Lợi, Q.12, TP.HCM";
 const RECEIPT_HOTLINE = "0909999999";
 const RECEIPT_TAX_CODE = "9999999999";
 
@@ -55,6 +55,22 @@ const normalizeReceiptText = (value?: string | null) =>
     .normalize("NFC")
     .replace(/\s+/g, " ")
     .trim();
+
+const softWrapReceiptText = (value: string, chunkSize = 16) => {
+  const parts = value.split(/(\s+)/);
+  return parts
+    .map((part) => {
+      if (!part || /^\s+$/.test(part)) return part;
+      const chars = Array.from(part);
+      if (chars.length <= chunkSize) return part;
+      const out: string[] = [];
+      for (let i = 0; i < chars.length; i += chunkSize) {
+        out.push(chars.slice(i, i + chunkSize).join(""));
+      }
+      return out.join("\u200B");
+    })
+    .join("");
+};
 
 const formatReceiptDate = (value?: string) => {
   if (!value) return "";
@@ -119,7 +135,7 @@ const ItemRow = ({
   <View style={s.itemRow}>
     {/* Cột tên — flex:1 cho phép wrap nhiều dòng */}
     <View style={s.itemNameWrap}>
-      <Text style={s.itemName}>{name}</Text>
+      <Text style={s.itemName}>{softWrapReceiptText(name)}</Text>
     </View>
     {/* SL — width cố định, alignSelf:flex-start → luôn dòng 1 */}
     <Text style={s.itemQty} numberOfLines={1}>
@@ -133,8 +149,10 @@ const ItemRow = ({
 );
 
 // ─── Component ────────────────────────────────────────────────────────────────
-const BillReceiptComponent = forwardRef<View, { data: BillData }>(
-  ({ data }, _ref) => {
+const BillReceiptComponent = forwardRef<
+  View,
+  { data: BillData; onLayout?: (e: any) => void }
+>(({ data, onLayout }, _ref) => {
     const payMethodLabel =
       data.paymentMethod === "VNPAY" ? "VNPay" : "Tiền mặt";
     const receiptDate = formatReceiptDate(data.createdAt);
@@ -146,7 +164,12 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
     const cashierName = normalizeReceiptText(data.cashierName) || "admin";
 
     return (
-      <View style={s.wrapper} ref={_ref as any} collapsable={false}>
+      <View
+        style={s.wrapper}
+        ref={_ref as any}
+        collapsable={false}
+        onLayout={onLayout}
+      >
         {/* ── HEADER ── */}
         <Divider />
         <View style={s.header}>
@@ -160,7 +183,7 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
           <Text style={s.branchName}>{branchName}</Text>
           <Text style={s.branchText}>{branchAddress}</Text>
           <Text style={s.branchText}>Hotline: {hotline}</Text>
-          <Text style={s.branchText}>Ma so thue: {taxCode}</Text>
+          <Text style={s.branchText}>Mã số thuế: {taxCode}</Text>
         </View>
 
         <Text style={s.billTitle}>HÓA ĐƠN BÁN HÀNG</Text>
@@ -208,11 +231,11 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
 
         {/* ── TỔNG KẾT ── */}
         <View style={s.section}>
-          <InfoRow label="Tổng tiền" value={`${vnd(data.subTotal)}đ`} />
+          <InfoRow label="Tổng tiền" value={vnd(data.subTotal)} />
           {(data.discount ?? 0) > 0 && (
             <InfoRow
               label="Khuyến mãi"
-              value={`-${vnd(data.discount ?? 0)}đ`}
+              value={`-${vnd(data.discount ?? 0)}`}
               valueStyle={{ color: "#EF4444" }}
             />
           )}
@@ -223,7 +246,7 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
         {/* TỔNG CỘNG */}
         <View style={s.totalRow}>
           <Text style={s.totalLabel}>TỔNG CỘNG</Text>
-          <Text style={s.totalValue}>{vnd(data.totalAmount)}đ</Text>
+          <Text style={s.totalValue}>{vnd(data.totalAmount)}</Text>
         </View>
 
         <Divider thick />
@@ -233,7 +256,7 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
           <View style={s.vatBox}>
             <InfoRow
               label="Tổng tiền thuế VAT (đã gồm):"
-              value={`${vnd(data.vatAmount || 0)}đ`}
+              value={vnd(data.vatAmount || 0)}
               valueStyle={s.vatValue}
             />
             <Text style={s.vatNote}>(Giá bán toàn bộ đã bao gồm thuế VAT)</Text>
@@ -248,11 +271,11 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
             <Divider />
             <InfoRow
               label="Tiền khách đưa"
-              value={`${vnd(data.cashReceived)}đ`}
+              value={vnd(data.cashReceived)}
             />
             <InfoRow
               label="Tiền thừa"
-              value={`${vnd(data.cashChange ?? 0)}đ`}
+              value={vnd(data.cashChange ?? 0)}
               valueStyle={{ color: "#10B981", fontFamily: FONTS.bold }}
             />
           </View>
@@ -276,8 +299,7 @@ const BillReceiptComponent = forwardRef<View, { data: BillData }>(
         <Divider />
       </View>
     );
-  },
-);
+});
 
 BillReceiptComponent.displayName = "BillReceiptComponent";
 export default BillReceiptComponent;
@@ -402,6 +424,7 @@ const s = StyleSheet.create({
   // Bọc tên để flex-start không conflict
   itemNameWrap: {
     flex: 1,
+    flexShrink: 1,
     minWidth: 0,
     paddingRight: 8,
   },
@@ -410,6 +433,7 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: "#111827",
     lineHeight: 17,
+    flexWrap: "wrap",
     ...RECEIPT_TEXT_FIX,
   },
   // SL: width cố định, alignSelf flex-start → luôn ở dòng 1

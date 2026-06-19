@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '@/styles/theme';
 import { useTranslation } from 'react-i18next';
-import { Search, ShoppingBag, X, QrCode } from 'lucide-react-native';
+import { Search, ShoppingBag, X, QrCode, LayoutGrid } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -171,6 +171,12 @@ const HomeScreen = () => {
           />
         </View>
         <View style={[s.headerRight, { width: 'auto', flexDirection: 'row', alignItems: 'center' }]}>
+          <TouchableOpacity 
+            style={[s.headerBtn, { marginRight: 12 }]} 
+            onPress={() => navigation.navigate('TableList')}
+          >
+            <LayoutGrid size={20} color={COLORS.primary} />
+          </TouchableOpacity>
           <TouchableOpacity 
             style={[s.headerBtn, { marginRight: 12 }]} 
             onPress={() => navigation.navigate('ScanQR', { scanType: 'table' })}

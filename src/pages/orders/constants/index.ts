@@ -33,56 +33,63 @@ export const CANCEL_STATUSES = [
   OrderStatus.CANCEL,
 ];
 
-export const getStatusConfig = (t: (key: string) => string) => ({
-  [OrderStatus.DRAFT]: {
-    label: t("status_draft") || "Nháp",
-    color: "#6B7280",
-    bg: "#F3F4F6",
-    Icon: Clock,
-  },
-  [OrderStatus.PENDING]: {
-    label: t("pending") || "Đang chờ",
-    color: "#D97706",
-    bg: "#FEF3C7",
-    Icon: Clock,
-  },
-  [OrderStatus.PENDING_PAYMENT]: {
-    label: t("status_pending_payment") || "Chờ thanh toán",
-    color: "#D97706",
-    bg: "#FEF3C7",
-    Icon: Clock,
-  },
-  [OrderStatus.PAID]: {
-    label: t("status_paid") || "Đã thanh toán",
-    color: "#059669",
-    bg: "#D1FAE5",
-    Icon: CheckCircle,
-  },
-  [OrderStatus.READY]: {
-    label: t("status_ready") || "Sẵn sàng",
-    color: "#2563EB",
-    bg: "#DBEAFE",
-    Icon: CheckCircle,
-  },
-  [OrderStatus.DONE]: {
-    label: t("done") || "Hoàn thành",
-    color: "#059669",
-    bg: "#D1FAE5",
-    Icon: CheckCircle,
-  },
-  [OrderStatus.CANCELLED]: {
-    label: t("status_cancelled") || "Đã hủy",
-    color: "#DC2626",
-    bg: "#FEE2E2",
-    Icon: XCircle,
-  },
-  [OrderStatus.CANCEL]: {
-    label: t("status_cancelled") || "Đã hủy",
-    color: "#DC2626",
-    bg: "#FEE2E2",
-    Icon: XCircle,
-  },
-});
+export const getStatusConfig = (t: (key: string) => string) => {
+  const safeT = (key: string, fallback: string) => {
+    const res = t(key);
+    return res === key || !res ? fallback : res;
+  };
+
+  return {
+    [OrderStatus.DRAFT]: {
+      label: safeT("status_draft", "Nháp"),
+      color: "#6B7280",
+      bg: "#F3F4F6",
+      Icon: Clock,
+    },
+    [OrderStatus.PENDING]: {
+      label: safeT("pending", "Đang chờ"),
+      color: "#D97706",
+      bg: "#FEF3C7",
+      Icon: Clock,
+    },
+    [OrderStatus.PENDING_PAYMENT]: {
+      label: safeT("status_pending_payment", "Chờ thanh toán"),
+      color: "#D97706",
+      bg: "#FEF3C7",
+      Icon: Clock,
+    },
+    [OrderStatus.PAID]: {
+      label: safeT("status_paid", "Đã thanh toán"),
+      color: "#059669",
+      bg: "#D1FAE5",
+      Icon: CheckCircle,
+    },
+    [OrderStatus.READY]: {
+      label: safeT("status_ready", "Sẵn sàng"),
+      color: "#2563EB",
+      bg: "#DBEAFE",
+      Icon: CheckCircle,
+    },
+    [OrderStatus.DONE]: {
+      label: safeT("done", "Hoàn thành"),
+      color: "#059669",
+      bg: "#D1FAE5",
+      Icon: CheckCircle,
+    },
+    [OrderStatus.CANCELLED]: {
+      label: safeT("status_cancelled", "Đã hủy"),
+      color: "#DC2626",
+      bg: "#FEE2E2",
+      Icon: XCircle,
+    },
+    [OrderStatus.CANCEL]: {
+      label: safeT("status_cancelled", "Đã hủy"),
+      color: "#DC2626",
+      bg: "#FEE2E2",
+      Icon: XCircle,
+    },
+  };
+};
 
 export const PAYMENT_STATUS_CONFIG: Record<
   string,

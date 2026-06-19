@@ -20,6 +20,7 @@ import PaymentScreen        from '@/pages/orders/screens/PaymentScreen';
 import ScanQRScreen         from '@/pages/orders/screens/ScanQRScreen';
 import AccountInfoScreen    from '@/pages/account/screens/UpdateProfileScreen';
 import ChangePasswordScreen from '@/pages/account/screens/ChangePasswordScreen';
+import TableListScreen      from '@/pages/tables/screens/TableListScreen';
 import MainNavigator        from '@/navigation/MainNavigator';
 import { useAuth, AuthProvider } from '@/context/AuthContext';
 import { CartProvider }          from '@/context/CartContext';
@@ -56,6 +57,7 @@ const NavigationContent = () => {
             <Stack.Screen name="OrderDetail"   component={OrderDetailScreen} />
             <Stack.Screen name="Payment"       component={PaymentScreen} />
             <Stack.Screen name="ScanQR"        component={ScanQRScreen} />
+            <Stack.Screen name="TableList"     component={TableListScreen} />
             <Stack.Screen name="UpdateProfile" component={AccountInfoScreen} />
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
           </>
