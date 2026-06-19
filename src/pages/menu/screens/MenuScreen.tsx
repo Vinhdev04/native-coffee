@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity,
   StatusBar, SectionList, Image,
@@ -7,25 +7,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { COLORS } from '@/styles/theme';
 import { useTranslation } from 'react-i18next';
 import { Search, X, ShoppingBag, Coffee as CoffeeIcon, QrCode } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import Toast from '@/components/common/Toast';
 import ProductModal from '@/components/menu/ProductModal';
 import ProductCardHorizontal from '@/components/home/ProductCardHorizontal';
 import ReceiptModal from '@/components/common/ReceiptModal';
-import { s, sh } from '../styles/MenuScreen.styles';
-
-const SectionHeader = ({ title }: { title: string }) => (
-  <View style={sh.wrap}>
-    <Text style={sh.title}>{title}</Text>
-    <View style={sh.line} />
-  </View>
-);
+import { makeMenuStyles } from '../styles/MenuScreen.styles';
 
 const MenuScreen = () => {
   const { width } = useWindowDimensions();
@@ -34,9 +27,11 @@ const MenuScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { t } = useTranslation();
+  const { colors: c, isDark } = useTheme();
+  const styles = useMemo(() => makeMenuStyles(c), [c]);
+
   const { items, totalItems, addToCart, activeTable, clearActiveTable } = useCart();
   const { user } = useAuth();
-  
   const branchId = user?.branchId || (user as any)?.branchId || (user as any)?.branch_id || 1;
 
   const [categories, setCategories] = useState<any[]>([]);
@@ -57,14 +52,11 @@ const MenuScreen = () => {
   const debouncedSearch = useDebounce(searchText, 350);
 
   useEffect(() => {
-    if (route.params?.search !== undefined) {
-      setSearchText(route.params.search);
-    }
+    if (route.params?.search !== undefined) setSearchText(route.params.search);
   }, [route.params?.search]);
 
   useEffect(() => { loadData(); }, []);
 
-  // TODO: Hàm loadData thực hiện tải danh mục và danh sách sản phẩm từ API dịch vụ branch
   const loadData = async () => {
     try {
       setLoading(true);
@@ -75,44 +67,34 @@ const MenuScreen = () => {
       setCategories(catRes.data?.rows || catRes.data || []);
       setAllProducts(prodRes.data?.rows || prodRes.data || []);
     } catch (err) {
-      console.error('[MenuScreen] Lỗi khi tải dữ liệu thực đơn:', err);
+      console.error('[MenuScreen] Lỗi:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const allCats = React.useMemo(() => [{ id: 'all', name: t('all'), imageUrl: null }, ...categories], [categories, t]);
+  const allCats = useMemo(() => [{ id: 'all', name: t('all'), imageUrl: null }, ...categories], [categories, t]);
 
   const scrollCatBarToActive = React.useCallback((catId: number | 'all') => {
     const idx = allCats.findIndex(c => c.id === catId);
-    if (idx >= 0) {
-      categoryListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
-    }
+    if (idx >= 0) categoryListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
   }, [allCats]);
 
-  const sections = React.useMemo(() => {
-    const searchLower = debouncedSearch.toLowerCase();
+  const sections = useMemo(() => {
+    const q = debouncedSearch.toLowerCase();
     return categories
-      .map((cat) => {
-        const items = allProducts.filter((p) => {
-          const matchCat = p.categoryId === cat.id;
-          const matchSearch = !debouncedSearch || p.name.toLowerCase().includes(searchLower);
-          return matchCat && matchSearch;
-        });
-        return { title: cat.name, catId: cat.id, data: items };
-      })
-      .filter((s) => s.data.length > 0);
+      .map(cat => ({
+        title: cat.name, catId: cat.id,
+        data: allProducts.filter(p => p.categoryId === cat.id && (!q || p.name.toLowerCase().includes(q))),
+      }))
+      .filter(s => s.data.length > 0);
   }, [categories, allProducts, debouncedSearch]);
 
-  // TODO: Hàm handleCategoryPress xử lý sự kiện bấm chọn danh mục và tự động cuộn đến khu vực danh sách tương ứng
   const handleCategoryPress = (catId: number | 'all') => {
     setActiveCategory(catId);
-    if (catId === 'all') {
-      sectionListRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: true, viewPosition: 0 });
-      return;
-    }
-    const idx = sections.findIndex((s) => s.catId === catId);
+    if (catId === 'all') { sectionListRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: true, viewPosition: 0 }); return; }
+    const idx = sections.findIndex(s => s.catId === catId);
     if (idx >= 0) {
       isScrollingFromPress.current = true;
       sectionListRef.current?.scrollToLocation({ sectionIndex: idx, itemIndex: 0, animated: true, viewPosition: 0 });
@@ -123,170 +105,109 @@ const MenuScreen = () => {
   const onViewableItemsChanged = React.useCallback(({ viewableItems }: any) => {
     if (isScrollingFromPress.current || debouncedSearch) return;
     if (viewableItems.length > 0) {
-      const topItem = viewableItems[0];
-      const catId = topItem.section?.catId;
-      if (catId && catId !== activeCategory) {
-        setActiveCategory(catId);
-        scrollCatBarToActive(catId);
-      }
+      const catId = viewableItems[0].section?.catId;
+      if (catId && catId !== activeCategory) { setActiveCategory(catId); scrollCatBarToActive(catId); }
     }
   }, [activeCategory, debouncedSearch, scrollCatBarToActive]);
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
 
-  const renderCategory = ({ item }: { item: any }) => {
-    const isActive = item.id === activeCategory || (item.id === 'all' && activeCategory === 'all');
-    return (
-      <TouchableOpacity style={[s.catChip, isActive && s.catChipActive, { paddingHorizontal: isSmallScreen ? 12 : 16 }]} onPress={() => handleCategoryPress(item.id)}>
-        {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={s.catIcon} />}
-        <Text style={[s.catText, isActive && s.catTextActive]} numberOfLines={1}>{item.name}</Text>
-      </TouchableOpacity>
-    );
-  };
-
-  // TODO: Hàm handleAddToCart xử lý thêm sản phẩm trực tiếp vào giỏ hàng và hiện thông báo Toast
   const handleAddToCart = (item: any) => {
     addToCart(item);
-    setToast({
-      visible: true,
-      title: t('added_to_cart'),
-      message: `${item.name}. ${t('tap_to_view_cart')}`
-    });
-  };
-
-  // TODO: Hàm handlePrintProduct tạo hóa đơn nháp và hiển thị hộp thoại xem trước in thử cho sản phẩm
-  const handlePrintProduct = (item: any) => {
-    setReceiptOrder({
-      id: 'DRAFT-' + Math.floor(Math.random() * 1000),
-      items: [{ ...item, quantity: 1, price: item.basePrice || item.price }],
-      totalPrice: item.basePrice || item.price,
-      customerName: 'Khách xem mẫu',
-    });
-    setIsReceiptVisible(true);
-  };
-
-  // TODO: Hàm handleProductPress mở hộp thoại cấu hình thuộc tính chi tiết sản phẩm trước khi mua
-  const handleProductPress = (product: any) => {
-    setSelectedProduct(product);
-    setIsModalVisible(true);
+    setToast({ visible: true, title: t('added_to_cart'), message: `${item.name}. ${t('tap_to_view_cart')}` });
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={s.container}>
-        <View style={s.loadingWrap}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={s.loadingText}>{t('loading')}</Text>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={c.headerBg} />
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={c.primary} />
+          <Text style={styles.loadingText}>{t('loading')}</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={s.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
-      <Toast 
-        visible={toast.visible} type="success" title={toast.title} message={toast.message} 
-        onHide={() => setToast(t => ({ ...t, visible: false }))} 
-        onPress={() => {
-          setToast(t => ({ ...t, visible: false }));
-          navigation.navigate('Cart');
-        }}
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={c.headerBg} />
+      <Toast
+        visible={toast.visible} type="success" title={toast.title} message={toast.message}
+        onHide={() => setToast(t => ({ ...t, visible: false }))}
+        onPress={() => { setToast(t => ({ ...t, visible: false })); navigation.navigate('Cart'); }}
       />
 
-      <View style={[s.header, { paddingHorizontal: isSmallScreen ? 12 : 20 }]}>
-        <View style={s.headerLeft} />
-        <Text style={s.headerTitle}>{t('menu_title')}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity 
-            style={[s.headerBtn, { marginRight: 12 }]} 
-            onPress={() => navigation.navigate('ScanQR', { scanType: 'table' })}
-            activeOpacity={0.7}
-          >
-            <QrCode size={20} color={COLORS.primary} />
+      {/* Header */}
+      <View style={[styles.header, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
+        <View style={styles.headerLeft} />
+        <Text style={styles.headerTitle}>{t('menu_title')}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('ScanQR', { scanType: 'table' })}>
+            <QrCode size={isSmallScreen ? 17 : 20} color={c.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
-            <ShoppingBag size={20} color={COLORS.primary} />
-            {totalItems > 0 && <View style={s.badge}><Text style={s.badgeText} adjustsFontSizeToFit numberOfLines={1}>{totalItems}</Text></View>}
+          <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('Cart')}>
+            <ShoppingBag size={isSmallScreen ? 17 : 20} color={c.primary} />
+            {totalItems > 0 && <View style={styles.badge}><Text style={styles.badgeText} adjustsFontSizeToFit numberOfLines={1}>{totalItems > 9 ? '9+' : totalItems}</Text></View>}
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Active Table Banner */}
       {activeTable && (
-        <View style={{
-          backgroundColor: '#FFF0E6',
-          paddingVertical: 10,
-          paddingHorizontal: 16,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottomWidth: 1,
-          borderBottomColor: '#FFE0CC',
-        }}>
+        <View style={styles.activeBanner}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-            <View style={{
-              backgroundColor: COLORS.primary,
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              marginRight: 8,
-            }} />
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: '#D44A00',
-            }} numberOfLines={1}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF7A00', marginRight: 8 }} />
+            <Text style={styles.activeBannerText} numberOfLines={1}>
               Đang gọi món tại: {activeTable.name || activeTable.qrToken}
             </Text>
           </View>
-          <TouchableOpacity 
-            style={{
-              paddingVertical: 4,
-              paddingHorizontal: 8,
-              borderRadius: 4,
-              backgroundColor: '#fff',
-              borderWidth: 1,
-              borderColor: '#FFE0CC',
-            }}
-            onPress={clearActiveTable}
-          >
-            <Text style={{ fontSize: 12, color: '#FF5500', fontWeight: '500' }}>Hủy chọn</Text>
+          <TouchableOpacity style={styles.activeBannerBtn} onPress={clearActiveTable}>
+            <Text style={styles.activeBannerBtnText}>Hủy chọn</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      <View style={[s.searchRow, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
-        <View style={s.searchInputWrap}>
-          <Search size={17} color="#9CA3AF" />
+      {/* Search */}
+      <View style={[styles.searchRow, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
+        <View style={styles.searchInputWrap}>
+          <Search size={17} color={c.placeholder} />
           <TextInput
-            style={s.searchInput}
-            value={searchText}
-            onChangeText={setSearchText}
-            placeholder={t('search_placeholder')}
-            placeholderTextColor="#9CA3AF"
+            style={styles.searchInput} value={searchText} onChangeText={setSearchText}
+            placeholder={t('search_placeholder')} placeholderTextColor={c.placeholder}
           />
-          {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchText('')}><X size={16} color="#9CA3AF" /></TouchableOpacity>
-          )}
+          {searchText.length > 0 && <TouchableOpacity onPress={() => setSearchText('')}><X size={16} color={c.placeholder} /></TouchableOpacity>}
         </View>
       </View>
 
-      <View style={s.catBar}>
+      {/* Category Bar */}
+      <View style={styles.catBar}>
         <FlatList
           ref={categoryListRef}
-          data={[{ id: 'all', name: t('all'), imageUrl: null }, ...categories]}
-          renderItem={renderCategory}
-          keyExtractor={(item) => item.id.toString()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.catScroll}
+          data={allCats}
+          renderItem={({ item }) => {
+            const isActive = item.id === activeCategory || (item.id === 'all' && activeCategory === 'all');
+            return (
+              <TouchableOpacity
+                style={[styles.catChip, isActive && styles.catChipActive, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}
+                onPress={() => handleCategoryPress(item.id)}
+              >
+                {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.catIcon} />}
+                <Text style={[styles.catText, isActive && styles.catTextActive]} numberOfLines={1}>{item.name}</Text>
+              </TouchableOpacity>
+            );
+          }}
+          keyExtractor={item => item.id.toString()}
+          horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.catScroll}
         />
       </View>
 
+      {/* Product List */}
       {sections.length === 0 ? (
-        <View style={s.emptyWrap}>
-          <CoffeeIcon size={52} color="#E5E7EB" />
-          <Text style={s.emptyTitle}>{t('no_products_found')}</Text>
+        <View style={styles.emptyWrap}>
+          <CoffeeIcon size={52} color={c.border} />
+          <Text style={styles.emptyTitle}>{t('no_products_found')}</Text>
         </View>
       ) : (
         <SectionList
@@ -294,40 +215,36 @@ const MenuScreen = () => {
           sections={sections}
           keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
           renderItem={({ item }) => {
-            const cartQty = items
-              .filter(cartItem => Number(cartItem.id) === Number(item.id))
-              .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
-
+            const cartQty = items.filter(ci => Number(ci.id) === Number(item.id)).reduce((s, ci) => s + ci.quantity, 0);
             return (
               <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
-                <ProductCardHorizontal 
-                  product={item} 
-                  onPress={() => handleProductPress(item)} 
-                  onAddPress={() => handleAddToCart(item)} 
-                  onPrintPress={() => handlePrintProduct(item)}
-                  searchText={debouncedSearch} 
+                <ProductCardHorizontal
+                  product={item}
+                  onPress={() => { setSelectedProduct(item); setIsModalVisible(true); }}
+                  onAddPress={() => handleAddToCart(item)}
+                  searchText={debouncedSearch}
                   cartQuantity={cartQty}
                 />
               </View>
             );
           }}
-          renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
+          renderSectionHeader={({ section }) => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              <View style={styles.sectionLine} />
+            </View>
+          )}
           stickySectionHeadersEnabled
           showsVerticalScrollIndicator={false}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig.current}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />}
+          contentContainerStyle={{ paddingBottom: 100, backgroundColor: c.sectionBg }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={c.primary} />}
         />
       )}
 
       <ProductModal visible={isModalVisible} product={selectedProduct} onClose={() => setIsModalVisible(false)} onAddToCart={handleAddToCart} />
-      <ReceiptModal 
-        visible={isReceiptVisible} 
-        onClose={() => setIsReceiptVisible(false)} 
-        order={receiptOrder}
-        title="PHIẾU XEM TRƯỚC MÓN"
-      />
+      <ReceiptModal visible={isReceiptVisible} onClose={() => setIsReceiptVisible(false)} order={receiptOrder} title="PHIẾU XEM TRƯỚC MÓN" />
     </SafeAreaView>
   );
 };

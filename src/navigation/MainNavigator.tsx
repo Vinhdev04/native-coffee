@@ -1,40 +1,51 @@
 /**
  * @file MainNavigator.tsx
- * @desc Navigator chính dạng Bottom Tab — quản lý chuyển đổi giữa các màn hình
- *       Home, Menu, Orders và Account với icon animated và style coffee.
- * @layer navigation
+ * @desc Navigator chính dạng Bottom Tab — dark/light mode, responsive height.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Coffee, Package, User, Home, ShoppingBag, Menu } from 'lucide-react-native';
-import { COLORS, FONTS } from '@/styles/theme';
+import { Package, User, Home, ShoppingBag } from 'lucide-react-native';
+import { FONTS } from '@/styles/theme';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/context/CartContext';
+import { useTheme, getThemeColors } from '@/context/ThemeContext';
 
 import HomeScreen    from '@/pages/home/screens/HomeScreen';
 import MenuScreen    from '@/pages/menu/screens/MenuScreen';
 import OrderScreen   from '@/pages/orders/screens/OrderScreen';
 import AccountScreen from '@/pages/account/screens/AccountScreen';
-import CartScreen    from '@/pages/cart/screens/CartScreen'; // Add CartScreen
 
 const Tab = createBottomTabNavigator();
 
-const TabIcon = ({ focused, icon: Icon, label, badgeCount }: { focused: boolean, icon: any, label: string, badgeCount?: number }) => {
-  const color = focused ? '#F97316' : '#9CA3AF';
+const TabIcon = ({
+  focused, icon: Icon, label, badgeCount, colors,
+}: {
+  focused: boolean;
+  icon: any;
+  label: string;
+  badgeCount?: number;
+  colors: ReturnType<typeof getThemeColors>;
+}) => {
+  const color = focused ? colors.tabActive : colors.tabInactive;
   return (
-    <View style={[s.tabItem, focused && s.tabItemActive]}>
-      {focused && <View style={s.topIndicator} />}
-      <View style={[s.iconWrap, focused && s.iconWrapActive]}>
+    <View style={[tabItemStyle.tabItem, focused && tabItemStyle.tabItemActive]}>
+      {focused && <View style={tabItemStyle.topIndicator} />}
+      <View style={[tabItemStyle.iconWrap, focused && { backgroundColor: colors.tabIconActiveBg }]}>
         <Icon size={20} color={color} strokeWidth={focused ? 2.5 : 1.5} />
         {badgeCount !== undefined && badgeCount > 0 && (
-          <View style={s.badge}>
-            <Text style={s.badgeText}>{badgeCount}</Text>
+          <View style={tabItemStyle.badge}>
+            <Text style={tabItemStyle.badgeText}>{badgeCount > 9 ? '9+' : badgeCount}</Text>
           </View>
         )}
       </View>
-      <Text style={[s.tabLabel, focused && s.tabLabelActive]} numberOfLines={1}>{label}</Text>
+      <Text
+        style={[tabItemStyle.tabLabel, { color }]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
     </View>
   );
 };
@@ -42,61 +53,77 @@ const TabIcon = ({ focused, icon: Icon, label, badgeCount }: { focused: boolean,
 const MainNavigator = () => {
   const { totalItems } = useCart();
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const colors = getThemeColors(isDark);
+  const { height } = useWindowDimensions();
+
+  // Responsive tab bar height
+  const isSmallScreen = height < 700;
+  const TAB_HEIGHT = Platform.OS === 'ios'
+    ? (isSmallScreen ? 72 : 88)
+    : (isSmallScreen ? 60 : 72);
+  const TAB_PADDING_BOTTOM = Platform.OS === 'ios'
+    ? (isSmallScreen ? 16 : 28)
+    : (isSmallScreen ? 8 : 14);
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: s.tabBar,
+        tabBarStyle: {
+          backgroundColor: colors.tabBar,
+          height: TAB_HEIGHT,
+          borderTopWidth: 1,
+          borderTopColor: colors.tabBorder,
+          elevation: 0,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: isDark ? 0.3 : 0.05,
+          shadowRadius: 10,
+          paddingBottom: TAB_PADDING_BOTTOM,
+          paddingTop: 0,
+        },
       }}
     >
       <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Home} label={t('home')} />,
+          tabBarIcon: ({ focused }) =>
+            <TabIcon focused={focused} icon={Home} label={t('home')} colors={colors} />,
         }}
       />
       <Tab.Screen
         name="MenuTab"
         component={MenuScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={ShoppingBag} label={t('menu.title')} />,
+          tabBarIcon: ({ focused }) =>
+            <TabIcon focused={focused} icon={ShoppingBag} label={t('menu.title')} colors={colors} />,
         }}
       />
       <Tab.Screen
         name="OrdersTab"
         component={OrderScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={Package} label={t('orders.title')} />,
+          tabBarIcon: ({ focused }) =>
+            <TabIcon focused={focused} icon={Package} label={t('orders.title')} colors={colors} />,
         }}
       />
       <Tab.Screen
         name="AccountTab"
         component={AccountScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={User} label={t('profile')} />,
+          tabBarIcon: ({ focused }) =>
+            <TabIcon focused={focused} icon={User} label={t('profile')} colors={colors} />,
         }}
       />
     </Tab.Navigator>
   );
 };
 
-const s = StyleSheet.create({
-  tabBar: {
-    backgroundColor: COLORS.white,
-    height: Platform.OS === 'ios' ? 92 : 75,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    elevation: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 15,
-    paddingTop: 0,
-  },
+// Static styles that don't change with theme
+const tabItemStyle = StyleSheet.create({
   tabItem: {
     flex: 1,
     alignItems: 'center',
@@ -110,7 +137,7 @@ const s = StyleSheet.create({
     top: -1,
     width: 32,
     height: 3,
-    backgroundColor: '#F97316',
+    backgroundColor: '#FF7A00',
     borderBottomLeftRadius: 3,
     borderBottomRightRadius: 3,
   },
@@ -122,38 +149,30 @@ const s = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 1,
   },
-  iconWrapActive: {
-    backgroundColor: '#FFF7ED',
-  },
   tabLabel: {
     fontSize: 10,
     fontFamily: FONTS.medium,
-    color: '#9CA3AF',
     textAlign: 'center',
     width: '100%',
-  },
-  tabLabelActive: {
-    color: '#F97316',
-    fontFamily: FONTS.bold,
   },
   badge: {
     position: 'absolute',
     top: 0,
     right: 0,
-    backgroundColor: '#F97316',
+    backgroundColor: '#FF7A00',
     minWidth: 14,
     height: 14,
     borderRadius: 7,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.white,
+    borderColor: '#FFFFFF',
   },
   badgeText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontFamily: FONTS.bold,
     fontSize: 7,
-  }
+  },
 });
 
 export default MainNavigator;

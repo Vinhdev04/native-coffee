@@ -24,6 +24,7 @@ import TableListScreen      from '@/pages/tables/screens/TableListScreen';
 import MainNavigator        from '@/navigation/MainNavigator';
 import { useAuth, AuthProvider } from '@/context/AuthContext';
 import { CartProvider }          from '@/context/CartContext';
+import { ThemeProvider }         from '@/context/ThemeContext';
 import { Colors }                from '@/constants/Colors';
 import Toast                     from 'react-native-toast-message';
 
@@ -70,13 +71,15 @@ const NavigationContent = () => {
 
 const RootNavigator = () => {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <NavigationContainer>
-          <NavigationContent />
-        </NavigationContainer>
-      </CartProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <NavigationContainer>
+            <NavigationContent />
+          </NavigationContainer>
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 
