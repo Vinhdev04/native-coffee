@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity,
-  ScrollView, Image, StatusBar, Modal, useWindowDimensions, Switch,
+  ScrollView, Image, StatusBar, Modal, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { 
   User, Lock, Printer, Globe, Headset, 
-  LogOut, ChevronRight, ArrowLeft, Check, Moon, Sun
+  LogOut, ChevronRight, ArrowLeft, Check
 } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import Toast from '@/components/common/Toast';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { setLanguage } from '@/i18n';
-import { useTheme } from '@/context/ThemeContext';
+
 import { s } from '../styles/AccountScreen.styles';
 
 const AccountScreen = () => {
@@ -24,7 +24,7 @@ const AccountScreen = () => {
   const navigation = useNavigation();
   const { user, logout } = useAuth();
   const { t, i18n } = useTranslation();
-  const { isDark, toggleTheme } = useTheme();
+
   const [toast, setToast] = useState({ visible: false, title: '', message: '' });
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [langModalVisible, setLangModalVisible] = useState(false);
@@ -116,23 +116,6 @@ const AccountScreen = () => {
           <MenuItem icon={Printer} label={t('printer_settings')} onPress={() => {}} />
           <MenuItem icon={Globe} label={t('language')} onPress={() => setLangModalVisible(true)} />
           <MenuItem icon={Headset} label={t('support')} onPress={() => {}} />
-
-          {/* Dark Mode Toggle */}
-          <View style={s.menuItem}>
-            <View style={[s.menuIconBox, { backgroundColor: isDark ? '#1E1B4B' : '#EEF2FF' }]}>
-              {isDark
-                ? <Moon size={20} color="#818CF8" />
-                : <Sun size={20} color="#F59E0B" />}
-            </View>
-            <Text style={s.menuLabel}>{t('dark_mode')}</Text>
-            <Switch
-              value={isDark}
-              onValueChange={toggleTheme}
-              trackColor={{ false: '#E5E7EB', true: 'rgba(255,122,0,0.35)' }}
-              thumbColor={isDark ? '#FF7A00' : '#9CA3AF'}
-              ios_backgroundColor="#E5E7EB"
-            />
-          </View>
         </View>
 
         <TouchableOpacity style={s.logoutBtn} onPress={() => setLogoutModalVisible(true)}>

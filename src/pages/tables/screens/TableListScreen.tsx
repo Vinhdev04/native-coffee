@@ -49,6 +49,9 @@ const TableListScreen = () => {
     try {
       const res = await fetchTables(branchId);
       const data = (res as any)?.data?.rows || (res as any)?.data || (res as any)?.rows || res || [];
+      if (data.length > 0) {
+        console.log('[TableListScreen] Dữ liệu bàn ăn đầu tiên:', JSON.stringify(data[0], null, 2));
+      }
       setTables(data);
     } catch (err) {
       console.error('Lỗi tải danh sách bàn:', err);
@@ -85,9 +88,10 @@ const TableListScreen = () => {
   const handleStartOrder = () => {
     if (!selectedTable) return;
     setActiveTable({
-      id: selectedTable.id,
+      id: Number(selectedTable.id),
       name: selectedTable.name,
-      qrToken: selectedTable.qrToken || String(selectedTable.id),
+      // Chỉ set qrToken nếu bàn thực sự có — không fake bằng id
+      ...(selectedTable.qrToken ? { qrToken: selectedTable.qrToken } : {}),
     });
     setModalVisible(false);
     Toast.show({

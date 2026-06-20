@@ -207,6 +207,31 @@ const PaymentScreen = () => {
   const [orderDiscount, setOrderDiscount] = useState(0);
   const [orderDetail, setOrderDetail] = useState<any>(null);
 
+  const navigateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Hàm chuyển hướng an toàn và dọn dẹp timer
+  const startSafeRedirect = (debugBranch: string, extraData: Record<string, any> = {}) => {
+    if (navigateTimeoutRef.current) {
+      clearTimeout(navigateTimeoutRef.current);
+    }
+    navigateTimeoutRef.current = setTimeout(() => {
+      reportPaymentDebug(debugBranch, `${debugBranch} redirecting to main`, extraData);
+      navigation.navigate("Main", {
+        screen: "OrdersTab",
+        params: { initialTab: "pending" },
+      });
+    }, 2500);
+  };
+
+  // Dọn dẹp timer khi component unmount
+  useEffect(() => {
+    return () => {
+      if (navigateTimeoutRef.current) {
+        clearTimeout(navigateTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Lấy chi tiết đơn để lấy danh sách món cho bill
   useEffect(() => {
     if (!orderId) return;
@@ -400,19 +425,8 @@ const PaymentScreen = () => {
             });
             loadHistory();
 
-            // Redirect về OrdersTab tab Đang chờ
-            setTimeout(() => {
-              // #region debug-point A:polling-navigate
-              reportPaymentDebug("A", "polling branch navigating to main", {
-                orderId,
-                paidAmount,
-              });
-              // #endregion
-              navigation.navigate("Main", {
-                screen: "OrdersTab",
-                params: { initialTab: "pending" },
-              });
-            }, 2500);
+            // Redirect về OrdersTab tab Đang chờ an toàn
+            startSafeRedirect("A", { orderId, paidAmount });
           }
         } catch (err) {
           console.warn("[Poll] Lỗi truy vấn trạng thái", err);
@@ -485,19 +499,8 @@ const PaymentScreen = () => {
             });
             loadHistory();
 
-            // Redirect về OrdersTab tab Đang chờ
-            setTimeout(() => {
-              // #region debug-point B:appstate-navigate
-              reportPaymentDebug("B", "appstate branch navigating to main", {
-                orderId,
-                paidAmount,
-              });
-              // #endregion
-              navigation.navigate("Main", {
-                screen: "OrdersTab",
-                params: { initialTab: "pending" },
-              });
-            }, 2500);
+            // Redirect về OrdersTab tab Đang chờ an toàn
+            startSafeRedirect("B", { orderId, paidAmount });
           }
         } catch (e) {
           console.warn("[Kiểm tra trạng thái] Lỗi:", e);
@@ -596,20 +599,8 @@ const PaymentScreen = () => {
       });
       loadHistory();
 
-      // Redirect về tab Đang chờ
-      setTimeout(() => {
-        // #region debug-point C:cash-navigate
-        reportPaymentDebug("C", "cash branch navigating to main", {
-          orderId,
-          cashReceived,
-          totalAmount: Number(totalAmount),
-        });
-        // #endregion
-        navigation.navigate("Main", {
-          screen: "OrdersTab",
-          params: { initialTab: "pending" },
-        });
-      }, 2500);
+      // Redirect về tab Đang chờ an toàn
+      startSafeRedirect("C", { orderId, cashReceived, totalAmount: Number(totalAmount) });
     } catch (err: any) {
       console.error("[PaymentScreen] Lỗi thanh toán tiền mặt:", err);
       console.error("Phản hồi lỗi:", JSON.stringify(err?.response?.data, null, 2));
@@ -712,9 +703,18 @@ const PaymentScreen = () => {
         <View style={s.summaryCard}>
           <Text style={s.summaryLabel}>Đơn hàng #{orderId}</Text>
           <Text style={s.summaryAmount}>{formatCurrency(totalAmount)}</Text>
-          {!!customerName && (
-            <Text style={s.summaryCustomer}>👤 {customerName}</Text>
-          )}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 8 }}>
+            {!!customerName && (
+              <Text style={[s.summaryCustomer, { marginTop: 0 }]}>👤 {customerName}</Text>
+            )}
+            {orderDetail?.tableName ? (
+              <Text style={[s.summaryCustomer, { marginTop: 0 }]}>🪑 {orderDetail.tableName}</Text>
+            ) : orderDetail?.tableId ? (
+              <Text style={[s.summaryCustomer, { marginTop: 0 }]}>🪑 Bàn #{orderDetail.tableId}</Text>
+            ) : (
+              <Text style={[s.summaryCustomer, { marginTop: 0 }]}>🥡 Mang đi</Text>
+            )}
+          </View>
         </View>
 
         {/* ── Biểu ngữ thanh toán thành công ── */}
@@ -1008,18 +1008,8 @@ const PaymentScreen = () => {
                   });
                   loadHistory();
 
-                  setTimeout(() => {
-                    // #region debug-point A:manual-navigate
-                    reportPaymentDebug("A", "manual confirm branch navigating to main", {
-                      orderId,
-                      paidAmount,
-                    });
-                    // #endregion
-                    navigation.navigate("Main", {
-                      screen: "OrdersTab",
-                      params: { initialTab: "pending" },
-                    });
-                  }, 2500);
+                  // Redirect về OrdersTab tab Đang chờ an toàn
+                  startSafeRedirect("A", { orderId, paidAmount });
                 } else {
                   console.log('[PaymentScreen] VNPay chưa thành công trên BE');
                   Toast.show({
@@ -1060,12 +1050,15 @@ const PaymentScreen = () => {
         <View style={s.footer}>
           <TouchableOpacity
             style={s.doneBtn}
-            onPress={() =>
+            onPress={() => {
+              if (navigateTimeoutRef.current) {
+                clearTimeout(navigateTimeoutRef.current);
+              }
               navigation.navigate("Main", {
                 screen: "OrdersTab",
                 params: { initialTab: "pending" },
-              })
-            }
+              });
+            }}
           >
             <Text style={s.doneBtnText}>Hoàn tất & Quay về</Text>
           </TouchableOpacity>

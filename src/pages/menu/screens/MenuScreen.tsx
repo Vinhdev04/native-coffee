@@ -12,13 +12,20 @@ import { Search, X, ShoppingBag, Coffee as CoffeeIcon, QrCode } from 'lucide-rea
 import { fetchCategories, fetchProducts } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
+import { COLORS } from '@/styles/theme';
 import { useDebounce } from '@/hooks/useDebounce';
 import Toast from '@/components/common/Toast';
 import ProductModal from '@/components/menu/ProductModal';
 import ProductCardHorizontal from '@/components/home/ProductCardHorizontal';
 import ReceiptModal from '@/components/common/ReceiptModal';
-import { makeMenuStyles } from '../styles/MenuScreen.styles';
+import { s, sh } from '../styles/MenuScreen.styles';
+
+const SectionHeader = ({ title }: { title: string }) => (
+  <View style={sh.wrap}>
+    <Text style={sh.title}>{title}</Text>
+    <View style={sh.line} />
+  </View>
+);
 
 const MenuScreen = () => {
   const { width } = useWindowDimensions();
@@ -27,9 +34,6 @@ const MenuScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { t } = useTranslation();
-  const { colors: c, isDark } = useTheme();
-  const styles = useMemo(() => makeMenuStyles(c), [c]);
-
   const { items, totalItems, addToCart, activeTable, clearActiveTable } = useCart();
   const { user } = useAuth();
   const branchId = user?.branchId || (user as any)?.branchId || (user as any)?.branch_id || 1;
@@ -93,8 +97,11 @@ const MenuScreen = () => {
 
   const handleCategoryPress = (catId: number | 'all') => {
     setActiveCategory(catId);
-    if (catId === 'all') { sectionListRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: true, viewPosition: 0 }); return; }
-    const idx = sections.findIndex(s => s.catId === catId);
+    if (catId === 'all') {
+      sectionListRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: true, viewPosition: 0 });
+      return;
+    }
+    const idx = sections.findIndex(sec => sec.catId === catId);
     if (idx >= 0) {
       isScrollingFromPress.current = true;
       sectionListRef.current?.scrollToLocation({ sectionIndex: idx, itemIndex: 0, animated: true, viewPosition: 0 });
@@ -119,19 +126,19 @@ const MenuScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={c.headerBg} />
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={c.primary} />
-          <Text style={styles.loadingText}>{t('loading')}</Text>
+      <SafeAreaView style={s.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+        <View style={s.loadingWrap}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={s.loadingText}>{t('loading')}</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={c.headerBg} />
+    <SafeAreaView style={s.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       <Toast
         visible={toast.visible} type="success" title={toast.title} message={toast.message}
         onHide={() => setToast(t => ({ ...t, visible: false }))}
@@ -139,49 +146,55 @@ const MenuScreen = () => {
       />
 
       {/* Header */}
-      <View style={[styles.header, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
-        <View style={styles.headerLeft} />
-        <Text style={styles.headerTitle}>{t('menu_title')}</Text>
+      <View style={[s.header, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
+        <View style={s.headerLeft} />
+        <Text style={s.headerTitle}>{t('menu_title')}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('ScanQR', { scanType: 'table' })}>
-            <QrCode size={isSmallScreen ? 17 : 20} color={c.primary} />
+          <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('ScanQR', { scanType: 'table' })}>
+            <QrCode size={isSmallScreen ? 17 : 20} color={COLORS.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('Cart')}>
-            <ShoppingBag size={isSmallScreen ? 17 : 20} color={c.primary} />
-            {totalItems > 0 && <View style={styles.badge}><Text style={styles.badgeText} adjustsFontSizeToFit numberOfLines={1}>{totalItems > 9 ? '9+' : totalItems}</Text></View>}
+          <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
+            <ShoppingBag size={isSmallScreen ? 17 : 20} color={COLORS.primary} />
+            {totalItems > 0 && (
+              <View style={s.badge}>
+                <Text style={s.badgeText} adjustsFontSizeToFit numberOfLines={1}>{totalItems > 9 ? '9+' : totalItems}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Active Table Banner */}
       {activeTable && (
-        <View style={styles.activeBanner}>
+        <View style={s.activeBanner}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF7A00', marginRight: 8 }} />
-            <Text style={styles.activeBannerText} numberOfLines={1}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary, marginRight: 8 }} />
+            <Text style={s.activeBannerText} numberOfLines={1}>
               Đang gọi món tại: {activeTable.name || activeTable.qrToken}
             </Text>
           </View>
-          <TouchableOpacity style={styles.activeBannerBtn} onPress={clearActiveTable}>
-            <Text style={styles.activeBannerBtnText}>Hủy chọn</Text>
+          <TouchableOpacity style={s.activeBannerBtn} onPress={clearActiveTable}>
+            <Text style={s.activeBannerBtnText}>Hủy chọn</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* Search */}
-      <View style={[styles.searchRow, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
-        <View style={styles.searchInputWrap}>
-          <Search size={17} color={c.placeholder} />
+      <View style={[s.searchRow, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
+        <View style={s.searchInputWrap}>
+          <Search size={17} color="#9CA3AF" />
           <TextInput
-            style={styles.searchInput} value={searchText} onChangeText={setSearchText}
-            placeholder={t('search_placeholder')} placeholderTextColor={c.placeholder}
+            style={s.searchInput} value={searchText} onChangeText={setSearchText}
+            placeholder={t('search_placeholder')} placeholderTextColor="#9CA3AF"
           />
-          {searchText.length > 0 && <TouchableOpacity onPress={() => setSearchText('')}><X size={16} color={c.placeholder} /></TouchableOpacity>}
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchText('')}><X size={16} color="#9CA3AF" /></TouchableOpacity>
+          )}
         </View>
       </View>
 
       {/* Category Bar */}
-      <View style={styles.catBar}>
+      <View style={s.catBar}>
         <FlatList
           ref={categoryListRef}
           data={allCats}
@@ -189,25 +202,25 @@ const MenuScreen = () => {
             const isActive = item.id === activeCategory || (item.id === 'all' && activeCategory === 'all');
             return (
               <TouchableOpacity
-                style={[styles.catChip, isActive && styles.catChipActive, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}
+                style={[s.catChip, isActive && s.catChipActive, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}
                 onPress={() => handleCategoryPress(item.id)}
               >
-                {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.catIcon} />}
-                <Text style={[styles.catText, isActive && styles.catTextActive]} numberOfLines={1}>{item.name}</Text>
+                {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={s.catIcon} />}
+                <Text style={[s.catText, isActive && s.catTextActive]} numberOfLines={1}>{item.name}</Text>
               </TouchableOpacity>
             );
           }}
           keyExtractor={item => item.id.toString()}
           horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.catScroll}
+          contentContainerStyle={s.catScroll}
         />
       </View>
 
       {/* Product List */}
       {sections.length === 0 ? (
-        <View style={styles.emptyWrap}>
-          <CoffeeIcon size={52} color={c.border} />
-          <Text style={styles.emptyTitle}>{t('no_products_found')}</Text>
+        <View style={s.emptyWrap}>
+          <CoffeeIcon size={52} color="#E5E7EB" />
+          <Text style={s.emptyTitle}>{t('no_products_found')}</Text>
         </View>
       ) : (
         <SectionList
@@ -215,7 +228,7 @@ const MenuScreen = () => {
           sections={sections}
           keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
           renderItem={({ item }) => {
-            const cartQty = items.filter(ci => Number(ci.id) === Number(item.id)).reduce((s, ci) => s + ci.quantity, 0);
+            const cartQty = items.filter(ci => Number(ci.id) === Number(item.id)).reduce((sum, ci) => sum + ci.quantity, 0);
             return (
               <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
                 <ProductCardHorizontal
@@ -228,18 +241,15 @@ const MenuScreen = () => {
               </View>
             );
           }}
-          renderSectionHeader={({ section }) => (
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-              <View style={styles.sectionLine} />
-            </View>
-          )}
+          renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
           stickySectionHeadersEnabled
           showsVerticalScrollIndicator={false}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig.current}
-          contentContainerStyle={{ paddingBottom: 100, backgroundColor: c.sectionBg }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={c.primary} />}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={COLORS.primary} />
+          }
         />
       )}
 

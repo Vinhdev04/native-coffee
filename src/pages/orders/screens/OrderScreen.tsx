@@ -21,7 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
-import { COLORS } from "@/styles/theme";
+import { COLORS, FONTS } from "@/styles/theme";
 import { formatCurrency } from "@/utils";
 import { fetchOrders, fetchOrderById } from "@/services/orderService";
 import {
@@ -158,6 +158,11 @@ export const OrderBottomSheet = ({
                 <User size={14} color={COLORS.textMuted} />
                 <Text style={bs.orderTime}>
                   {order.customerName || t('anonymous_customer')}
+                </Text>
+              </View>
+              <View style={[bs.infoItem, { marginTop: 4 }]}>
+                <Text style={[bs.orderTime, { color: order.tableName ? COLORS.primary : COLORS.textMuted, fontFamily: FONTS.bold }]}>
+                  {order.tableName ? `🪑 Bàn: ${order.tableName}` : `🥡 Mang đi`}
                 </Text>
               </View>
             </View>
@@ -494,6 +499,28 @@ const OrderScreen = () => {
               {cfg.label}
             </Text>
           </View>
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <View style={{
+            backgroundColor: item.tableName ? '#FFF0E6' : '#F3F4F6',
+            borderRadius: 6,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+          }}>
+            <Text style={{
+              fontSize: 10,
+              fontFamily: FONTS.bold,
+              color: item.tableName ? COLORS.primary : COLORS.textMuted,
+            }}>
+              {item.tableName ? `🪑 Bàn: ${item.tableName}` : `🥡 Mang đi`}
+            </Text>
+          </View>
+          {!!item.customerName && (
+            <Text style={{ fontSize: 11, color: COLORS.textMuted, fontFamily: FONTS.regular }}>
+              👤 {item.customerName}
+            </Text>
+          )}
         </View>
 
         {!!previewName && (

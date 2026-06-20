@@ -19,6 +19,7 @@ export interface CreateOrderItem {
 export interface CreateOrderPayload {
   branchId: number;
   shiftSessionId?: number;
+  tableId?: number;
   customerName?: string;
   customerPhone?: string;
   note?: string;
@@ -52,7 +53,8 @@ export const createOrder = async (payload: CreateOrderPayload) => {
     .slice(2)}`;
   const requestPayload = {
     branchId: payload.branchId,
-    ...(payload.shiftSessionId ? { shiftSessionId: payload.shiftSessionId } : {}),
+    ...(payload.shiftSessionId !== undefined && payload.shiftSessionId !== null ? { shiftSessionId: payload.shiftSessionId } : {}),
+    ...(payload.tableId !== undefined && payload.tableId !== null ? { tableId: payload.tableId } : {}),
     ...(payload.customerName ? { customerName: payload.customerName } : {}),
     ...(payload.customerPhone ? { customerPhone: payload.customerPhone } : {}),
     ...(payload.note ? { note: payload.note } : {}),

@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   ChevronLeft, Package, CreditCard, User, FileText, Calendar
 } from 'lucide-react-native';
-import { COLORS } from '@/styles/theme';
+import { COLORS, FONTS } from '@/styles/theme';
 import { formatCurrency } from '@/utils';
 import { fetchOrderById, cancelOrder } from '@/services/orderService';
 import Toast from 'react-native-toast-message';
@@ -177,7 +177,7 @@ const OrderDetailScreen = () => {
           </View>
           <Text style={[s.statusText, { color: cfg.color, fontSize: isSmallScreen ? 18 : 22 }]}>{cfg.label}</Text>
           <Text style={s.orderIdText}>Mã đơn: #{orderId}</Text>
-          <View style={s.orderMetaRow}>
+          <View style={[s.orderMetaRow, { flexWrap: 'wrap', gap: 2 }]}>
             <View style={s.metaItem}>
               <Calendar size={14} color={COLORS.textMuted} />
               <Text style={s.metaText}>{formatDateTime(order.createTime || '')}</Text>
@@ -186,6 +186,12 @@ const OrderDetailScreen = () => {
             <View style={s.metaItem}>
               <User size={14} color={COLORS.textMuted} />
               <Text style={s.metaText}>{order.customerName || 'Khách hàng'}</Text>
+            </View>
+            <View style={s.metaDivider} />
+            <View style={s.metaItem}>
+              <Text style={[s.metaText, { color: order.tableName ? COLORS.primary : COLORS.textMuted, fontFamily: FONTS.bold }]}>
+                {order.tableName ? `🪑 ${order.tableName}` : `🥡 Mang đi`}
+              </Text>
             </View>
           </View>
         </View>

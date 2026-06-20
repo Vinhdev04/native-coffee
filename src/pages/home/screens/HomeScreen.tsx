@@ -7,26 +7,23 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { COLORS } from '@/styles/theme';
 import { useTranslation } from 'react-i18next';
 import { Search, ShoppingBag, X, QrCode, LayoutGrid } from 'lucide-react-native';
 import { fetchCategories, fetchProducts } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
 import Toast from '@/components/common/Toast';
 import ProductCardHorizontal from '@/components/home/ProductCardHorizontal';
 import ProductModal from '@/components/menu/ProductModal';
 import ReceiptModal from '@/components/common/ReceiptModal';
-import { makeHomeStyles, makeSectionHeaderStyles } from '../styles/HomeScreen.styles';
+import { s, sh } from '../styles/HomeScreen.styles';
 
-const SectionHeader = ({ title, c }: { title: string; c: ReturnType<typeof getThemeColors> }) => {
-  const styles = makeSectionHeaderStyles(c);
-  return (
-    <View style={styles.wrap}>
-      <Text style={styles.title}>{title}</Text>
-    </View>
-  );
-};
+const SectionHeader = ({ title }: { title: string }) => (
+  <View style={sh.wrap}>
+    <Text style={sh.title}>{title}</Text>
+  </View>
+);
 
 const HomeScreen = () => {
   const { width } = useWindowDimensions();
@@ -34,10 +31,6 @@ const HomeScreen = () => {
 
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
-  const { isDark } = useTheme();
-  const c = getThemeColors(isDark);
-  const s = makeHomeStyles(c);
-
   const { items, totalItems, addToCart, updateQuantity, activeTable, clearActiveTable } = useCart();
   const { user } = useAuth();
   const branchId = user?.branchId || (user as any)?.branchId || (user as any)?.branch_id || 1;
@@ -80,11 +73,7 @@ const HomeScreen = () => {
         : [];
     }
     return categories
-      .map(cat => ({
-        catId: cat.id,
-        title: cat.name,
-        data: allProducts.filter(p => p.categoryId === cat.id),
-      }))
+      .map(cat => ({ catId: cat.id, title: cat.name, data: allProducts.filter(p => p.categoryId === cat.id) }))
       .filter(s => s.data.length > 0);
   }, [categories, allProducts, searchText]);
 
@@ -99,29 +88,21 @@ const HomeScreen = () => {
     const idx = sections.findIndex(s => s.catId === catId);
     if (idx >= 0) {
       isScrollingFromPress.current = true;
-      try {
-        sectionListRef.current?.scrollToLocation({ sectionIndex: idx, itemIndex: 0, animated: true, viewOffset: 0 });
-      } catch {}
+      try { sectionListRef.current?.scrollToLocation({ sectionIndex: idx, itemIndex: 0, animated: true, viewOffset: 0 }); } catch {}
       setTimeout(() => { isScrollingFromPress.current = false; }, 800);
     }
   }, [sections]);
 
   const scrollCatBarToActive = useCallback((catId: number | 'all') => {
     const idx = allCats.findIndex(c => c.id === catId);
-    if (idx >= 0) {
-      catBarRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
-    }
+    if (idx >= 0) catBarRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
   }, [allCats]);
 
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (isScrollingFromPress.current || searchText) return;
     if (viewableItems.length > 0) {
-      const topItem = viewableItems[0];
-      const catId = topItem.section?.catId;
-      if (catId && catId !== activeCatId) {
-        setActiveCatId(catId);
-        scrollCatBarToActive(catId);
-      }
+      const catId = viewableItems[0].section?.catId;
+      if (catId && catId !== activeCatId) { setActiveCatId(catId); scrollCatBarToActive(catId); }
     }
   }, [activeCatId, searchText, scrollCatBarToActive]);
 
@@ -129,64 +110,43 @@ const HomeScreen = () => {
 
   const handleAddToCart = (item: any) => {
     addToCart(item);
-    setToast({
-      visible: true,
-      title: t('added_to_cart'),
-      msg: `${item.name}. ${t('tap_to_view_cart')}`,
-    });
-  };
-
-  const handleProductPress = (product: any) => {
-    setSelectedProduct(product);
-    setIsModalVisible(true);
+    setToast({ visible: true, title: t('added_to_cart'), msg: `${item.name}. ${t('tap_to_view_cart')}` });
   };
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={c.headerBg}
-      />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       <Toast
         visible={toast.visible} type="success"
         title={toast.title} message={toast.msg}
         onHide={() => setToast(t => ({ ...t, visible: false }))}
-        onPress={() => {
-          setToast(t => ({ ...t, visible: false }));
-          navigation.navigate('Cart');
-        }}
+        onPress={() => { setToast(t => ({ ...t, visible: false })); navigation.navigate('Cart'); }}
       />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <View style={[s.topBar, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}>
         <View style={s.headerLeft}>
-          <Image
-            source={require('@/assets/images/logo.png')}
-            style={s.headerLogo}
-            resizeMode="contain"
-          />
+          <Image source={require('@/assets/images/logo.png')} style={s.headerLogo} resizeMode="contain" />
         </View>
         <View style={s.headerRight}>
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('TableList')}>
-            <LayoutGrid size={isSmallScreen ? 17 : 20} color={c.primary} />
+            <LayoutGrid size={isSmallScreen ? 17 : 20} color={COLORS.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('ScanQR', { scanType: 'table' })}>
-            <QrCode size={isSmallScreen ? 17 : 20} color={c.primary} />
+            <QrCode size={isSmallScreen ? 17 : 20} color={COLORS.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation.navigate('Cart')}>
-            <ShoppingBag size={isSmallScreen ? 17 : 20} color={c.primary} />
+            <ShoppingBag size={isSmallScreen ? 17 : 20} color={COLORS.primary} />
             {totalItems > 0 && (
               <View style={s.badge}>
-                <Text style={s.badgeText} adjustsFontSizeToFit numberOfLines={1}>
-                  {totalItems > 9 ? '9+' : totalItems}
-                </Text>
+                <Text style={s.badgeText} adjustsFontSizeToFit numberOfLines={1}>{totalItems > 9 ? '9+' : totalItems}</Text>
               </View>
             )}
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* ── Active Table Banner ── */}
+      {/* Active Table Banner */}
       {activeTable && (
         <View style={s.activeBanner}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
@@ -201,34 +161,31 @@ const HomeScreen = () => {
         </View>
       )}
 
-      {/* ── Search ── */}
+      {/* Search */}
       <View style={[s.searchSection, { paddingHorizontal: isSmallScreen ? 12 : 16, paddingTop: 10 }]}>
         <View style={s.searchBar}>
-          <Search size={18} color={c.placeholder} />
+          <Search size={18} color="#9CA3AF" />
           <TextInput
             style={s.searchInput}
             placeholder={t('search_placeholder')}
-            placeholderTextColor={c.placeholder}
+            placeholderTextColor="#9CA3AF"
             value={searchText}
             onChangeText={setSearchText}
           />
           {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchText('')}>
-              <X size={16} color={c.placeholder} />
-            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setSearchText('')}><X size={16} color="#9CA3AF" /></TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* ── Category Bar ── */}
+      {/* Category Bar */}
       {!searchText && (
         <View style={s.catBar}>
           <FlatList
             ref={catBarRef}
             data={allCats}
             keyExtractor={i => i.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
+            horizontal showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
             onScrollToIndexFailed={() => {}}
             renderItem={({ item }) => {
@@ -246,10 +203,10 @@ const HomeScreen = () => {
         </View>
       )}
 
-      {/* ── Product List ── */}
+      {/* Products */}
       {loading ? (
         <View style={s.loadingWrap}>
-          <ActivityIndicator size="large" color={c.primary} />
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={s.loadingText}>{t('loading')}</Text>
         </View>
       ) : sections.length === 0 && searchText ? (
@@ -269,18 +226,16 @@ const HomeScreen = () => {
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig.current}
           onScrollToIndexFailed={() => {}}
-          renderSectionHeader={({ section }) => <SectionHeader title={section.title} c={c} />}
+          renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
           renderItem={({ item }) => {
             const cartQty = items
-              .filter(cartItem => Number(cartItem.id) === Number(item.id))
-              .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+              .filter(ci => Number(ci.id) === Number(item.id))
+              .reduce((sum, ci) => sum + ci.quantity, 0);
             return (
               <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
                 <ProductCardHorizontal
-                  product={item}
-                  searchText={searchText}
-                  cartQuantity={cartQty}
-                  onPress={() => handleProductPress(item)}
+                  product={item} searchText={searchText} cartQuantity={cartQty}
+                  onPress={() => { setSelectedProduct(item); setIsModalVisible(true); }}
                   onAddPress={() => handleAddToCart(item)}
                   onMinusPress={() => {
                     const cartItem = items.find(i => Number(i.id) === Number(item.id));
@@ -297,12 +252,7 @@ const HomeScreen = () => {
       )}
 
       <ProductModal visible={isModalVisible} product={selectedProduct} onClose={() => setIsModalVisible(false)} onAddToCart={handleAddToCart} />
-      <ReceiptModal
-        visible={isReceiptVisible}
-        onClose={() => setIsReceiptVisible(false)}
-        order={receiptOrder}
-        title={t('preview_receipt_title')}
-      />
+      <ReceiptModal visible={isReceiptVisible} onClose={() => setIsReceiptVisible(false)} order={receiptOrder} title={t('preview_receipt_title')} />
     </SafeAreaView>
   );
 };

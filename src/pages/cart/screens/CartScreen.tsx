@@ -52,6 +52,9 @@ const CartScreen = () => {
     try {
       const res = await fetchTables(branchId);
       const rows = (res as any)?.data?.rows || (res as any)?.data || (res as any)?.rows || res || [];
+      if (rows.length > 0) {
+        console.log('[CartScreen] Bàn ăn đầu tiên nhận được từ API:', JSON.stringify(rows[0], null, 2));
+      }
       setTables(rows.filter((t: any) => t.isActive === '1' || t.isActive === 1 || t.isActive === undefined));
     } catch (err) {
       console.error('Lỗi khi lấy danh sách bàn:', err);
@@ -105,6 +108,7 @@ const CartScreen = () => {
 
     try {
       setIsCheckingOut(true);
+      console.log('[CartScreen] Bắt đầu handleCheckout. activeTable:', JSON.stringify(activeTable, null, 2));
 
       const customerName = user?.fullName || (user as any)?.full_name
         || user?.username || (user as any)?.name
@@ -112,7 +116,7 @@ const CartScreen = () => {
       
       let res: any = null;
 
-      // Phân biệt luồng: Nếu chọn bàn bằng QR Token (Luồng khách hàng)
+      // Phân biệt luồng: Nếu chọn bàn bằng QR Token mà không có id (Luồng khách hàng)
       if (activeTable?.qrToken && !activeTable.id) {
         const qrPayload = {
           qrToken: activeTable.qrToken,
@@ -128,7 +132,7 @@ const CartScreen = () => {
         res = await createQrOrder(qrPayload);
 
       } else {
-        // Luồng nhân viên/mặc định (có hoặc không có tableId)
+        // Luồng nhân viên — có tableId (chọn từ danh sách hoặc quét QR có match)
         let shiftSessionId: number | null = null;
         try {
           const shiftRes = await fetchActiveShiftSession(branchId);
@@ -148,10 +152,15 @@ const CartScreen = () => {
           console.error('[CartScreen] Lỗi fetchActiveShiftSession:', shiftErr);
         }
 
+        // Đảm bảo tableId luôn là Number (API có thể trả về string), hỗ trợ cả ID = 0 và tránh NaN
+        const rawTableId = activeTable?.id;
+        const tableId = (rawTableId !== undefined && rawTableId !== null && (rawTableId as any) !== '') ? Number(rawTableId) : undefined;
+        const validTableId = (tableId !== undefined && !isNaN(tableId)) ? tableId : undefined;
+
         const payload: any = {
           branchId,
-          ...(shiftSessionId ? { shiftSessionId } : {}),
-          ...(activeTable?.id ? { tableId: activeTable.id } : {}),
+          ...(shiftSessionId !== undefined && shiftSessionId !== null ? { shiftSessionId } : {}),
+          ...(validTableId !== undefined && validTableId !== null ? { tableId: validTableId } : {}),
           customerName,
           note: selectedVoucher ? `Voucher: ${selectedVoucher.code} (-${formatCurrency(selectedVoucher.value)})` : '',
           items: items.map(item => ({
@@ -161,7 +170,9 @@ const CartScreen = () => {
             note: item.note || '',
           })),
         };
-        console.log('[CartScreen] Gửi tạo đơn hàng tiêu chuẩn:', JSON.stringify(payload, null, 2));
+        console.log('[CartScreen] Gửi tạo đơn hàng tiêu chuẩn. activeTable:', JSON.stringify(activeTable, null, 2));
+        console.log('[CartScreen] tableId được trích xuất:', validTableId, 'Kiểu:', typeof validTableId);
+        console.log('[CartScreen] Payload gửi lên API:', JSON.stringify(payload, null, 2));
         res = await createOrder(payload);
       }
 
@@ -683,9 +694,10 @@ const CartScreen = () => {
                           }}
                           onPress={() => {
                             setActiveTable({
-                              id: t.id,
+                              id: Number(t.id),
                               name: t.name,
-                              qrToken: t.qrToken,
+                              // Chỉ set qrToken nếu bàn thực sự có
+                              ...(t.qrToken ? { qrToken: t.qrToken } : {}),
                             });
                             setTablesModalVisible(false);
                           }}
